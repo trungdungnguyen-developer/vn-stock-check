@@ -1,5 +1,16 @@
 const API_BASE = "https://query1.finance.yahoo.com";
 const PROXY_BASE = "/.netlify/functions/vn-stock";
+const CHART_COLORS = {
+  text: "#6d7c76",
+  grid: "#d8e1d1",
+  price: "#0a4e73",
+  ma10: "#2ac6c5",
+  ma50: "#3f5e55",
+  ma100: "#a48b79",
+  ma200: "#cea88d",
+  positive: "#3f5e55",
+  negative: "#b91c1c"
+};
 
 const form = document.getElementById("stockForm");
 const symbolInput = document.getElementById("symbol");
@@ -379,7 +390,7 @@ function drawChart(points) {
   context.clearRect(0, 0, width, height);
 
   if (!points.length) {
-    context.fillStyle = "#78716c";
+    context.fillStyle = CHART_COLORS.text;
     context.font = "18px Arial";
     context.fillText("Chưa có dữ liệu biểu đồ.", 24, 48);
     return;
@@ -391,7 +402,7 @@ function drawChart(points) {
   const max = Math.max(...closes);
   const span = max - min || 1;
 
-  context.strokeStyle = "#eadbd0";
+  context.strokeStyle = CHART_COLORS.grid;
   context.lineWidth = 1;
   for (let index = 0; index < 5; index += 1) {
     const y = padding + ((height - padding * 2) / 4) * index;
@@ -408,16 +419,16 @@ function drawChart(points) {
     if (index === 0) context.moveTo(x, y);
     else context.lineTo(x, y);
   });
-  context.strokeStyle = "#dc2626";
+  context.strokeStyle = CHART_COLORS.price;
   context.lineWidth = 3;
   context.stroke();
 
   const movingAverages = calculateMovingAverages(points);
   [
-    { values: movingAverages.ma10, color: "#2563eb" },
-    { values: movingAverages.ma50, color: "#047857" },
-    { values: movingAverages.ma100, color: "#7c3aed" },
-    { values: movingAverages.ma200, color: "#f59e0b" }
+    { values: movingAverages.ma10, color: CHART_COLORS.ma10 },
+    { values: movingAverages.ma50, color: CHART_COLORS.ma50 },
+    { values: movingAverages.ma100, color: CHART_COLORS.ma100 },
+    { values: movingAverages.ma200, color: CHART_COLORS.ma200 }
   ].forEach((series) => {
     context.beginPath();
     let started = false;
@@ -437,7 +448,7 @@ function drawChart(points) {
     context.stroke();
   });
 
-  context.fillStyle = "#78716c";
+  context.fillStyle = CHART_COLORS.text;
   context.font = "13px Arial";
   context.fillText(formatPrice(max), 8, padding + 4);
   context.fillText(formatPrice(min), 8, height - padding + 4);
@@ -554,7 +565,7 @@ function drawLineCanvas(canvas, values, options = {}) {
 
   const numericValues = values.filter((value) => value !== null);
   if (!numericValues.length) {
-    context.fillStyle = "#78716c";
+    context.fillStyle = CHART_COLORS.text;
     context.font = "16px Arial";
     context.fillText("Chưa đủ dữ liệu.", 18, 38);
     return;
@@ -565,7 +576,7 @@ function drawLineCanvas(canvas, values, options = {}) {
   const max = options.max ?? Math.max(...numericValues);
   const span = max - min || 1;
 
-  context.strokeStyle = "#eadbd0";
+  context.strokeStyle = CHART_COLORS.grid;
   context.lineWidth = 1;
   for (let index = 0; index < 4; index += 1) {
     const y = padding + ((height - padding * 2) / 3) * index;
@@ -597,7 +608,7 @@ function drawLineCanvas(canvas, values, options = {}) {
     if (index === values.findIndex((item) => item !== null)) context.moveTo(x, y);
     else context.lineTo(x, y);
   });
-  context.strokeStyle = options.color || "#dc2626";
+  context.strokeStyle = options.color || CHART_COLORS.price;
   context.lineWidth = 2.5;
   context.stroke();
 }
@@ -610,7 +621,7 @@ function drawMacdCanvas(canvas, macdData) {
 
   const allValues = [...macdData.macd, ...macdData.signal, ...macdData.histogram].filter((value) => value !== null);
   if (!allValues.length) {
-    context.fillStyle = "#78716c";
+    context.fillStyle = CHART_COLORS.text;
     context.font = "16px Arial";
     context.fillText("Chưa đủ dữ liệu.", 18, 38);
     return;
@@ -625,7 +636,7 @@ function drawMacdCanvas(canvas, macdData) {
   const yFor = (value) => height - padding - ((value - min) / span) * (height - padding * 2);
   const xFor = (index) => padding + ((width - padding * 2) / Math.max(macdData.macd.length - 1, 1)) * index;
 
-  context.strokeStyle = "#eadbd0";
+  context.strokeStyle = CHART_COLORS.grid;
   context.lineWidth = 1;
   [min, 0, max].forEach((value) => {
     const y = yFor(value);
@@ -640,7 +651,7 @@ function drawMacdCanvas(canvas, macdData) {
     const x = xFor(index);
     const zeroY = yFor(0);
     const y = yFor(value);
-    context.strokeStyle = value >= 0 ? "#047857" : "#b91c1c";
+    context.strokeStyle = value >= 0 ? CHART_COLORS.positive : CHART_COLORS.negative;
     context.lineWidth = 4;
     context.beginPath();
     context.moveTo(x, zeroY);
@@ -649,8 +660,8 @@ function drawMacdCanvas(canvas, macdData) {
   });
 
   [
-    { values: macdData.macd, color: "#dc2626" },
-    { values: macdData.signal, color: "#2563eb" }
+    { values: macdData.macd, color: CHART_COLORS.price },
+    { values: macdData.signal, color: CHART_COLORS.ma10 }
   ].forEach((line) => {
     context.beginPath();
     let started = false;
@@ -686,10 +697,10 @@ function renderIndicators(bars) {
   drawLineCanvas(rsiCanvas, rsi, {
     min: 0,
     max: 100,
-    color: "#dc2626",
+    color: CHART_COLORS.price,
     guides: [
-      { value: 70, color: "#b91c1c", label: "70" },
-      { value: 30, color: "#047857", label: "30" }
+      { value: 70, color: CHART_COLORS.negative, label: "70" },
+      { value: 30, color: CHART_COLORS.positive, label: "30" }
     ]
   });
   drawMacdCanvas(macdCanvas, macd);

@@ -1,17 +1,20 @@
 :root {
   color-scheme: light;
-  --bg: #fff7ed;
+  --bg: #f3f7f4;
   --panel: #ffffff;
-  --text: #1c1917;
-  --muted: #78716c;
-  --border: #eadbd0;
-  --soft: #fff1e6;
-  --primary: #7f1d1d;
-  --accent: #dc2626;
-  --green: #047857;
+  --text: #143832;
+  --muted: #6d7c76;
+  --border: #d8e1d1;
+  --soft: #eef4ec;
+  --primary: #0a4e73;
+  --accent: #2ac6c5;
+  --secondary: #3f5e55;
+  --sand: #cea88d;
+  --taupe: #a48b79;
+  --green: #3f5e55;
   --red: #b91c1c;
-  --purple: #7c3aed;
-  --blue: #2563eb;
+  --purple: #a48b79;
+  --blue: #0a4e73;
 }
 
 * {
@@ -38,7 +41,7 @@ body {
   border: 1px solid var(--border);
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 18px 46px rgba(127, 29, 29, 0.13);
+  box-shadow: 0 18px 46px rgba(10, 78, 115, 0.14);
 }
 
 .hero {
@@ -46,7 +49,7 @@ body {
   justify-content: space-between;
   gap: 18px;
   padding: 24px;
-  background: var(--primary);
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
   color: #ffffff;
 }
 
@@ -63,7 +66,7 @@ h1 {
 
 .hero p {
   margin-bottom: 0;
-  color: #ffe4e6;
+  color: #d8e1d1;
 }
 
 .eyebrow {
@@ -74,7 +77,7 @@ h1 {
 }
 
 .hero .eyebrow {
-  color: #fecaca;
+  color: #bdf0ee;
 }
 
 .pill {
@@ -83,7 +86,7 @@ h1 {
   border: 1px solid rgba(255, 255, 255, 0.35);
   border-radius: 999px;
   padding: 8px 12px;
-  color: #ffe4e6;
+  color: #d8e1d1;
 }
 
 .search-panel,
@@ -113,8 +116,8 @@ h1 {
 }
 
 .tab.active {
-  background: var(--accent);
-  border-color: var(--accent);
+  background: var(--primary);
+  border-color: var(--primary);
   color: #ffffff;
 }
 
@@ -154,15 +157,15 @@ input {
 
 input:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.14);
+  box-shadow: 0 0 0 3px rgba(42, 198, 197, 0.18);
 }
 
 button {
   min-height: 48px;
-  border: 1px solid var(--accent);
+  border: 1px solid var(--primary);
   border-radius: 8px;
   padding: 0 18px;
-  background: var(--accent);
+  background: var(--primary);
   color: #ffffff;
   font-size: 16px;
   font-weight: 700;
@@ -176,7 +179,7 @@ button:hover {
 .secondary,
 .quick-symbols button {
   background: #ffffff;
-  color: var(--accent);
+  color: var(--primary);
 }
 
 .quick-symbols {
@@ -223,7 +226,7 @@ button:hover {
   min-width: 230px;
   padding: 18px;
   border-radius: 8px;
-  background: #fff1f2;
+  background: #eef4ec;
   text-align: right;
 }
 
@@ -383,7 +386,7 @@ canvas {
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 12px;
-  background: #fff7ed;
+  background: #f7f4ef;
 }
 
 .ma-summary span {
@@ -419,23 +422,23 @@ canvas {
 }
 
 .legend-price {
-  background: #dc2626;
+  background: #0a4e73;
 }
 
 .legend-ma10 {
-  background: #2563eb;
+  background: #2ac6c5;
 }
 
 .legend-ma50 {
-  background: #047857;
+  background: #3f5e55;
 }
 
 .legend-ma100 {
-  background: #7c3aed;
+  background: #a48b79;
 }
 
 .legend-ma200 {
-  background: #f59e0b;
+  background: #cea88d;
 }
 
 .note {
@@ -542,7 +545,7 @@ strong.negative {
   margin-top: 8px;
   padding: 6px 10px;
   border-radius: 999px;
-  background: #fff1f2;
+  background: #d8e1d1;
   color: var(--primary);
   font-weight: 800;
 }
@@ -600,8 +603,8 @@ pre {
   margin: 0;
   padding: 14px;
   border-radius: 8px;
-  background: #1c1917;
-  color: #ffedd5;
+  background: #143832;
+  color: #eef4ec;
   white-space: pre-wrap;
   word-break: break-word;
 }
