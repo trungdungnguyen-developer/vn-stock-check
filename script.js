@@ -1072,7 +1072,7 @@ function fillData(symbol, quote, overview, bars) {
   fields.companyName.textContent = safeText(overview.name) !== "-" ? overview.name : symbol;
   fields.companyDescription.textContent = safeText(overview.description) !== "-"
     ? overview.description
-    : "Du lieu duoc lay tu nguon cong khai TCBS. Mot so truong co the trong tuy theo ma co phieu.";
+    : "Dữ liệu được lấy từ nguồn công khai. Một số trường có thể trống tùy theo mã cổ phiếu.";
   fields.currentPrice.textContent = formatPrice(currentPrice);
   fields.priceChange.textContent = `${toNumber(change) > 0 ? "+" : ""}${formatPrice(change)} (${formatPercent(changePercent)})`;
   updatePriceColor(currentPrice, reference, fields.priceChange);
@@ -1104,12 +1104,12 @@ function fillData(symbol, quote, overview, bars) {
   renderInvestorFlow(quote);
   renderHistory(bars);
   const score = renderScoreAnalysis(symbol, quote, overview, bars, movingAverages, indicators);
-  fields.chartRange.textContent = `${bars.length} phien gan nhat`;
+  fields.chartRange.textContent = `${bars.length} phiên gần nhất`;
   return { movingAverages, indicators, score };
 }
 
 async function loadVietnamStock(symbol) {
-  setMessage("Dang tai du lieu...");
+  setMessage("Đang tải dữ liệu...");
 
   let parsed = null;
   let lastError = null;
@@ -1134,7 +1134,7 @@ async function loadVietnamStock(symbol) {
   }
 
   if (!parsed || !parsed.bars.length) {
-    throw new Error(lastError?.message || "Khong tim thay ma chung khoan Viet Nam nay tren Yahoo Finance.");
+    throw new Error(lastError?.message || "Không tìm thấy mã chứng khoán Việt Nam này trên nguồn dữ liệu hiện tại.");
   }
 
   const quote = parsed.quote;
@@ -1162,12 +1162,12 @@ async function loadVietnamStock(symbol) {
     score: analysis.score,
     investorFlow: {
       status: parsed.source === "Vietcap/VCI"
-        ? "Du lieu bang gia VCI neu co"
-        : "Yahoo Finance khong cung cap du lieu mua/ban theo nhom nha dau tu"
+        ? "Dữ liệu bảng giá VCI nếu có"
+        : "Yahoo Finance không cung cấp dữ liệu mua/bán theo nhóm nhà đầu tư"
     }
   };
   fields.rawData.textContent = JSON.stringify(latestPayload, null, 2);
-  fields.lastUpdated.textContent = `Cap nhat: ${new Date().toLocaleString("vi-VN")}`;
+  fields.lastUpdated.textContent = `Cập nhật: ${new Date().toLocaleString("vi-VN")}`;
   setMessage("");
 }
 
@@ -1176,7 +1176,7 @@ form.addEventListener("submit", async (event) => {
   const symbol = symbolInput.value.trim().toUpperCase();
 
   if (!symbol) {
-    setMessage("Hay nhap ma chung khoan Viet Nam.");
+    setMessage("Hãy nhập mã chứng khoán Việt Nam.");
     symbolInput.focus();
     return;
   }
@@ -1184,7 +1184,7 @@ form.addEventListener("submit", async (event) => {
   try {
     await loadVietnamStock(symbol);
   } catch (error) {
-    setMessage(error.message || "Khong tai duoc du lieu.");
+    setMessage(error.message || "Không tải được dữ liệu.");
   }
 });
 
@@ -1201,15 +1201,15 @@ tabs.forEach((tab) => {
 
 copyButton.addEventListener("click", async () => {
   if (!latestPayload) {
-    setMessage("Chua co du lieu de copy.");
+    setMessage("Chưa có dữ liệu để copy.");
     return;
   }
 
   try {
     await navigator.clipboard.writeText(JSON.stringify(latestPayload, null, 2));
-    setMessage("Da copy JSON.");
+    setMessage("Đã copy JSON.");
   } catch {
-    setMessage("Khong copy duoc. Hay boi den phan JSON va copy thu cong.");
+    setMessage("Không copy được. Hãy bôi đen phần JSON và copy thủ công.");
   }
 });
 
