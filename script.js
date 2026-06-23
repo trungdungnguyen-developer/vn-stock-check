@@ -1,15 +1,16 @@
 const API_BASE = "https://query1.finance.yahoo.com";
 const PROXY_BASE = "/.netlify/functions/vn-stock";
 const CHART_COLORS = {
-  text: "#6d7c76",
-  grid: "#d8e1d1",
-  price: "#0a4e73",
-  ma10: "#2ac6c5",
-  ma50: "#3f5e55",
-  ma100: "#a48b79",
-  ma200: "#cea88d",
-  positive: "#3f5e55",
-  negative: "#b91c1c"
+  text: "#6f5a6d",
+  grid: "#ead6ea",
+  price: "#880085",
+  ma10: "#378dde",
+  ma50: "#22bd3f",
+  ma100: "#af2a01",
+  ma200: "#e08c16",
+  positive: "#22bd3f",
+  negative: "#af2a01",
+  neutral: "#e08c16"
 };
 
 const form = document.getElementById("stockForm");
@@ -173,7 +174,8 @@ function formatPercent(value) {
 
 function valueClass(value) {
   const number = toNumber(value);
-  if (number === null || number === 0) return "";
+  if (number === null) return "";
+  if (number === 0) return "neutral";
   return number > 0 ? "positive" : "negative";
 }
 
@@ -651,7 +653,7 @@ function drawMacdCanvas(canvas, macdData) {
     const x = xFor(index);
     const zeroY = yFor(0);
     const y = yFor(value);
-    context.strokeStyle = value >= 0 ? CHART_COLORS.positive : CHART_COLORS.negative;
+    context.strokeStyle = value > 0 ? CHART_COLORS.positive : value < 0 ? CHART_COLORS.negative : CHART_COLORS.neutral;
     context.lineWidth = 4;
     context.beginPath();
     context.moveTo(x, zeroY);
@@ -723,8 +725,8 @@ function renderInvestorFlow(quote) {
   fields.domesticBuy.textContent = formatLargeNumber(domesticBuy);
   fields.domesticSell.textContent = formatLargeNumber(domesticSell);
   fields.domesticNet.textContent = formatLargeNumber(domesticNet);
-  fields.foreignNet.classList.remove("positive", "negative");
-  fields.domesticNet.classList.remove("positive", "negative");
+  fields.foreignNet.classList.remove("positive", "negative", "neutral");
+  fields.domesticNet.classList.remove("positive", "negative", "neutral");
   const foreignClass = valueClass(foreignNet);
   const domesticClass = valueClass(domesticNet);
   if (foreignClass) fields.foreignNet.classList.add(foreignClass);
@@ -765,19 +767,20 @@ function renderPriceChanges(bars) {
     const compare = bars[bars.length - 1 - period]?.close;
     const change = latest && compare ? ((latest - compare) / compare) * 100 : null;
     target.textContent = formatPercent(change);
-    target.classList.remove("positive", "negative");
+    target.classList.remove("positive", "negative", "neutral");
     const className = valueClass(change);
     if (className) target.classList.add(className);
   });
 }
 
 function updatePriceColor(price, reference, target) {
-  target.classList.remove("positive", "negative", "ceiling", "floor");
+  target.classList.remove("positive", "negative", "neutral", "ceiling", "floor");
   const current = toNumber(price);
   const ref = toNumber(reference);
   if (current === null || ref === null) return;
   if (current > ref) target.classList.add("positive");
   if (current < ref) target.classList.add("negative");
+  if (current === ref) target.classList.add("neutral");
 }
 
 function renderMovingAverages(bars) {
@@ -786,10 +789,11 @@ function renderMovingAverages(bars) {
   const currentPrice = bars[bars.length - 1]?.close;
   const renderMa = (target, value) => {
     target.textContent = formatOptional(value, 2);
-    target.classList.remove("positive", "negative");
+    target.classList.remove("positive", "negative", "neutral");
     if (toNumber(value) === null || toNumber(currentPrice) === null) return;
     if (currentPrice > value) target.classList.add("positive");
     if (currentPrice < value) target.classList.add("negative");
+    if (currentPrice === value) target.classList.add("neutral");
   };
 
   renderMa(fields.ma10, latestValue(movingAverages.ma10));
