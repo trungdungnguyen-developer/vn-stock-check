@@ -1,4 +1,4 @@
-const API_BASE = "https://query1.finance.yahoo.com";
+﻿const API_BASE = "https://query1.finance.yahoo.com";
 const PROXY_BASE = "/.netlify/functions/vn-stock";
 const CHART_COLORS = {
   text: "#6f5a6d",
@@ -22,6 +22,10 @@ const rsiCanvas = document.getElementById("rsiChart");
 const macdCanvas = document.getElementById("macdChart");
 const quickSymbols = document.querySelector(".quick-symbols");
 const chartControls = document.querySelector(".chart-controls");
+const historyControls = document.querySelector(".history-controls");
+const chartSection = document.querySelector(".chart-section");
+const chartWorkspace = document.getElementById("chartWorkspace");
+const fullscreenChartButton = document.getElementById("fullscreenChart");
 const tabs = document.querySelectorAll(".tab");
 const tabPanels = {
   overview: document.getElementById("overviewPanel"),
@@ -75,26 +79,36 @@ const fields = {
   historyBody: document.getElementById("historyBody"),
   scoreTotalBadge: document.getElementById("scoreTotalBadge"),
   scoreAnalysis: document.getElementById("scoreAnalysis"),
+  recommendationBody: document.getElementById("recommendationBody"),
   rawData: document.getElementById("rawData")
 };
 
 const CHART_PRESETS = {
-  "30m": { label: "30p", sourceRange: "30m", mode: "tail", count: 30, intraday: true },
-  "1h": { label: "1h", sourceRange: "1h", mode: "tail", count: 60, intraday: true },
-  "2h": { label: "2h", sourceRange: "2h", mode: "tail", count: 120, intraday: true },
-  "4h": { label: "4h", sourceRange: "4h", mode: "tail", count: 240, intraday: true },
-  "1d": { label: "1 ngày", sourceRange: "1d", mode: "tradingDays", count: 1, intraday: true },
-  "3d": { label: "3 ngày", sourceRange: "3d", mode: "tradingDays", count: 3, intraday: true },
-  "5d": { label: "5 ngày", sourceRange: "5d", mode: "tradingDays", count: 5, intraday: true },
-  "1w": { label: "1 tuần", sourceRange: "1w", mode: "calendarDays", days: 7 },
-  "1m": { label: "1 tháng", sourceRange: "1m", mode: "calendarDays", days: 31 },
-  "3m": { label: "3 tháng", sourceRange: "3m", mode: "calendarDays", days: 93 }
+  "30m": { label: "30p", sourceRange: "30m", intervalMs: 30 * 60 * 1000, intraday: true },
+  "1h": { label: "1h", sourceRange: "1h", intervalMs: 60 * 60 * 1000, intraday: true },
+  "2h": { label: "2h", sourceRange: "2h", intervalMs: 2 * 60 * 60 * 1000, intraday: true },
+  "4h": { label: "4h", sourceRange: "4h", intervalMs: 4 * 60 * 60 * 1000, intraday: true },
+  "1d": { label: "1 ngày", sourceRange: "2y", bucket: "1d" },
+  "3d": { label: "3 ngày", sourceRange: "2y", bucket: "3d" },
+  "5d": { label: "5 ngày", sourceRange: "2y", bucket: "5d" },
+  "1w": { label: "1 tuần", sourceRange: "2y", bucket: "1w" },
+  "1m": { label: "1 tháng", sourceRange: "2y", bucket: "1m" },
+  "3m": { label: "3 tháng", sourceRange: "2y", bucket: "3m" }
+};
+
+const HISTORY_LIMITS = {
+  "7": { label: "7 ngày", rows: 7 },
+  "15": { label: "15 ngày", rows: 15 },
+  "30": { label: "30 ngày", rows: 30 },
+  "60": { label: "60 ngày", rows: 60 }
 };
 
 let latestPayload = null;
 let currentSymbol = "";
 let currentDailyBars = [];
-let activeChartRange = "3m";
+let currentChartSourceBars = [];
+let activeChartRange = "1d";
+let activeHistoryLimit = 30;
 let chartRequestId = 0;
 
 function setMessage(text) {
@@ -215,6 +229,33 @@ function formatLargeNumber(value) {
 
 function formatOptional(value, digits = 2) {
   return toNumber(value) === null ? "-" : formatNumber(value, digits);
+}
+
+function technicalPriceDivisor(bars) {
+  const closes = bars
+    .map((bar) => toNumber(bar.close))
+    .filter((value) => value !== null)
+    .sort((a, b) => a - b);
+  if (!closes.length) return 1;
+  const median = closes[Math.floor(closes.length / 2)];
+  return median >= 1000 ? 1000 : 1;
+}
+
+function normalizeTechnicalBars(bars) {
+  const divisor = technicalPriceDivisor(bars);
+  if (divisor === 1) return bars;
+  const normalize = (value) => {
+    const number = toNumber(value);
+    return number === null ? null : number / divisor;
+  };
+
+  return bars.map((bar) => ({
+    ...bar,
+    open: normalize(bar.open),
+    high: normalize(bar.high),
+    low: normalize(bar.low),
+    close: normalize(bar.close)
+  }));
 }
 
 async function requestJson(path) {
@@ -407,11 +448,21 @@ function parseVciData(rawData) {
   };
 }
 
-function drawChart(points) {
+function syncCanvasSize(canvas) {
+  const rect = canvas.getBoundingClientRect();
+  const width = Math.max(320, Math.round(rect.width || canvas.width));
+  const height = Math.max(180, Math.round(rect.height || canvas.height));
+  if (canvas.width !== width || canvas.height !== height) {
+    canvas.width = width;
+    canvas.height = height;
+  }
+  return { width, height };
+}
+
+function drawChart(points, movingAverages = null) {
   const canvas = chartCanvas;
+  const { width, height } = syncCanvasSize(canvas);
   const context = canvas.getContext("2d");
-  const width = canvas.width;
-  const height = canvas.height;
   context.clearRect(0, 0, width, height);
 
   if (!points.length) {
@@ -422,45 +473,83 @@ function drawChart(points) {
   }
 
   const padding = 44;
-  const closes = points.map((point) => point.close);
-  const min = Math.min(...closes);
-  const max = Math.max(...closes);
+  const volumeHeight = 74;
+  const gap = 16;
+  const plotTop = padding;
+  const plotBottom = height - padding - volumeHeight - gap;
+  const volumeTop = plotBottom + gap;
+  const plotHeight = plotBottom - plotTop;
+  const priceValues = points.flatMap((point) => [
+    toNumber(point.high) ?? toNumber(point.close),
+    toNumber(point.low) ?? toNumber(point.close),
+    toNumber(point.open),
+    toNumber(point.close)
+  ]).filter((value) => value !== null);
+  const min = Math.min(...priceValues);
+  const max = Math.max(...priceValues);
   const span = max - min || 1;
+  const xStep = (width - padding * 2) / Math.max(points.length - 1, 1);
+  const candleWidth = Math.max(3, Math.min(14, xStep * 0.58));
+  const maxVolume = Math.max(...points.map((point) => toNumber(point.volume) || 0), 1);
+  const xFor = (index) => padding + xStep * index;
+  const yFor = (value) => plotBottom - ((value - min) / span) * plotHeight;
 
   context.strokeStyle = CHART_COLORS.grid;
   context.lineWidth = 1;
   for (let index = 0; index < 5; index += 1) {
-    const y = padding + ((height - padding * 2) / 4) * index;
+    const y = plotTop + (plotHeight / 4) * index;
     context.beginPath();
     context.moveTo(padding, y);
     context.lineTo(width - padding, y);
     context.stroke();
   }
 
-  context.beginPath();
   points.forEach((point, index) => {
-    const x = padding + ((width - padding * 2) / Math.max(points.length - 1, 1)) * index;
-    const y = height - padding - ((point.close - min) / span) * (height - padding * 2);
-    if (index === 0) context.moveTo(x, y);
-    else context.lineTo(x, y);
-  });
-  context.strokeStyle = CHART_COLORS.price;
-  context.lineWidth = 3;
-  context.stroke();
+    const open = toNumber(point.open) ?? point.close;
+    const close = toNumber(point.close);
+    const high = toNumber(point.high) ?? Math.max(open, close);
+    const low = toNumber(point.low) ?? Math.min(open, close);
+    if (close === null || open === null) return;
 
-  const movingAverages = calculateMovingAverages(points);
+    const x = xFor(index);
+    const color = close >= open ? CHART_COLORS.positive : CHART_COLORS.negative;
+    const openY = yFor(open);
+    const closeY = yFor(close);
+    const highY = yFor(high);
+    const lowY = yFor(low);
+    const bodyTop = Math.min(openY, closeY);
+    const bodyHeight = Math.max(Math.abs(closeY - openY), 2);
+    const volume = toNumber(point.volume) || 0;
+    const volumeBarHeight = (volume / maxVolume) * volumeHeight;
+
+    context.strokeStyle = color;
+    context.lineWidth = 1;
+    context.beginPath();
+    context.moveTo(x, highY);
+    context.lineTo(x, lowY);
+    context.stroke();
+
+    context.fillStyle = color;
+    context.fillRect(x - candleWidth / 2, bodyTop, candleWidth, bodyHeight);
+
+    context.globalAlpha = 0.42;
+    context.fillRect(x - candleWidth / 2, height - padding - volumeBarHeight, candleWidth, volumeBarHeight);
+    context.globalAlpha = 1;
+  });
+
+  const chartMovingAverages = movingAverages || calculateMovingAverages(points);
   [
-    { values: movingAverages.ma10, color: CHART_COLORS.ma10 },
-    { values: movingAverages.ma50, color: CHART_COLORS.ma50 },
-    { values: movingAverages.ma100, color: CHART_COLORS.ma100 },
-    { values: movingAverages.ma200, color: CHART_COLORS.ma200 }
+    { values: chartMovingAverages.ma10, color: CHART_COLORS.ma10 },
+    { values: chartMovingAverages.ma50, color: CHART_COLORS.ma50 },
+    { values: chartMovingAverages.ma100, color: CHART_COLORS.ma100 },
+    { values: chartMovingAverages.ma200, color: CHART_COLORS.ma200 }
   ].forEach((series) => {
     context.beginPath();
     let started = false;
     series.values.forEach((value, index) => {
       if (value === null) return;
-      const x = padding + ((width - padding * 2) / Math.max(points.length - 1, 1)) * index;
-      const y = height - padding - ((value - min) / span) * (height - padding * 2);
+      const x = xFor(index);
+      const y = yFor(value);
       if (!started) {
         context.moveTo(x, y);
         started = true;
@@ -476,9 +565,10 @@ function drawChart(points) {
   context.fillStyle = CHART_COLORS.text;
   context.font = "13px Arial";
   context.fillText(formatPrice(max), 8, padding + 4);
-  context.fillText(formatPrice(min), 8, height - padding + 4);
+  context.fillText(formatPrice(min), 8, plotBottom + 4);
+  context.fillText("Vol", 8, volumeTop + 14);
   context.fillText(safeText(points[0].time), padding, height - 12);
-  context.fillText(safeText(points[points.length - 1].time), width - padding - 90, height - 12);
+  context.fillText(safeText(points[points.length - 1].time), width - padding - 110, height - 12);
 }
 
 function calculateRsi(points, period = 14) {
@@ -530,7 +620,7 @@ function calculateSma(points, period) {
 
 function calculateMovingAverages(points) {
   return {
-    ma10: calculateSma(points, 10),
+    ma10: calculateSma(points, 20),
     ma50: calculateSma(points, 50),
     ma100: calculateSma(points, 100),
     ma200: calculateSma(points, 200)
@@ -583,9 +673,8 @@ function calculateMacd(points) {
 }
 
 function drawLineCanvas(canvas, values, options = {}) {
+  const { width, height } = syncCanvasSize(canvas);
   const context = canvas.getContext("2d");
-  const width = canvas.width;
-  const height = canvas.height;
   context.clearRect(0, 0, width, height);
 
   const numericValues = values.filter((value) => value !== null);
@@ -639,9 +728,8 @@ function drawLineCanvas(canvas, values, options = {}) {
 }
 
 function drawMacdCanvas(canvas, macdData) {
+  const { width, height } = syncCanvasSize(canvas);
   const context = canvas.getContext("2d");
-  const width = canvas.width;
-  const height = canvas.height;
   context.clearRect(0, 0, width, height);
 
   const allValues = [...macdData.macd, ...macdData.signal, ...macdData.histogram].filter((value) => value !== null);
@@ -707,17 +795,18 @@ function drawMacdCanvas(canvas, macdData) {
   });
 }
 
-function renderIndicators(bars) {
-  const rsi = calculateRsi(bars);
-  const macd = calculateMacd(bars);
+function renderIndicators(bars, indicators = null) {
+  const rsi = indicators?.rsi || calculateRsi(bars);
+  const macd = indicators?.macd || calculateMacd(bars);
   const latestRsi = [...rsi].reverse().find((value) => value !== null);
   const latestMacd = [...macd.macd].reverse().find((value) => value !== null);
   const latestSignal = [...macd.signal].reverse().find((value) => value !== null);
+  const latestHistogram = [...macd.histogram].reverse().find((value) => value !== null);
 
   fields.rsiValue.textContent = latestRsi === undefined ? "-" : formatNumber(latestRsi, 2);
   fields.macdValue.textContent = latestMacd === undefined
     ? "-"
-    : `${formatNumber(latestMacd, 2)} / Signal ${formatOptional(latestSignal, 2)}`;
+    : `${formatNumber(latestMacd, 2)} / Signal ${formatOptional(latestSignal, 2)} / Hist ${formatOptional(latestHistogram, 2)}`;
 
   drawLineCanvas(rsiCanvas, rsi, {
     min: 0,
@@ -757,17 +846,18 @@ function renderInvestorFlow(quote) {
   fields.flowStatus.textContent = foreignBuy !== null ? "Dữ liệu từ Vietcap/VCI" : "Chưa có dữ liệu";
 }
 
-function renderHistory(bars) {
+function renderHistory(bars, limit = activeHistoryLimit) {
   const rows = bars
     .map((bar, index) => {
       const previousClose = index > 0 ? bars[index - 1].close : null;
       const changePercent = previousClose ? ((bar.close - previousClose) / previousClose) * 100 : null;
       return { ...bar, changePercent };
     })
-    .slice(-60)
+    .slice(-limit)
     .reverse();
 
-  fields.historyCount.textContent = `${rows.length} phiên gần nhất`;
+  const limitInfo = HISTORY_LIMITS[String(limit)] || { label: `${limit} ngày` };
+  fields.historyCount.textContent = `${rows.length} phiên gần nhất (${limitInfo.label})`;
   fields.historyBody.innerHTML = rows.map((row) => `
     <tr>
       <td>${safeText(row.time)}</td>
@@ -806,8 +896,8 @@ function updatePriceColor(price, reference, target) {
   if (current === ref) target.classList.add("neutral");
 }
 
-function renderMovingAverages(bars) {
-  const movingAverages = calculateMovingAverages(bars);
+function renderMovingAverages(bars, movingAverages = null) {
+  const maValues = movingAverages || calculateMovingAverages(bars);
   const latestValue = (series) => [...series].reverse().find((value) => value !== null);
   const currentPrice = bars[bars.length - 1]?.close;
   const renderMa = (target, value) => {
@@ -819,12 +909,12 @@ function renderMovingAverages(bars) {
     if (currentPrice === value) target.classList.add("neutral");
   };
 
-  renderMa(fields.ma10, latestValue(movingAverages.ma10));
-  renderMa(fields.ma50, latestValue(movingAverages.ma50));
-  renderMa(fields.ma100, latestValue(movingAverages.ma100));
-  renderMa(fields.ma200, latestValue(movingAverages.ma200));
+  renderMa(fields.ma10, latestValue(maValues.ma10));
+  renderMa(fields.ma50, latestValue(maValues.ma50));
+  renderMa(fields.ma100, latestValue(maValues.ma100));
+  renderMa(fields.ma200, latestValue(maValues.ma200));
 
-  return movingAverages;
+  return maValues;
 }
 
 function setActiveChartButton(rangeKey) {
@@ -833,64 +923,129 @@ function setActiveChartButton(rangeKey) {
   });
 }
 
-function barDateKey(bar) {
-  const timestamp = toNumber(bar.timestamp);
-  if (timestamp === null) return safeText(bar.time);
-  return new Date(timestamp).toLocaleDateString("vi-VN");
+function setActiveHistoryButton(limit) {
+  historyControls?.querySelectorAll("button[data-history-limit]").forEach((button) => {
+    button.classList.toggle("active", Number(button.dataset.historyLimit) === Number(limit));
+  });
 }
 
 function formatChartPointTime(bar, preset) {
   const timestamp = toNumber(bar.timestamp);
   if (timestamp === null) return safeText(bar.time);
   const date = new Date(timestamp);
-  if (preset.intraday && preset.mode === "tail") {
-    return date.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
-  }
   if (preset.intraday) {
-    return `${date.toLocaleDateString("vi-VN")} ${date.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}`;
+    return date.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
   }
   return date.toLocaleDateString("vi-VN");
 }
 
-function filterBarsForPreset(bars, preset) {
+function startOfLocalDay(date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+}
+
+function getCalendarBucket(timestamp, preset) {
+  const date = new Date(timestamp);
+
+  if (preset.intervalMs) {
+    return Math.floor(timestamp / preset.intervalMs) * preset.intervalMs;
+  }
+
+  if (preset.bucket === "1d") {
+    return startOfLocalDay(date);
+  }
+
+  if (preset.bucket === "3d" || preset.bucket === "5d") {
+    const size = preset.bucket === "3d" ? 3 : 5;
+    const dayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const yearStart = new Date(date.getFullYear(), 0, 1);
+    const dayIndex = Math.floor((dayStart - yearStart) / 86400000);
+    return new Date(date.getFullYear(), 0, 1 + Math.floor(dayIndex / size) * size).getTime();
+  }
+
+  if (preset.bucket === "1w") {
+    const day = date.getDay() || 7;
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate() - day + 1).getTime();
+  }
+
+  if (preset.bucket === "1m") {
+    return new Date(date.getFullYear(), date.getMonth(), 1).getTime();
+  }
+
+  if (preset.bucket === "3m") {
+    return new Date(date.getFullYear(), Math.floor(date.getMonth() / 3) * 3, 1).getTime();
+  }
+
+  return startOfLocalDay(date);
+}
+
+function aggregateBarsForPreset(bars, preset) {
   if (!bars.length) return [];
+  const buckets = new Map();
 
-  if (preset.mode === "tail") {
-    return bars.slice(-preset.count);
-  }
+  bars.forEach((bar) => {
+    const timestamp = toNumber(bar.timestamp);
+    const close = toNumber(bar.close);
+    if (timestamp === null || close === null) return;
 
-  if (preset.mode === "tradingDays") {
-    const dateKeys = [];
-    [...bars].reverse().forEach((bar) => {
-      const key = barDateKey(bar);
-      if (!dateKeys.includes(key)) dateKeys.push(key);
-    });
-    const allowed = new Set(dateKeys.slice(0, preset.count));
-    return bars.filter((bar) => allowed.has(barDateKey(bar)));
-  }
+    const bucket = getCalendarBucket(timestamp, preset);
+    const current = buckets.get(bucket);
+    if (!current) {
+      buckets.set(bucket, {
+        timestamp: bucket,
+        time: bar.time,
+        open: toNumber(bar.open) ?? close,
+        high: toNumber(bar.high) ?? close,
+        low: toNumber(bar.low) ?? close,
+        close,
+        volume: toNumber(bar.volume) ?? 0
+      });
+      return;
+    }
 
-  if (preset.mode === "calendarDays") {
-    const latestTimestamp = toNumber(bars[bars.length - 1]?.timestamp);
-    if (latestTimestamp === null) return bars.slice(-preset.days);
-    const cutoff = latestTimestamp - preset.days * 86400 * 1000;
-    return bars.filter((bar) => toNumber(bar.timestamp) === null || bar.timestamp >= cutoff);
-  }
+    current.high = Math.max(current.high, toNumber(bar.high) ?? close);
+    current.low = Math.min(current.low, toNumber(bar.low) ?? close);
+    current.close = close;
+    current.volume += toNumber(bar.volume) ?? 0;
+  });
 
-  return bars;
+  return [...buckets.values()].sort((a, b) => a.timestamp - b.timestamp).slice(-260);
 }
 
 function renderSelectedChart(bars, rangeKey = activeChartRange) {
-  const preset = CHART_PRESETS[rangeKey] || CHART_PRESETS["3m"];
-  const filtered = filterBarsForPreset(bars, preset);
-  const displayBars = filtered.map((bar) => ({
+  const preset = CHART_PRESETS[rangeKey] || CHART_PRESETS["1d"];
+  currentChartSourceBars = bars;
+  const timeframeBars = normalizeTechnicalBars(aggregateBarsForPreset(bars, preset));
+  const fullMovingAverages = calculateMovingAverages(timeframeBars);
+  const fullIndicators = {
+    rsi: calculateRsi(timeframeBars),
+    macd: calculateMacd(timeframeBars)
+  };
+  const displayBars = timeframeBars.map((bar) => ({
     ...bar,
     time: formatChartPointTime(bar, preset)
   }));
 
-  drawChart(displayBars);
-  renderMovingAverages(displayBars);
-  fields.chartRange.textContent = `${preset.label} - ${displayBars.length} điểm dữ liệu`;
-  return displayBars;
+  drawChart(displayBars, fullMovingAverages);
+  renderMovingAverages(timeframeBars, fullMovingAverages);
+  renderIndicators(timeframeBars, fullIndicators);
+  fields.chartRange.textContent = `${preset.label} - ${displayBars.length} nến`;
+
+  if (latestPayload) {
+    latestPayload.activeTimeframe = preset.label;
+    latestPayload.indicators = {
+      rsi14: fields.rsiValue.textContent,
+      macd: fields.macdValue.textContent,
+      movingAverages: {
+        ma20: fields.ma10.textContent,
+        ma50: fields.ma50.textContent,
+        ma100: fields.ma100.textContent,
+        ma200: fields.ma200.textContent
+      }
+    };
+    fields.rawData.textContent = JSON.stringify(latestPayload, null, 2);
+  }
+
+  return { bars: displayBars, movingAverages: fullMovingAverages, indicators: fullIndicators };
 }
 
 async function applyChartRange(rangeKey) {
@@ -899,7 +1054,7 @@ async function applyChartRange(rangeKey) {
     return;
   }
 
-  const preset = CHART_PRESETS[rangeKey] || CHART_PRESETS["3m"];
+  const preset = CHART_PRESETS[rangeKey] || CHART_PRESETS["1d"];
   activeChartRange = rangeKey;
   setActiveChartButton(rangeKey);
 
@@ -923,9 +1078,9 @@ async function applyChartRange(rangeKey) {
     renderSelectedChart(parsed.bars, rangeKey);
     setMessage("");
   } catch (error) {
-    renderSelectedChart(currentDailyBars, "3m");
-    setActiveChartButton("3m");
-    activeChartRange = "3m";
+    renderSelectedChart(currentDailyBars, "1d");
+    setActiveChartButton("1d");
+    activeChartRange = "1d";
     setMessage(error.message || "Không tải được dữ liệu biểu đồ.");
   }
 }
@@ -1196,6 +1351,120 @@ function renderScoreAnalysis(symbol, quote, overview, bars, movingAverages, indi
   return score;
 }
 
+function recommendationLabel(score) {
+  if (score >= 4) return { text: "Ưu tiên mua", className: "positive" };
+  if (score >= 2) return { text: "Mua thăm dò", className: "positive" };
+  if (score >= 0) return { text: "Theo dõi", className: "neutral" };
+  if (score >= -2) return { text: "Giảm tỷ trọng", className: "negative" };
+  return { text: "Tránh mua", className: "negative" };
+}
+
+function buildRecommendation(title, bars, options) {
+  const latestBar = bars[bars.length - 1] || {};
+  const currentPrice = latestBar.close;
+  const movingAverages = calculateMovingAverages(bars);
+  const rsi = calculateRsi(bars);
+  const macd = calculateMacd(bars);
+  const maFast = latestNonNull(movingAverages[options.fastMa]);
+  const maSlow = latestNonNull(movingAverages[options.slowMa]);
+  const latestRsi = latestNonNull(rsi);
+  const latestMacd = latestNonNull(macd.macd);
+  const latestSignal = latestNonNull(macd.signal);
+  const latestHistogram = latestNonNull(macd.histogram);
+  const volumes = bars.map((bar) => bar.volume);
+  const latestVolume = latestBar.volume;
+  const avgVolume20 = average(volumes.slice(-20));
+  const levels = findSupportResistance(bars, currentPrice);
+
+  let score = 0;
+  const reasons = [];
+
+  if (currentPrice > maFast) {
+    score += 1;
+    reasons.push(`giá trên ${options.fastLabel}`);
+  } else {
+    score -= 1;
+    reasons.push(`giá dưới ${options.fastLabel}`);
+  }
+
+  if (maFast > maSlow) {
+    score += 1;
+    reasons.push(`${options.fastLabel} trên ${options.slowLabel}`);
+  } else {
+    score -= 1;
+    reasons.push(`${options.fastLabel} dưới ${options.slowLabel}`);
+  }
+
+  if (latestMacd > latestSignal && latestHistogram > 0) {
+    score += 1;
+    reasons.push("MACD ủng hộ tăng");
+  } else if (latestMacd < latestSignal && latestHistogram < 0) {
+    score -= 1;
+    reasons.push("MACD còn yếu");
+  }
+
+  if (latestRsi >= 45 && latestRsi <= 65) {
+    score += 1;
+    reasons.push(`RSI ${formatOptional(latestRsi, 1)} khỏe`);
+  } else if (latestRsi > 75 || latestRsi < 35) {
+    score -= 1;
+    reasons.push(`RSI ${formatOptional(latestRsi, 1)} rủi ro`);
+  } else {
+    reasons.push(`RSI ${formatOptional(latestRsi, 1)} trung tính`);
+  }
+
+  if (latestVolume && avgVolume20 && latestVolume > avgVolume20) {
+    score += 1;
+    reasons.push("volume trên TB20");
+  }
+
+  const distanceToSupport = levels.support1 ? ((currentPrice - levels.support1) / currentPrice) * 100 : null;
+  if (distanceToSupport !== null && distanceToSupport <= 4) {
+    score += 1;
+    reasons.push("gần hỗ trợ");
+  }
+
+  const label = recommendationLabel(score);
+  return {
+    title,
+    label,
+    detail: `${reasons.slice(0, 4).join(", ")}. Hỗ trợ gần ${formatPrice(levels.support1)}, kháng cự gần ${formatPrice(levels.resistance1)}.`
+  };
+}
+
+function renderTradingRecommendations(bars) {
+  if (!bars.length) return;
+  const normalizedBars = normalizeTechnicalBars(bars);
+  const recommendations = [
+    buildRecommendation("Ngắn hạn", normalizedBars.slice(-80), {
+      fastMa: "ma10",
+      slowMa: "ma50",
+      fastLabel: "MA20",
+      slowLabel: "MA50"
+    }),
+    buildRecommendation("Trung hạn", normalizedBars.slice(-180), {
+      fastMa: "ma50",
+      slowMa: "ma100",
+      fastLabel: "MA50",
+      slowLabel: "MA100"
+    }),
+    buildRecommendation("Dài hạn", normalizedBars, {
+      fastMa: "ma100",
+      slowMa: "ma200",
+      fastLabel: "MA100",
+      slowLabel: "MA200"
+    })
+  ];
+
+  fields.recommendationBody.innerHTML = recommendations.map((item) => `
+    <article>
+      <span>${escapeHtml(item.title)}</span>
+      <strong class="${item.label.className}">${escapeHtml(item.label.text)}</strong>
+      <p>${escapeHtml(item.detail)}</p>
+    </article>
+  `).join("");
+}
+
 function fillData(symbol, quote, overview, bars) {
   const latestBar = bars[bars.length - 1] || {};
   const previousBar = bars[bars.length - 2] || {};
@@ -1240,14 +1509,20 @@ function fillData(symbol, quote, overview, bars) {
 
   currentSymbol = symbol;
   currentDailyBars = bars;
-  activeChartRange = "3m";
+  activeChartRange = "1d";
+  activeHistoryLimit = 30;
   setActiveChartButton(activeChartRange);
+  setActiveHistoryButton(activeHistoryLimit);
   renderSelectedChart(bars, activeChartRange);
   const movingAverages = calculateMovingAverages(bars);
-  const indicators = renderIndicators(bars);
+  const indicators = {
+    rsi: calculateRsi(bars),
+    macd: calculateMacd(bars)
+  };
   renderPriceChanges(bars);
+  renderTradingRecommendations(bars);
   renderInvestorFlow(quote);
-  renderHistory(bars);
+  renderHistory(bars, activeHistoryLimit);
   const score = renderScoreAnalysis(symbol, quote, overview, bars, movingAverages, indicators);
   return { movingAverages, indicators, score };
 }
@@ -1283,13 +1558,14 @@ async function loadVietnamStock(symbol) {
 
   const quote = parsed.quote;
   const overview = parsed.overview;
-  const bars = parsed.bars.slice(-260);
+  const bars = parsed.bars;
 
   const analysis = fillData(symbol, quote, overview, bars);
   latestPayload = {
     source: parsed.source,
     symbol,
     resolvedSymbol: quote.ticker,
+    activeTimeframe: CHART_PRESETS[activeChartRange]?.label || activeChartRange,
     quote,
     overview,
     recentBars: bars.slice(-30),
@@ -1297,7 +1573,7 @@ async function loadVietnamStock(symbol) {
       rsi14: fields.rsiValue.textContent,
       macd: fields.macdValue.textContent,
       movingAverages: {
-        ma10: fields.ma10.textContent,
+        ma20: fields.ma10.textContent,
         ma50: fields.ma50.textContent,
         ma100: fields.ma100.textContent,
         ma200: fields.ma200.textContent
@@ -1345,6 +1621,34 @@ chartControls?.addEventListener("click", (event) => {
   applyChartRange(button.dataset.chartRange);
 });
 
+historyControls?.addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-history-limit]");
+  if (!button || !currentDailyBars.length) return;
+  activeHistoryLimit = Number(button.dataset.historyLimit) || 30;
+  setActiveHistoryButton(activeHistoryLimit);
+  renderHistory(currentDailyBars, activeHistoryLimit);
+});
+
+fullscreenChartButton?.addEventListener("click", async () => {
+  try {
+    if (document.fullscreenElement) {
+      await document.exitFullscreen();
+    } else {
+      await (chartWorkspace || chartSection).requestFullscreen();
+    }
+  } catch {
+    setMessage("Trình duyệt không cho phép phóng to biểu đồ.");
+  }
+});
+
+document.addEventListener("fullscreenchange", () => {
+  if (!fullscreenChartButton) return;
+  fullscreenChartButton.textContent = document.fullscreenElement ? "Thu nhỏ" : "Phóng to";
+  if (currentChartSourceBars.length) {
+    requestAnimationFrame(() => renderSelectedChart(currentChartSourceBars, activeChartRange));
+  }
+});
+
 tabs.forEach((tab) => {
   tab.addEventListener("click", () => setActiveTab(tab.dataset.tab));
 });
@@ -1375,3 +1679,4 @@ if ("serviceWorker" in navigator) {
     });
   });
 }
+

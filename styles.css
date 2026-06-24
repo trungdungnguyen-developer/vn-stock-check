@@ -102,6 +102,10 @@ h1 {
 .quote-card,
 .metrics-grid,
 .chart-section,
+.change-section,
+.recommendation-section,
+.flow-section,
+.history-section,
 .details-grid,
 .raw-section {
   margin: 18px 24px;
@@ -305,6 +309,7 @@ button:hover {
 
 .chart-section,
 .change-section,
+.recommendation-section,
 .flow-section,
 .history-section,
 .raw-section {
@@ -343,6 +348,38 @@ button:hover {
   font-size: 22px;
 }
 
+.recommendation-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.recommendation-grid article {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  background: #ffffff;
+}
+
+.recommendation-grid span {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--muted);
+  font-size: var(--font-small);
+}
+
+.recommendation-grid strong {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 20px;
+}
+
+.recommendation-grid p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
 .indicator-card {
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -369,11 +406,39 @@ button:hover {
   font-size: var(--font-small);
 }
 
+.chart-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.chart-fullscreen {
+  min-height: 34px;
+  padding: 0 12px;
+  font-size: var(--font-small);
+}
+
 .chart-controls {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   margin: 0 0 14px;
+}
+
+.history-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: -4px 0 14px;
+}
+
+.history-controls span {
+  color: var(--muted);
+  font-size: var(--font-small);
+  font-weight: 700;
 }
 
 .chart-controls button {
@@ -391,6 +456,21 @@ button:hover {
   color: #ffffff;
 }
 
+.history-controls button {
+  min-height: 30px;
+  border-color: var(--border);
+  padding: 0 10px;
+  background: #ffffff;
+  color: var(--primary);
+  font-size: 13px;
+}
+
+.history-controls button.active {
+  border-color: var(--orange);
+  background: var(--orange);
+  color: #ffffff;
+}
+
 canvas {
   width: 100%;
   display: block;
@@ -399,7 +479,49 @@ canvas {
 }
 
 #priceChart {
-  height: 340px;
+  height: 420px;
+}
+
+.chart-workspace:fullscreen {
+  width: 100vw;
+  height: 100vh;
+  overflow: auto;
+  padding: 18px;
+  background: #211420;
+  color: #ffffff;
+}
+
+.chart-workspace:fullscreen .chart-section,
+.chart-workspace:fullscreen .indicator-card {
+  border-color: rgba(255, 244, 255, 0.18);
+  background: transparent;
+}
+
+.chart-workspace:fullscreen .indicator-grid {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.chart-workspace:fullscreen .section-head h2,
+.chart-workspace:fullscreen .section-head span,
+.chart-workspace:fullscreen .chart-legend,
+.chart-workspace:fullscreen .ma-summary span {
+  color: #fff4ff;
+}
+
+.chart-workspace:fullscreen canvas {
+  background: #17111a;
+}
+
+.chart-workspace:fullscreen #priceChart {
+  height: 48vh;
+  min-height: 420px;
+}
+
+.chart-workspace:fullscreen #rsiChart,
+.chart-workspace:fullscreen #macdChart {
+  height: 24vh;
+  min-height: 240px;
 }
 
 #rsiChart,
@@ -694,6 +816,10 @@ pre {
   .change-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
+
+  .recommendation-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 520px) {
@@ -707,6 +833,7 @@ pre {
     .chart-section,
     .indicator-grid,
     .change-section,
+    .recommendation-section,
     .flow-section,
   .history-section,
   .details-grid,
@@ -738,6 +865,10 @@ pre {
   }
 
   .change-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .recommendation-grid {
     grid-template-columns: 1fr;
   }
 
