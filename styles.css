@@ -110,6 +110,7 @@ h1 {
 .history-section,
 .news-section,
 .details-grid,
+.fundamental-analysis-section,
 .raw-section {
   margin: 18px 24px;
 }
@@ -355,6 +356,45 @@ button:hover {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
+}
+
+.fundamental-analysis-section {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  background: #ffffff;
+}
+
+.fundamental-analysis {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.fundamental-analysis article {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  background: var(--soft);
+}
+
+.fundamental-analysis span {
+  display: block;
+  color: var(--muted);
+  font-size: var(--font-small);
+  font-weight: 700;
+}
+
+.fundamental-analysis strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 20px;
+}
+
+.fundamental-analysis p {
+  margin: 8px 0 0;
+  color: var(--text);
+  line-height: 1.55;
 }
 
 .recommendation-grid article {
@@ -900,6 +940,10 @@ pre {
   .recommendation-grid {
     grid-template-columns: 1fr;
   }
+
+  .fundamental-analysis {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 520px) {
@@ -917,6 +961,7 @@ pre {
     .flow-section,
   .history-section,
   .news-section,
+  .fundamental-analysis-section,
   .details-grid,
   .raw-section {
     margin-left: 14px;
@@ -951,6 +996,10 @@ pre {
   }
 
   .recommendation-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .fundamental-analysis {
     grid-template-columns: 1fr;
   }
 

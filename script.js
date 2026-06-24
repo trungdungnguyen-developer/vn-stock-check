@@ -82,6 +82,8 @@ const fields = {
   scoreTotalBadge: document.getElementById("scoreTotalBadge"),
   scoreAnalysis: document.getElementById("scoreAnalysis"),
   newsBody: document.getElementById("newsBody"),
+  fundamentalBadge: document.getElementById("fundamentalBadge"),
+  fundamentalAnalysis: document.getElementById("fundamentalAnalysis"),
   recommendationBody: document.getElementById("recommendationBody"),
   rawData: document.getElementById("rawData")
 };
@@ -925,6 +927,90 @@ function renderPriceChanges(bars) {
   });
 }
 
+function classifyPe(pe) {
+  const value = toNumber(pe);
+  if (value === null || value <= 0) return { label: "Thiếu dữ liệu", className: "neutral", score: 0, text: "Chưa có P/E hợp lệ để đánh giá định giá theo lợi nhuận." };
+  if (value < 8) return { label: "Rẻ tương đối", className: "positive", score: 2, text: "P/E thấp, có thể đang rẻ nếu lợi nhuận không suy giảm mạnh." };
+  if (value <= 15) return { label: "Hợp lý", className: "positive", score: 2, text: "P/E nằm trong vùng dễ chấp nhận với nhiều cổ phiếu Việt Nam." };
+  if (value <= 25) return { label: "Cao vừa", className: "neutral", score: 1, text: "P/E không rẻ, cần doanh nghiệp có tăng trưởng tốt để hấp dẫn." };
+  return { label: "Đắt", className: "negative", score: -1, text: "P/E cao, biên an toàn định giá thấp hơn nếu tăng trưởng không đủ mạnh." };
+}
+
+function classifyPb(pb, roe) {
+  const pbValue = toNumber(pb);
+  const roeValue = toNumber(roe);
+  if (pbValue === null || pbValue <= 0) return { label: "Thiếu dữ liệu", className: "neutral", score: 0, text: "Chưa có P/B hợp lệ để đánh giá giá trị sổ sách." };
+  if (pbValue < 1) return { label: "Dưới giá trị sổ sách", className: "positive", score: 2, text: "P/B dưới 1, cần kiểm tra chất lượng tài sản và triển vọng ngành." };
+  if (pbValue <= 2) return { label: "Hợp lý", className: "positive", score: 1, text: "P/B ở vùng vừa phải, phù hợp hơn nếu ROE tốt." };
+  if (pbValue <= 4 && roeValue !== null && roeValue >= 18) return { label: "Cao nhưng có ROE hỗ trợ", className: "neutral", score: 1, text: "P/B cao hơn trung bình nhưng ROE tốt giúp định giá dễ chấp nhận hơn." };
+  if (pbValue <= 4) return { label: "Cao", className: "neutral", score: 0, text: "P/B cao, cần xem tăng trưởng và lợi thế cạnh tranh." };
+  return { label: "Rất cao", className: "negative", score: -1, text: "P/B rất cao, rủi ro định giá lớn nếu ROE/growth không nổi bật." };
+}
+
+function classifyRoe(roe) {
+  const value = toNumber(roe);
+  if (value === null) return { label: "Thiếu dữ liệu", className: "neutral", score: 0, text: "Chưa có ROE để đánh giá hiệu quả sinh lời." };
+  if (value >= 20) return { label: "Sinh lời mạnh", className: "positive", score: 2, text: "ROE cao, doanh nghiệp đang tạo lợi nhuận tốt trên vốn chủ." };
+  if (value >= 12) return { label: "Sinh lời ổn", className: "positive", score: 1, text: "ROE ở mức khá, có thể chấp nhận nếu xu hướng lợi nhuận ổn định." };
+  if (value >= 5) return { label: "Trung bình", className: "neutral", score: 0, text: "ROE chưa nổi bật, cần thêm yếu tố tăng trưởng hoặc định giá rẻ." };
+  return { label: "Yếu", className: "negative", score: -1, text: "ROE thấp, chất lượng sinh lời chưa hấp dẫn." };
+}
+
+function classifyBeta(beta) {
+  const value = toNumber(beta);
+  if (value === null || value <= 0) return { label: "Thiếu dữ liệu", className: "neutral", score: 0, text: "Chưa có Beta để đánh giá độ biến động." };
+  if (value < 0.8) return { label: "Biến động thấp", className: "positive", score: 1, text: "Beta thấp hơn thị trường, phù hợp hơn với phong cách thận trọng." };
+  if (value <= 1.2) return { label: "Biến động vừa", className: "neutral", score: 1, text: "Beta gần thị trường, rủi ro biến động ở mức vừa phải." };
+  return { label: "Biến động cao", className: "negative", score: -1, text: "Beta cao, cần quản trị vị thế và điểm cắt lỗ chặt hơn." };
+}
+
+function renderFundamentalAnalysis(overview, score) {
+  if (!fields.fundamentalAnalysis) return null;
+
+  const pe = classifyPe(overview.pe);
+  const pb = classifyPb(overview.pb, overview.roe);
+  const roe = classifyRoe(overview.roe);
+  const beta = classifyBeta(overview.beta);
+  const eps = toNumber(overview.eps);
+  const marketCap = toNumber(overview.marketCap);
+  const total = pe.score + pb.score + roe.score + beta.score + (eps !== null && eps > 0 ? 1 : eps !== null && eps < 0 ? -1 : 0);
+  const valuationLabel = total >= 5
+    ? { text: "Cơ bản hấp dẫn", className: "positive" }
+    : total >= 2
+      ? { text: "Cơ bản tương đối ổn", className: "positive" }
+      : total >= 0
+        ? { text: "Trung tính", className: "neutral" }
+        : { text: "Cần thận trọng", className: "negative" };
+  const investText = score?.total >= 65 && total >= 2
+    ? "Có thể đưa vào danh sách theo dõi mua từng phần khi kỹ thuật xác nhận."
+    : score?.total >= 50 && total >= 0
+      ? "Chưa nên mua vội, phù hợp để theo dõi thêm tín hiệu giá và dòng tiền."
+      : "Chưa nên ưu tiên giải ngân nếu chưa có thêm tín hiệu cải thiện rõ.";
+
+  fields.fundamentalBadge.textContent = valuationLabel.text;
+  fields.fundamentalBadge.classList.remove("positive", "negative", "neutral");
+  fields.fundamentalBadge.classList.add(valuationLabel.className);
+  fields.fundamentalAnalysis.innerHTML = `
+    <article>
+      <span>Định giá P/E, P/B</span>
+      <strong class="${pe.className}">${pe.label}</strong>
+      <p>P/E ${formatFundamentalNumber(overview.pe, 2)}. P/B ${formatFundamentalNumber(overview.pb, 2)}. ${pe.text} ${pb.text}</p>
+    </article>
+    <article>
+      <span>Chất lượng lợi nhuận</span>
+      <strong class="${roe.className}">${roe.label}</strong>
+      <p>ROE ${toNumber(overview.roe) ? formatPercent(overview.roe) : "-"}, EPS ${formatFundamentalNumber(overview.eps, 2)}. ${roe.text}</p>
+    </article>
+    <article>
+      <span>Rủi ro và kết luận</span>
+      <strong class="${valuationLabel.className}">${valuationLabel.text}</strong>
+      <p>Beta ${formatFundamentalNumber(overview.beta, 2)}, vốn hóa ${marketCap ? formatLargeNumber(marketCap) : "-"}. ${beta.text} ${investText}</p>
+    </article>
+  `;
+
+  return { valuationLabel, total, pe, pb, roe, beta };
+}
+
 function updatePriceColor(price, reference, target) {
   target.classList.remove("positive", "negative", "neutral", "ceiling", "floor");
   const current = toNumber(price);
@@ -1732,17 +1818,20 @@ function fillData(symbol, quote, overview, bars) {
   setActiveChartButton(activeChartRange);
   setActiveHistoryButton(activeHistoryLimit);
   renderSelectedChart(bars, activeChartRange);
-  const movingAverages = calculateMovingAverages(bars);
+  const scoreBars = aggregateBarsForPreset(bars, CHART_PRESETS["1d"]);
+  const scoreTechnicalBars = normalizeTechnicalBars(scoreBars);
+  const movingAverages = calculateMovingAverages(scoreBars);
   const indicators = {
-    rsi: calculateRsi(bars),
-    macd: calculateMacd(bars)
+    rsi: calculateRsi(scoreTechnicalBars),
+    macd: calculateMacd(scoreTechnicalBars)
   };
   renderPriceChanges(bars);
   renderTradingRecommendations(bars);
   renderInvestorFlow(quote);
   renderHistory(bars, activeHistoryLimit);
-  const score = renderScoreAnalysis(symbol, quote, overview, bars, movingAverages, indicators);
-  return { movingAverages, indicators, score };
+  const score = renderScoreAnalysis(symbol, quote, overview, scoreBars, movingAverages, indicators);
+  const fundamentalView = renderFundamentalAnalysis(overview, score);
+  return { movingAverages, indicators, score, fundamentalView };
 }
 
 async function loadVietnamStock(symbol) {
