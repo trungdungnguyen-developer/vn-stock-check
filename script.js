@@ -21,6 +21,7 @@ const chartCanvas = document.getElementById("priceChart");
 const rsiCanvas = document.getElementById("rsiChart");
 const macdCanvas = document.getElementById("macdChart");
 const quickSymbols = document.querySelector(".quick-symbols");
+const chartControls = document.querySelector(".chart-controls");
 const tabs = document.querySelectorAll(".tab");
 const tabPanels = {
   overview: document.getElementById("overviewPanel"),
@@ -77,7 +78,24 @@ const fields = {
   rawData: document.getElementById("rawData")
 };
 
+const CHART_PRESETS = {
+  "30m": { label: "30p", sourceRange: "30m", mode: "tail", count: 30, intraday: true },
+  "1h": { label: "1h", sourceRange: "1h", mode: "tail", count: 60, intraday: true },
+  "2h": { label: "2h", sourceRange: "2h", mode: "tail", count: 120, intraday: true },
+  "4h": { label: "4h", sourceRange: "4h", mode: "tail", count: 240, intraday: true },
+  "1d": { label: "1 ngày", sourceRange: "1d", mode: "tradingDays", count: 1, intraday: true },
+  "3d": { label: "3 ngày", sourceRange: "3d", mode: "tradingDays", count: 3, intraday: true },
+  "5d": { label: "5 ngày", sourceRange: "5d", mode: "tradingDays", count: 5, intraday: true },
+  "1w": { label: "1 tuần", sourceRange: "1w", mode: "calendarDays", days: 7 },
+  "1m": { label: "1 tháng", sourceRange: "1m", mode: "calendarDays", days: 31 },
+  "3m": { label: "3 tháng", sourceRange: "3m", mode: "calendarDays", days: 93 }
+};
+
 let latestPayload = null;
+let currentSymbol = "";
+let currentDailyBars = [];
+let activeChartRange = "3m";
+let chartRequestId = 0;
 
 function setMessage(text) {
   message.textContent = text;
@@ -220,12 +238,12 @@ async function requestJson(path) {
   return response.json();
 }
 
-async function requestVciData(symbol) {
+async function requestVciData(symbol, range = "2y") {
   if (location.protocol === "file:") {
     throw new Error("Đang mở bằng file:// nên không có proxy dữ liệu. Hãy chạy local-server.js rồi mở http://localhost:8787.");
   }
 
-  const response = await fetch(`${PROXY_BASE}?source=vci&symbol=${encodeURIComponent(symbol)}`, {
+  const response = await fetch(`${PROXY_BASE}?source=vci&symbol=${encodeURIComponent(symbol)}&range=${encodeURIComponent(range)}`, {
     headers: { accept: "application/json" }
   });
   if (!response.ok) {
@@ -254,6 +272,7 @@ function parseYahooChart(rawData) {
   const timestamps = result.timestamp || [];
   const bars = timestamps
     .map((timestamp, index) => ({
+      timestamp: timestamp * 1000,
       time: new Date(timestamp * 1000).toLocaleDateString("vi-VN"),
       open: toNumber(quoteData.open?.[index]),
       high: toNumber(quoteData.high?.[index]),
@@ -325,14 +344,18 @@ function parseVciData(rawData) {
   const listing = board.listingInfo || {};
   const match = board.matchPrice || {};
   const exchange = boardName(listing.board);
-  const bars = chart.c.map((close, index) => ({
-    time: new Date(Number(chart.t[index]) * 1000).toLocaleDateString("vi-VN"),
-    open: toNumber(chart.o?.[index]),
-    high: toNumber(chart.h?.[index]),
-    low: toNumber(chart.l?.[index]),
-    close: toNumber(close),
-    volume: toNumber(chart.v?.[index])
-  })).filter((item) => item.close !== null);
+  const bars = chart.c.map((close, index) => {
+    const timestamp = Number(chart.t[index]) * 1000;
+    return {
+      timestamp,
+      time: new Date(timestamp).toLocaleDateString("vi-VN"),
+      open: toNumber(chart.o?.[index]),
+      high: toNumber(chart.h?.[index]),
+      low: toNumber(chart.l?.[index]),
+      close: toNumber(close),
+      volume: toNumber(chart.v?.[index])
+    };
+  }).filter((item) => item.close !== null);
 
   const latestBar = bars[bars.length - 1] || {};
   const previousBar = bars[bars.length - 2] || {};
@@ -804,6 +827,109 @@ function renderMovingAverages(bars) {
   return movingAverages;
 }
 
+function setActiveChartButton(rangeKey) {
+  chartControls?.querySelectorAll("button[data-chart-range]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.chartRange === rangeKey);
+  });
+}
+
+function barDateKey(bar) {
+  const timestamp = toNumber(bar.timestamp);
+  if (timestamp === null) return safeText(bar.time);
+  return new Date(timestamp).toLocaleDateString("vi-VN");
+}
+
+function formatChartPointTime(bar, preset) {
+  const timestamp = toNumber(bar.timestamp);
+  if (timestamp === null) return safeText(bar.time);
+  const date = new Date(timestamp);
+  if (preset.intraday && preset.mode === "tail") {
+    return date.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+  }
+  if (preset.intraday) {
+    return `${date.toLocaleDateString("vi-VN")} ${date.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}`;
+  }
+  return date.toLocaleDateString("vi-VN");
+}
+
+function filterBarsForPreset(bars, preset) {
+  if (!bars.length) return [];
+
+  if (preset.mode === "tail") {
+    return bars.slice(-preset.count);
+  }
+
+  if (preset.mode === "tradingDays") {
+    const dateKeys = [];
+    [...bars].reverse().forEach((bar) => {
+      const key = barDateKey(bar);
+      if (!dateKeys.includes(key)) dateKeys.push(key);
+    });
+    const allowed = new Set(dateKeys.slice(0, preset.count));
+    return bars.filter((bar) => allowed.has(barDateKey(bar)));
+  }
+
+  if (preset.mode === "calendarDays") {
+    const latestTimestamp = toNumber(bars[bars.length - 1]?.timestamp);
+    if (latestTimestamp === null) return bars.slice(-preset.days);
+    const cutoff = latestTimestamp - preset.days * 86400 * 1000;
+    return bars.filter((bar) => toNumber(bar.timestamp) === null || bar.timestamp >= cutoff);
+  }
+
+  return bars;
+}
+
+function renderSelectedChart(bars, rangeKey = activeChartRange) {
+  const preset = CHART_PRESETS[rangeKey] || CHART_PRESETS["3m"];
+  const filtered = filterBarsForPreset(bars, preset);
+  const displayBars = filtered.map((bar) => ({
+    ...bar,
+    time: formatChartPointTime(bar, preset)
+  }));
+
+  drawChart(displayBars);
+  renderMovingAverages(displayBars);
+  fields.chartRange.textContent = `${preset.label} - ${displayBars.length} điểm dữ liệu`;
+  return displayBars;
+}
+
+async function applyChartRange(rangeKey) {
+  if (!currentSymbol) {
+    setMessage("Hãy nhập mã chứng khoán trước khi chọn khung biểu đồ.");
+    return;
+  }
+
+  const preset = CHART_PRESETS[rangeKey] || CHART_PRESETS["3m"];
+  activeChartRange = rangeKey;
+  setActiveChartButton(rangeKey);
+
+  if (!preset.intraday) {
+    renderSelectedChart(currentDailyBars, rangeKey);
+    setMessage("");
+    return;
+  }
+
+  const requestId = chartRequestId + 1;
+  chartRequestId = requestId;
+  fields.chartRange.textContent = `Đang tải biểu đồ ${preset.label}...`;
+
+  try {
+    const raw = await requestVciData(currentSymbol, preset.sourceRange);
+    if (requestId !== chartRequestId) return;
+    const parsed = parseVciData(raw);
+    if (!parsed || !parsed.bars.length) {
+      throw new Error("Không có dữ liệu cho khung biểu đồ này.");
+    }
+    renderSelectedChart(parsed.bars, rangeKey);
+    setMessage("");
+  } catch (error) {
+    renderSelectedChart(currentDailyBars, "3m");
+    setActiveChartButton("3m");
+    activeChartRange = "3m";
+    setMessage(error.message || "Không tải được dữ liệu biểu đồ.");
+  }
+}
+
 function latestNonNull(series) {
   return [...series].reverse().find((value) => value !== null);
 }
@@ -1112,14 +1238,17 @@ function fillData(symbol, quote, overview, bars) {
   fields.eps.textContent = safeText(overview.eps);
   fields.beta.textContent = safeText(overview.beta);
 
-  drawChart(bars);
-  const movingAverages = renderMovingAverages(bars);
+  currentSymbol = symbol;
+  currentDailyBars = bars;
+  activeChartRange = "3m";
+  setActiveChartButton(activeChartRange);
+  renderSelectedChart(bars, activeChartRange);
+  const movingAverages = calculateMovingAverages(bars);
   const indicators = renderIndicators(bars);
   renderPriceChanges(bars);
   renderInvestorFlow(quote);
   renderHistory(bars);
   const score = renderScoreAnalysis(symbol, quote, overview, bars, movingAverages, indicators);
-  fields.chartRange.textContent = `${bars.length} phiên gần nhất`;
   return { movingAverages, indicators, score };
 }
 
@@ -1130,7 +1259,7 @@ async function loadVietnamStock(symbol) {
   let lastError = null;
 
   try {
-    const rawVci = await requestVciData(symbol);
+    const rawVci = await requestVciData(symbol, "2y");
     parsed = parseVciData(rawVci);
   } catch (error) {
     lastError = error;
@@ -1208,6 +1337,12 @@ quickSymbols.addEventListener("click", (event) => {
   if (!button) return;
   symbolInput.value = button.dataset.symbol;
   form.requestSubmit();
+});
+
+chartControls?.addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-chart-range]");
+  if (!button) return;
+  applyChartRange(button.dataset.chartRange);
 });
 
 tabs.forEach((tab) => {
