@@ -506,7 +506,7 @@ function drawChart(points, movingAverages = null) {
 
   if (!points.length) {
     context.fillStyle = CHART_COLORS.text;
-    context.font = "18px Arial";
+    context.font = "18px 'Be Vietnam Pro', Arial";
     context.fillText("Chưa có dữ liệu biểu đồ.", 24, 48);
     return;
   }
@@ -602,7 +602,7 @@ function drawChart(points, movingAverages = null) {
   });
 
   context.fillStyle = CHART_COLORS.text;
-  context.font = "13px Arial";
+  context.font = "13px 'Be Vietnam Pro', Arial";
   context.fillText(formatPrice(max), 8, padding + 4);
   context.fillText(formatPrice(min), 8, plotBottom + 4);
   context.fillText("Vol", 8, volumeTop + 14);
@@ -719,7 +719,7 @@ function drawLineCanvas(canvas, values, options = {}) {
   const numericValues = values.filter((value) => value !== null);
   if (!numericValues.length) {
     context.fillStyle = CHART_COLORS.text;
-    context.font = "16px Arial";
+    context.font = "16px 'Be Vietnam Pro', Arial";
     context.fillText("Chưa đủ dữ liệu.", 18, 38);
     return;
   }
@@ -749,7 +749,7 @@ function drawLineCanvas(canvas, values, options = {}) {
     context.stroke();
     context.setLineDash([]);
     context.fillStyle = guide.color;
-    context.font = "12px Arial";
+    context.font = "12px 'Be Vietnam Pro', Arial";
     context.fillText(guide.label, width - padding - 28, y - 4);
   });
 
@@ -774,7 +774,7 @@ function drawMacdCanvas(canvas, macdData) {
   const allValues = [...macdData.macd, ...macdData.signal, ...macdData.histogram].filter((value) => value !== null);
   if (!allValues.length) {
     context.fillStyle = CHART_COLORS.text;
-    context.font = "16px Arial";
+    context.font = "16px 'Be Vietnam Pro', Arial";
     context.fillText("Chưa đủ dữ liệu.", 18, 38);
     return;
   }
