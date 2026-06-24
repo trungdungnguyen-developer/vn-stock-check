@@ -847,6 +847,16 @@ pre {
   word-break: break-word;
 }
 
+.app-footer {
+  margin: 18px 24px 0;
+  padding: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  text-align: center;
+  font-size: var(--font-small);
+  font-weight: 700;
+}
+
 @media (max-width: 860px) {
   .hero,
   .quote-card,
@@ -912,7 +922,8 @@ pre {
   }
 
   .tabs,
-  .score-section {
+  .score-section,
+  .app-footer {
     margin-left: 14px;
     margin-right: 14px;
   }

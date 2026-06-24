@@ -236,6 +236,12 @@ function formatOptional(value, digits = 2) {
   return toNumber(value) === null ? "-" : formatNumber(value, digits);
 }
 
+function formatFundamentalNumber(value, digits = 2) {
+  const number = toNumber(value);
+  if (number === null || number === 0) return "-";
+  return formatNumber(number, digits);
+}
+
 function technicalPriceDivisor(bars) {
   const closes = bars
     .map((bar) => toNumber(bar.close))
@@ -308,6 +314,20 @@ async function requestNewsData() {
   });
   if (!response.ok) {
     throw new Error(`Không tải được tin tức. HTTP ${response.status}`);
+  }
+  return response.json();
+}
+
+async function requestFundamentalsData(symbol) {
+  if (location.protocol === "file:") {
+    throw new Error("Đang mở bằng file:// nên không có proxy dữ liệu. Hãy chạy local-server.js rồi mở http://localhost:8787.");
+  }
+
+  const response = await fetch(`${PROXY_BASE}?source=fundamentals&symbol=${encodeURIComponent(symbol)}`, {
+    headers: { accept: "application/json" }
+  });
+  if (!response.ok) {
+    throw new Error(`Không tải được chỉ số cơ bản. HTTP ${response.status}`);
   }
   return response.json();
 }
@@ -1240,6 +1260,29 @@ function calculateMarketStrength(stockBars, indexBars) {
   };
 }
 
+function hasUsefulValue(value) {
+  return value !== undefined && value !== null && value !== "" && value !== "-" && value !== 0;
+}
+
+function mergeOverviewWithFundamentals(overview, fundamentals) {
+  const extra = fundamentals?.overview || {};
+  return {
+    ...overview,
+    ticker: extra.ticker || overview.ticker,
+    name: hasUsefulValue(extra.name) ? extra.name : overview.name,
+    exchange: hasUsefulValue(extra.exchange) ? boardName(extra.exchange) : overview.exchange,
+    industry: hasUsefulValue(extra.industry) ? extra.industry : overview.industry,
+    sector: hasUsefulValue(extra.sector) ? extra.sector : overview.sector,
+    marketCap: hasUsefulValue(extra.marketCap) ? extra.marketCap : overview.marketCap,
+    pe: hasUsefulValue(extra.pe) ? extra.pe : overview.pe,
+    pb: hasUsefulValue(extra.pb) ? extra.pb : overview.pb,
+    roe: hasUsefulValue(extra.roe) ? extra.roe : overview.roe,
+    eps: hasUsefulValue(extra.eps) ? extra.eps : overview.eps,
+    beta: hasUsefulValue(extra.beta) ? extra.beta : overview.beta,
+    fundamentalsSource: fundamentals?.found ? fundamentals.source : overview.fundamentalsSource
+  };
+}
+
 function average(values) {
   const filtered = values.filter((value) => toNumber(value) !== null);
   if (!filtered.length) return null;
@@ -1675,12 +1718,12 @@ function fillData(symbol, quote, overview, bars) {
   fields.listedExchange.textContent = safeText(overview.exchange || quote.exchange);
   fields.industry.textContent = safeText(overview.industry);
   fields.sector.textContent = safeText(overview.sector);
-  fields.marketCap.textContent = formatLargeNumber(overview.marketCap);
-  fields.peRatio.textContent = safeText(overview.pe);
-  fields.pbRatio.textContent = safeText(overview.pb);
-  fields.roe.textContent = overview.roe ? formatPercent(overview.roe) : "-";
-  fields.eps.textContent = safeText(overview.eps);
-  fields.beta.textContent = safeText(overview.beta);
+  fields.marketCap.textContent = toNumber(overview.marketCap) ? formatLargeNumber(overview.marketCap) : "-";
+  fields.peRatio.textContent = formatFundamentalNumber(overview.pe, 2);
+  fields.pbRatio.textContent = formatFundamentalNumber(overview.pb, 2);
+  fields.roe.textContent = toNumber(overview.roe) ? formatPercent(overview.roe) : "-";
+  fields.eps.textContent = formatFundamentalNumber(overview.eps, 2);
+  fields.beta.textContent = formatFundamentalNumber(overview.beta, 2);
 
   currentSymbol = symbol;
   currentDailyBars = bars;
@@ -1732,13 +1775,14 @@ async function loadVietnamStock(symbol) {
   }
 
   const quote = parsed.quote;
-  const overview = parsed.overview;
+  let overview = parsed.overview;
   const bars = parsed.bars;
 
   latestMarketStrength = null;
-  const [newsResult, indexResult] = await Promise.allSettled([
+  const [newsResult, indexResult, fundamentalsResult] = await Promise.allSettled([
     loadNews(symbol, { silent: true }),
-    requestVciData("VNINDEX", "2y")
+    requestVciData("VNINDEX", "2y"),
+    requestFundamentalsData(symbol)
   ]);
 
   if (indexResult.status === "fulfilled") {
@@ -1750,6 +1794,10 @@ async function loadVietnamStock(symbol) {
 
   if (newsResult.status !== "fulfilled") {
     latestNewsItems = [];
+  }
+
+  if (fundamentalsResult.status === "fulfilled") {
+    overview = mergeOverviewWithFundamentals(overview, fundamentalsResult.value);
   }
 
   const analysis = fillData(symbol, quote, overview, bars);
@@ -1776,6 +1824,15 @@ async function loadVietnamStock(symbol) {
       sources: "CafeF RSS, VnExpress RSS",
       relatedCount: analysis.score.relatedNews.length,
       topRelated: analysis.score.relatedNews.slice(0, 3)
+    },
+    fundamentals: {
+      source: overview.fundamentalsSource || "Chưa có dữ liệu cơ bản",
+      marketCap: overview.marketCap,
+      pe: overview.pe,
+      pb: overview.pb,
+      roe: overview.roe,
+      eps: overview.eps,
+      beta: overview.beta
     },
     marketStrength: latestMarketStrength,
     investorFlow: {

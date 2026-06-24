@@ -5,6 +5,7 @@ const path = require("path");
 const PORT = 8787;
 const API_BASE = "https://query1.finance.yahoo.com";
 const VCI_TRADING_BASE = "https://trading.vietcap.com.vn/api";
+const TRADINGVIEW_SCAN_BASE = "https://scanner.tradingview.com/vietnam/scan";
 const ROOT = __dirname;
 
 const MIME_TYPES = {
@@ -23,6 +24,20 @@ const ALLOWED_PREFIXES = [
 const RSS_SOURCES = [
   { name: "CafeF", url: "https://cafef.vn/thi-truong-chung-khoan.rss" },
   { name: "VnExpress", url: "https://vnexpress.net/rss/kinh-doanh.rss" }
+];
+
+const FUNDAMENTAL_COLUMNS = [
+  "name",
+  "description",
+  "exchange",
+  "sector",
+  "industry",
+  "market_cap_basic",
+  "price_earnings_ttm",
+  "price_book_fq",
+  "return_on_equity_fy",
+  "earnings_per_share_basic_ttm",
+  "beta_1_year"
 ];
 
 const VCI_RANGE_CONFIG = {
@@ -110,7 +125,75 @@ async function fetchNews() {
   };
 }
 
+async function fetchFundamentals(symbol) {
+  const normalized = String(symbol || "").toUpperCase();
+  if (!/^[A-Z0-9]{2,12}$/.test(normalized)) {
+    throw new Error("Missing or invalid symbol");
+  }
+
+  const tickers = ["HOSE", "HNX", "UPCOM"].map((exchange) => `${exchange}:${normalized}`);
+  const upstream = await fetch(TRADINGVIEW_SCAN_BASE, {
+    method: "POST",
+    headers: {
+      accept: "application/json",
+      "content-type": "application/json",
+      origin: "https://www.tradingview.com",
+      referer: "https://www.tradingview.com/",
+      "user-agent": "Mozilla/5.0"
+    },
+    body: JSON.stringify({
+      symbols: { tickers, query: { types: [] } },
+      columns: FUNDAMENTAL_COLUMNS
+    })
+  });
+
+  if (!upstream.ok) {
+    throw new Error(`TradingView HTTP ${upstream.status}`);
+  }
+
+  const payload = await upstream.json();
+  const row = Array.isArray(payload.data) ? payload.data[0] : null;
+  if (!row) {
+    return { source: "TradingView", symbol: normalized, found: false, overview: null };
+  }
+
+  const values = {};
+  FUNDAMENTAL_COLUMNS.forEach((column, index) => {
+    values[column] = row.d?.[index] ?? null;
+  });
+
+  return {
+    source: "TradingView Scanner",
+    symbol: normalized,
+    resolvedSymbol: row.s,
+    found: true,
+    overview: {
+      ticker: values.name || normalized,
+      name: values.description || values.name || normalized,
+      exchange: values.exchange || String(row.s || "").split(":")[0],
+      industry: values.industry,
+      sector: values.sector,
+      marketCap: values.market_cap_basic,
+      pe: values.price_earnings_ttm,
+      pb: values.price_book_fq,
+      roe: values.return_on_equity_fy,
+      eps: values.earnings_per_share_basic_ttm,
+      beta: values.beta_1_year
+    },
+    raw: values
+  };
+}
+
 async function handleProxy(req, res, url) {
+  if (url.searchParams.get("source") === "fundamentals") {
+    try {
+      sendJson(res, 200, await fetchFundamentals(url.searchParams.get("symbol")));
+    } catch (error) {
+      sendJson(res, 502, { error: "Fundamentals request failed", details: error.message });
+    }
+    return;
+  }
+
   if (url.searchParams.get("source") === "news") {
     try {
       sendJson(res, 200, await fetchNews());
