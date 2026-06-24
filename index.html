@@ -41,6 +41,7 @@
         <nav class="tabs" aria-label="Chọn nội dung">
           <button id="overviewTab" class="tab active" type="button" data-tab="overview" aria-selected="true">Theo dõi</button>
           <button id="scoreTab" class="tab" type="button" data-tab="score" aria-selected="false">Bảng đánh giá</button>
+          <button id="newsTab" class="tab" type="button" data-tab="news" aria-selected="false">Tin tức</button>
         </nav>
 
         <section id="overviewPanel" class="tab-panel active">
@@ -238,6 +239,25 @@
             </div>
             <div id="scoreAnalysis" class="score-analysis">
               Hãy tra cứu một mã cổ phiếu trước, sau đó quay lại tab này để xem phân tích theo thang điểm 100.
+            </div>
+          </section>
+        </section>
+
+        <section id="newsPanel" class="tab-panel" hidden>
+          <section class="news-section">
+            <div class="section-head">
+              <div>
+                <h2>Tin tức thị trường</h2>
+                <p>Tin tức được cập nhật từ RSS CafeF và VnExpress khi bấm mở tab hoặc cập nhật lại.</p>
+              </div>
+              <button id="refreshNewsButton" type="button" class="secondary">Cập nhật tin</button>
+            </div>
+            <div id="newsBody" class="news-list">
+              <article>
+                <span>Chưa có dữ liệu</span>
+                <h3>Hãy tra cứu mã cổ phiếu hoặc bấm Cập nhật tin.</h3>
+                <p>App sẽ hiển thị tin liên quan đến mã đang xem và các tin quan trọng của thị trường chứng khoán Việt Nam.</p>
+              </article>
             </div>
           </section>
         </section>

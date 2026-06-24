@@ -5,6 +5,11 @@ const ALLOWED_PREFIXES = [
   "/v8/finance/chart/"
 ];
 
+const RSS_SOURCES = [
+  { name: "CafeF", url: "https://cafef.vn/thi-truong-chung-khoan.rss" },
+  { name: "VnExpress", url: "https://vnexpress.net/rss/kinh-doanh.rss" }
+];
+
 const VCI_RANGE_CONFIG = {
   "2y": { timeFrame: "ONE_DAY", lookbackDays: 7300 },
   "30m": { timeFrame: "ONE_MINUTE", lookbackDays: 120 },
@@ -31,9 +36,80 @@ function response(statusCode, body) {
   };
 }
 
+function decodeXml(value) {
+  return String(value || "")
+    .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#039;/g, "'")
+    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(Number(code)));
+}
+
+function stripHtml(value) {
+  return decodeXml(value)
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function getTag(item, tag) {
+  const match = item.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, "i"));
+  return match ? decodeXml(match[1]).trim() : "";
+}
+
+function parseRss(xml, sourceName) {
+  return [...String(xml || "").matchAll(/<item\b[\s\S]*?<\/item>/gi)]
+    .map((match) => {
+      const item = match[0];
+      return {
+        source: sourceName,
+        title: stripHtml(getTag(item, "title")),
+        link: stripHtml(getTag(item, "link")),
+        pubDate: stripHtml(getTag(item, "pubDate")),
+        description: stripHtml(getTag(item, "description"))
+      };
+    })
+    .filter((item) => item.title && item.link);
+}
+
+async function fetchNews() {
+  const responses = await Promise.allSettled(RSS_SOURCES.map(async (source) => {
+    const upstream = await fetch(source.url, {
+      headers: {
+        accept: "application/rss+xml,text/xml,*/*",
+        "user-agent": "stock-tracker-vietnam-news/1.0"
+      }
+    });
+    if (!upstream.ok) throw new Error(`${source.name} HTTP ${upstream.status}`);
+    const xml = await upstream.text();
+    return parseRss(xml, source.name);
+  }));
+
+  const items = responses
+    .flatMap((result) => result.status === "fulfilled" ? result.value : [])
+    .sort((a, b) => new Date(b.pubDate || 0) - new Date(a.pubDate || 0))
+    .slice(0, 40);
+
+  return {
+    source: RSS_SOURCES.map((item) => item.name).join(", "),
+    updatedAt: new Date().toISOString(),
+    items
+  };
+}
+
 exports.handler = async function handler(event) {
   if (event.httpMethod === "OPTIONS") {
     return response(200, { ok: true });
+  }
+
+  if (event.queryStringParameters && event.queryStringParameters.source === "news") {
+    try {
+      return response(200, await fetchNews());
+    } catch (error) {
+      return response(502, { error: "News request failed", details: error.message });
+    }
   }
 
   if (event.queryStringParameters && event.queryStringParameters.source === "vci") {

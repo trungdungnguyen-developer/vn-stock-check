@@ -106,6 +106,7 @@ h1 {
 .recommendation-section,
 .flow-section,
 .history-section,
+.news-section,
 .details-grid,
 .raw-section {
   margin: 18px 24px;
@@ -672,6 +673,73 @@ strong.neutral {
   padding: 16px;
 }
 
+.news-section {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  background: #ffffff;
+}
+
+.news-section .section-head p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: var(--font-small);
+}
+
+.news-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.news-list article {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  background: #ffffff;
+}
+
+.news-list article.related {
+  background: var(--soft);
+  border-color: rgba(136, 0, 133, 0.35);
+}
+
+.news-list span {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  color: var(--muted);
+  font-size: var(--font-small);
+  font-weight: 700;
+}
+
+.news-list h3 {
+  margin: 8px 0;
+  font-size: 18px;
+  line-height: 1.35;
+}
+
+.news-list h3 a {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.news-list h3 a:hover {
+  text-decoration: underline;
+}
+
+.news-list p {
+  margin: 0;
+  color: var(--text);
+  line-height: 1.55;
+}
+
+.news-source-note {
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: var(--font-small);
+}
+
 .score-analysis {
   display: grid;
   gap: 14px;
@@ -836,6 +904,7 @@ pre {
     .recommendation-section,
     .flow-section,
   .history-section,
+  .news-section,
   .details-grid,
   .raw-section {
     margin-left: 14px;

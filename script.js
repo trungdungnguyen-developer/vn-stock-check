@@ -26,10 +26,12 @@ const historyControls = document.querySelector(".history-controls");
 const chartSection = document.querySelector(".chart-section");
 const chartWorkspace = document.getElementById("chartWorkspace");
 const fullscreenChartButton = document.getElementById("fullscreenChart");
+const refreshNewsButton = document.getElementById("refreshNewsButton");
 const tabs = document.querySelectorAll(".tab");
 const tabPanels = {
   overview: document.getElementById("overviewPanel"),
-  score: document.getElementById("scorePanel")
+  score: document.getElementById("scorePanel"),
+  news: document.getElementById("newsPanel")
 };
 
 const fields = {
@@ -79,6 +81,7 @@ const fields = {
   historyBody: document.getElementById("historyBody"),
   scoreTotalBadge: document.getElementById("scoreTotalBadge"),
   scoreAnalysis: document.getElementById("scoreAnalysis"),
+  newsBody: document.getElementById("newsBody"),
   recommendationBody: document.getElementById("recommendationBody"),
   rawData: document.getElementById("rawData")
 };
@@ -110,6 +113,8 @@ let currentChartSourceBars = [];
 let activeChartRange = "1d";
 let activeHistoryLimit = 30;
 let chartRequestId = 0;
+let latestNewsItems = [];
+let latestMarketStrength = null;
 
 function setMessage(text) {
   message.textContent = text;
@@ -289,6 +294,20 @@ async function requestVciData(symbol, range = "2y") {
   });
   if (!response.ok) {
     throw new Error(`VCI không tải được dữ liệu. HTTP ${response.status}`);
+  }
+  return response.json();
+}
+
+async function requestNewsData() {
+  if (location.protocol === "file:") {
+    throw new Error("Đang mở bằng file:// nên không có proxy dữ liệu. Hãy chạy local-server.js rồi mở http://localhost:8787.");
+  }
+
+  const response = await fetch(`${PROXY_BASE}?source=news`, {
+    headers: { accept: "application/json" }
+  });
+  if (!response.ok) {
+    throw new Error(`Không tải được tin tức. HTTP ${response.status}`);
   }
   return response.json();
 }
@@ -1098,6 +1117,129 @@ function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
+function formatNewsDate(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleString("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
+
+function percentChangeBetween(bars, periods) {
+  if (!bars.length || bars.length <= periods) return null;
+  const latest = bars[bars.length - 1]?.close;
+  const previous = bars[bars.length - 1 - periods]?.close;
+  if (!toNumber(latest) || !toNumber(previous)) return null;
+  return ((latest - previous) / previous) * 100;
+}
+
+function normalizeSearchText(value) {
+  return safeText(value)
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d");
+}
+
+function isRelatedNews(item, symbol, companyName) {
+  const text = normalizeSearchText(`${item.title} ${item.description}`);
+  const ticker = normalizeSearchText(symbol);
+  const company = normalizeSearchText(companyName)
+    .replace(/\bctcp\b|\bcong ty\b|\btap doan\b|\bcorporation\b|\bgroup\b/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const companyWords = company.split(" ").filter((word) => word.length >= 4).slice(0, 3);
+
+  if (ticker && new RegExp(`(^|[^a-z0-9])${ticker}([^a-z0-9]|$)`).test(text)) return true;
+  return companyWords.length >= 2 && companyWords.some((word) => text.includes(word));
+}
+
+function renderNews(items, symbol = currentSymbol, companyName = fields.companyName.textContent) {
+  if (!fields.newsBody) return;
+
+  const marketKeywords = /vn-?index|chứng khoán|co phieu|cổ phiếu|khối ngoại|thanh khoản|dòng tiền|nâng hạng|thị trường/i;
+  const related = items.filter((item) => isRelatedNews(item, symbol, companyName));
+  const market = items.filter((item) => !related.includes(item) && marketKeywords.test(`${item.title} ${item.description}`));
+  const displayItems = [...related.slice(0, 8), ...market.slice(0, 16)].slice(0, 20);
+
+  if (!displayItems.length) {
+    fields.newsBody.innerHTML = `
+      <article>
+        <span>Chưa có tin phù hợp</span>
+        <h3>Chưa tìm thấy tin mới từ nguồn RSS hiện tại.</h3>
+        <p>Hãy bấm Cập nhật tin sau hoặc kiểm tra lại khi nguồn CafeF/VnExpress có bài mới.</p>
+      </article>
+    `;
+    return;
+  }
+
+  fields.newsBody.innerHTML = `
+    ${displayItems.map((item) => {
+      const relatedClass = related.includes(item) ? " related" : "";
+      const label = related.includes(item) ? `Liên quan ${escapeHtml(symbol || "mã đang xem")}` : "Tin thị trường";
+      return `
+        <article class="${relatedClass.trim()}">
+          <span>${escapeHtml(item.source)} · ${formatNewsDate(item.pubDate)} · ${label}</span>
+          <h3><a href="${escapeHtml(item.link)}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.title)}</a></h3>
+          <p>${escapeHtml(item.description || "Bấm để xem chi tiết bài viết từ nguồn gốc.")}</p>
+        </article>
+      `;
+    }).join("")}
+    <p class="news-source-note">Nguồn: RSS CafeF và VnExpress. Tin được tải lại khi mở tab Tin tức hoặc bấm Cập nhật tin.</p>
+  `;
+}
+
+async function loadNews(symbol = currentSymbol, options = {}) {
+  if (fields.newsBody && !options.silent) {
+    fields.newsBody.innerHTML = `
+      <article>
+        <span>Đang cập nhật</span>
+        <h3>Đang tải tin tức thị trường...</h3>
+        <p>Nguồn RSS có thể mất vài giây để phản hồi.</p>
+      </article>
+    `;
+  }
+
+  try {
+    const data = await requestNewsData();
+    latestNewsItems = Array.isArray(data.items) ? data.items : [];
+    renderNews(latestNewsItems, symbol, fields.companyName.textContent);
+    return latestNewsItems;
+  } catch (error) {
+    if (!options.silent && fields.newsBody) {
+      fields.newsBody.innerHTML = `
+        <article>
+          <span>Lỗi dữ liệu</span>
+          <h3>${escapeHtml(error.message || "Không tải được tin tức.")}</h3>
+          <p>Hãy kiểm tra local server hoặc Netlify Function đã được upload cùng website.</p>
+        </article>
+      `;
+    }
+    latestNewsItems = [];
+    return [];
+  }
+}
+
+function calculateMarketStrength(stockBars, indexBars) {
+  const stock20 = percentChangeBetween(stockBars, 20);
+  const stock60 = percentChangeBetween(stockBars, 60);
+  const index20 = percentChangeBetween(indexBars, 20);
+  const index60 = percentChangeBetween(indexBars, 60);
+
+  return {
+    stock20,
+    stock60,
+    index20,
+    index60,
+    relative20: toNumber(stock20) !== null && toNumber(index20) !== null ? stock20 - index20 : null,
+    relative60: toNumber(stock60) !== null && toNumber(index60) !== null ? stock60 - index60 : null
+  };
+}
+
 function average(values) {
   const filtered = values.filter((value) => toNumber(value) !== null);
   if (!filtered.length) return null;
@@ -1181,8 +1323,19 @@ function scoreStock(symbol, quote, overview, bars, movingAverages, indicators) {
   if (levels.resistance1) srScore += 1;
   srScore = Math.min(srScore, 10);
 
-  const fundamentalScore = overview.name && overview.name !== symbol ? 6 : 5;
-  const industryScore = overview.exchange ? 6 : 5;
+  const relatedNews = latestNewsItems.filter((item) => isRelatedNews(item, symbol, overview.name || symbol));
+  let fundamentalScore = overview.name && overview.name !== symbol ? 5 : 4;
+  if (relatedNews.length >= 1) fundamentalScore += 1;
+  if (relatedNews.length >= 3) fundamentalScore += 1;
+  if (overview.industry && overview.industry !== "-") fundamentalScore += 1;
+  if (overview.pe || overview.pb || overview.roe || overview.eps) fundamentalScore += 1;
+  fundamentalScore = Math.min(fundamentalScore, 10);
+
+  let industryScore = overview.exchange ? 5 : 4;
+  if (latestMarketStrength?.relative20 !== null && latestMarketStrength.relative20 > 0) industryScore += 2;
+  if (latestMarketStrength?.relative60 !== null && latestMarketStrength.relative60 > 0) industryScore += 2;
+  if (latestMarketStrength?.stock20 !== null && latestMarketStrength.stock20 > 0) industryScore += 1;
+  industryScore = Math.min(industryScore, 10);
   let rrScore = 2;
   if (riskReward >= 3) rrScore = 5;
   else if (riskReward >= 2) rrScore = 4;
@@ -1199,6 +1352,8 @@ function scoreStock(symbol, quote, overview, bars, movingAverages, indicators) {
     srScore,
     fundamentalScore,
     industryScore,
+    relatedNews,
+    marketStrength: latestMarketStrength,
     rrScore,
     currentPrice,
     ma50,
@@ -1248,6 +1403,26 @@ function renderScoreAnalysis(symbol, quote, overview, bars, movingAverages, indi
     score.levels.resistance1 ? `Giá vượt ${formatPrice(score.levels.resistance1)} với volume tốt` : "Giá vượt kháng cự gần",
     score.latestVolume < score.avgVolume20 ? "Volume vượt trung bình 20 phiên" : null
   ].filter(Boolean);
+  const relatedNewsHtml = score.relatedNews.length
+    ? `
+      <p>Tìm thấy ${score.relatedNews.length} tin liên quan trực tiếp tới mã hoặc doanh nghiệp từ nguồn RSS uy tín.</p>
+      <ul class="score-points">
+        ${score.relatedNews.slice(0, 3).map((item) => `
+          <li><a href="${escapeHtml(item.link)}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.title)}</a> <small>(${escapeHtml(item.source)}, ${formatNewsDate(item.pubDate)})</small></li>
+        `).join("")}
+      </ul>
+    `
+    : `<p>Chưa tìm thấy tin liên quan trực tiếp tới ${escapeHtml(symbol)} trong RSS mới nhất. Điểm cơ bản được giữ thận trọng và nên đọc thêm báo cáo tài chính, công bố thông tin hoặc tin doanh nghiệp riêng.</p>`;
+  const strength = score.marketStrength || {};
+  const marketStrengthHtml = strength.relative20 !== null || strength.relative60 !== null
+    ? `
+      <p>App đang dùng sức mạnh tương đối so với VNINDEX làm thước đo thay thế khi chưa có API phân ngành realtime đầy đủ.</p>
+      <ul class="score-points">
+        <li>20 phiên: ${escapeHtml(symbol)} ${formatPercent(strength.stock20)} / VNINDEX ${formatPercent(strength.index20)} / chênh lệch ${formatPercent(strength.relative20)}</li>
+        <li>60 phiên: ${escapeHtml(symbol)} ${formatPercent(strength.stock60)} / VNINDEX ${formatPercent(strength.index60)} / chênh lệch ${formatPercent(strength.relative60)}</li>
+      </ul>
+    `
+    : `<p>Chưa tải được dữ liệu VNINDEX để so sánh sức mạnh tương đối. Điểm này được giữ ở mức trung tính có điều kiện.</p>`;
 
   fields.scoreTotalBadge.textContent = `${score.total}/100 điểm`;
   fields.scoreAnalysis.innerHTML = `
@@ -1302,12 +1477,12 @@ function renderScoreAnalysis(symbol, quote, overview, bars, movingAverages, indi
 
     <div class="score-block">
       <h3>6. Cơ bản - Tin tức (${score.fundamentalScore}/10)</h3>
-      <p>Nguồn dữ liệu hiện tại chưa có tin tức và báo cáo cơ bản chi tiết, nên điểm này được chấm ở mức trung tính. Nên bổ sung dữ liệu tin tức/API cơ bản nếu muốn chấm sâu hơn.</p>
+      ${relatedNewsHtml}
     </div>
 
     <div class="score-block">
       <h3>7. Sức mạnh ngành (${score.industryScore}/10)</h3>
-      <p>Nguồn dữ liệu hiện tại chưa cung cấp đầy đủ sức mạnh ngành theo thị trường Việt Nam, nên điểm này là điểm trung tính có điều kiện.</p>
+      ${marketStrengthHtml}
     </div>
 
     <div class="score-block">
@@ -1560,6 +1735,23 @@ async function loadVietnamStock(symbol) {
   const overview = parsed.overview;
   const bars = parsed.bars;
 
+  latestMarketStrength = null;
+  const [newsResult, indexResult] = await Promise.allSettled([
+    loadNews(symbol, { silent: true }),
+    requestVciData("VNINDEX", "2y")
+  ]);
+
+  if (indexResult.status === "fulfilled") {
+    const indexParsed = parseVciData(indexResult.value);
+    if (indexParsed?.bars?.length) {
+      latestMarketStrength = calculateMarketStrength(bars, indexParsed.bars);
+    }
+  }
+
+  if (newsResult.status !== "fulfilled") {
+    latestNewsItems = [];
+  }
+
   const analysis = fillData(symbol, quote, overview, bars);
   latestPayload = {
     source: parsed.source,
@@ -1580,6 +1772,12 @@ async function loadVietnamStock(symbol) {
       }
     },
     score: analysis.score,
+    news: {
+      sources: "CafeF RSS, VnExpress RSS",
+      relatedCount: analysis.score.relatedNews.length,
+      topRelated: analysis.score.relatedNews.slice(0, 3)
+    },
+    marketStrength: latestMarketStrength,
     investorFlow: {
       status: parsed.source === "Vietcap/VCI"
         ? "Dữ liệu bảng giá VCI nếu có"
@@ -1650,7 +1848,16 @@ document.addEventListener("fullscreenchange", () => {
 });
 
 tabs.forEach((tab) => {
-  tab.addEventListener("click", () => setActiveTab(tab.dataset.tab));
+  tab.addEventListener("click", () => {
+    setActiveTab(tab.dataset.tab);
+    if (tab.dataset.tab === "news") {
+      loadNews(currentSymbol);
+    }
+  });
+});
+
+refreshNewsButton?.addEventListener("click", () => {
+  loadNews(currentSymbol);
 });
 
 copyButton.addEventListener("click", async () => {
