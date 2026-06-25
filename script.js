@@ -27,11 +27,13 @@ const chartSection = document.querySelector(".chart-section");
 const chartWorkspace = document.getElementById("chartWorkspace");
 const fullscreenChartButton = document.getElementById("fullscreenChart");
 const refreshNewsButton = document.getElementById("refreshNewsButton");
+const refreshAiButton = document.getElementById("refreshAiButton");
 const tabs = document.querySelectorAll(".tab");
 const tabPanels = {
   overview: document.getElementById("overviewPanel"),
   score: document.getElementById("scorePanel"),
-  news: document.getElementById("newsPanel")
+  news: document.getElementById("newsPanel"),
+  ai: document.getElementById("aiPanel")
 };
 
 const fields = {
@@ -82,6 +84,8 @@ const fields = {
   scoreTotalBadge: document.getElementById("scoreTotalBadge"),
   scoreAnalysis: document.getElementById("scoreAnalysis"),
   newsBody: document.getElementById("newsBody"),
+  aiBadge: document.getElementById("aiBadge"),
+  aiAnalysisBody: document.getElementById("aiAnalysisBody"),
   fundamentalBadge: document.getElementById("fundamentalBadge"),
   fundamentalAnalysis: document.getElementById("fundamentalAnalysis"),
   recommendationBody: document.getElementById("recommendationBody"),
@@ -1011,6 +1015,214 @@ function renderFundamentalAnalysis(overview, score) {
   return { valuationLabel, total, pe, pb, roe, beta };
 }
 
+function scoreTimeframeSignals(bars) {
+  const technicalBars = normalizeTechnicalBars(bars);
+  const movingAverages = calculateMovingAverages(technicalBars);
+  const rsi = calculateRsi(technicalBars);
+  const macd = calculateMacd(technicalBars);
+  const latest = technicalBars[technicalBars.length - 1] || {};
+  const previous = technicalBars[technicalBars.length - 2] || {};
+  const ma20 = latestNonNull(movingAverages.ma10);
+  const ma50 = latestNonNull(movingAverages.ma50);
+  const ma100 = latestNonNull(movingAverages.ma100);
+  const latestRsi = latestNonNull(rsi);
+  const latestMacd = latestNonNull(macd.macd);
+  const latestSignal = latestNonNull(macd.signal);
+  const latestHistogram = latestNonNull(macd.histogram);
+  const volumes = bars.map((bar) => bar.volume);
+  const latestVolume = bars[bars.length - 1]?.volume;
+  const avgVolume20 = average(volumes.slice(-20));
+  const change = previous.close ? ((latest.close - previous.close) / previous.close) * 100 : null;
+  const change20 = percentChangeBetween(bars, Math.min(20, Math.max(1, bars.length - 2)));
+
+  let score = 0;
+  const good = [];
+  const bad = [];
+  const neutral = [];
+
+  if (latest.close > ma20) {
+    score += 1;
+    good.push(`Giá đang trên MA20 (${formatOptional(ma20, 2)})`);
+  } else if (toNumber(ma20) !== null) {
+    score -= 1;
+    bad.push(`Giá nằm dưới MA20 (${formatOptional(ma20, 2)}), xu hướng ngắn hạn yếu`);
+  }
+
+  if (latest.close > ma50) {
+    score += 1;
+    good.push(`Giá trên MA50 (${formatOptional(ma50, 2)})`);
+  } else if (toNumber(ma50) !== null) {
+    score -= 1;
+    bad.push(`Giá dưới MA50 (${formatOptional(ma50, 2)}), lực hồi chưa thuyết phục`);
+  }
+
+  if (ma20 > ma50 && ma50 > ma100) {
+    score += 1;
+    good.push("Cấu trúc MA20 > MA50 > MA100 ủng hộ xu hướng tăng");
+  } else if (toNumber(ma20) !== null && toNumber(ma50) !== null && toNumber(ma100) !== null) {
+    bad.push("Các đường MA chưa xếp thành cấu trúc tăng rõ ràng");
+  }
+
+  if (latestMacd > latestSignal && latestHistogram > 0) {
+    score += 2;
+    good.push(`MACD đang trên Signal, histogram ${formatOptional(latestHistogram, 2)} tích cực`);
+  } else if (latestMacd < latestSignal && latestHistogram < 0) {
+    score -= 2;
+    bad.push(`MACD dưới Signal, histogram ${formatOptional(latestHistogram, 2)} còn xấu`);
+  } else {
+    neutral.push("MACD chưa cho tín hiệu rõ");
+  }
+
+  if (latestRsi >= 50 && latestRsi <= 65) {
+    score += 1;
+    good.push(`RSI ${formatOptional(latestRsi, 2)} khỏe nhưng chưa quá nóng`);
+  } else if (latestRsi > 70) {
+    score -= 1;
+    bad.push(`RSI ${formatOptional(latestRsi, 2)} cao, dễ rung lắc`);
+  } else if (latestRsi < 40) {
+    score -= 1;
+    bad.push(`RSI ${formatOptional(latestRsi, 2)} yếu, lực cầu chưa tốt`);
+  } else if (toNumber(latestRsi) !== null) {
+    neutral.push(`RSI ${formatOptional(latestRsi, 2)} trung tính`);
+  }
+
+  if (latestVolume && avgVolume20 && latestVolume > avgVolume20 * 1.2 && toNumber(change) !== null && change > 0) {
+    score += 1;
+    good.push("Giá tăng kèm volume cao hơn trung bình 20 nến");
+  } else if (latestVolume && avgVolume20 && latestVolume > avgVolume20 * 1.2 && toNumber(change) !== null && change < 0) {
+    score -= 1;
+    bad.push("Giá giảm với volume cao, cần cẩn thận áp lực bán");
+  } else if (latestVolume && avgVolume20) {
+    neutral.push(`Volume hiện tại ${formatInteger(latestVolume)}, TB20 ${formatInteger(avgVolume20)}`);
+  }
+
+  const verdict = score >= 4
+    ? { text: "Tích cực", className: "positive" }
+    : score >= 1
+      ? { text: "Nghiêng tích cực", className: "positive" }
+      : score >= -1
+        ? { text: "Trung tính", className: "neutral" }
+        : { text: "Tiêu cực", className: "negative" };
+
+  return {
+    score,
+    verdict,
+    latestClose: latest.close,
+    change,
+    change20,
+    ma20,
+    ma50,
+    latestRsi,
+    latestMacd,
+    latestSignal,
+    latestHistogram,
+    good,
+    bad,
+    neutral
+  };
+}
+
+function renderAiCards(symbol, analyses) {
+  const validAnalyses = analyses.filter((item) => item && item.data);
+  if (!validAnalyses.length) {
+    fields.aiBadge.textContent = "Thiếu dữ liệu";
+    fields.aiBadge.className = "neutral";
+    fields.aiAnalysisBody.innerHTML = `
+      <article>
+        <span>Không đủ dữ liệu</span>
+        <h3>Chưa phân tích được ${escapeHtml(symbol)}.</h3>
+        <p>Hãy kiểm tra lại mã cổ phiếu hoặc nguồn dữ liệu intraday/ngày.</p>
+      </article>
+    `;
+    return;
+  }
+
+  const totalScore = validAnalyses.reduce((sum, item) => sum + item.data.score, 0);
+  const overall = totalScore >= 8
+    ? { text: "Tổng quan tích cực nhưng vẫn cần điểm mua", className: "positive" }
+    : totalScore >= 3
+      ? { text: "Có tín hiệu tốt, chưa đủ để hưng phấn", className: "positive" }
+      : totalScore >= -2
+        ? { text: "Tổng quan lẫn lộn, nên kiên nhẫn", className: "neutral" }
+        : { text: "Tổng quan yếu, không nên cố mua", className: "negative" };
+
+  fields.aiBadge.textContent = overall.text;
+  fields.aiBadge.className = overall.className;
+  fields.aiAnalysisBody.innerHTML = `
+    <article class="summary">
+      <span>Tổng hợp AI cho ${escapeHtml(symbol)}</span>
+      <h3 class="${overall.className}">${overall.text}</h3>
+      <p>Phân tích này dựa trên MA20/50/100, RSI 14, MACD 12-26-9, volume và biến động giá ở các khung 1h, 4h, 1 ngày, 1 tuần, 1 tháng. Đây là nhận định kỹ thuật tự động, không phải cam kết lợi nhuận.</p>
+    </article>
+    ${validAnalyses.map(({ label, data }) => `
+      <article>
+        <span>Khung ${label}</span>
+        <h3 class="${data.verdict.className}">${data.verdict.text}</h3>
+        <p>Giá: ${formatOptional(data.latestClose, 2)}. Biến động nến gần nhất: ${formatPercent(data.change)}. Biến động khoảng 20 nến: ${formatPercent(data.change20)}.</p>
+        <p>RSI ${formatOptional(data.latestRsi, 2)}. MACD ${formatOptional(data.latestMacd, 2)} / Signal ${formatOptional(data.latestSignal, 2)} / Hist ${formatOptional(data.latestHistogram, 2)}.</p>
+        <ul class="ai-points">
+          ${data.good.slice(0, 3).map((item) => `<li class="positive">${escapeHtml(item)}</li>`).join("")}
+          ${data.bad.slice(0, 3).map((item) => `<li class="negative">${escapeHtml(item)}</li>`).join("")}
+          ${data.neutral.slice(0, 2).map((item) => `<li class="neutral">${escapeHtml(item)}</li>`).join("")}
+        </ul>
+      </article>
+    `).join("")}
+  `;
+}
+
+async function loadAiAnalysis() {
+  if (!currentSymbol || !currentDailyBars.length) {
+    fields.aiBadge.textContent = "Chưa có dữ liệu";
+    fields.aiBadge.className = "neutral";
+    fields.aiAnalysisBody.innerHTML = `
+      <article>
+        <span>Chưa có dữ liệu</span>
+        <h3>Hãy tra cứu một mã cổ phiếu trước.</h3>
+        <p>AI cần dữ liệu giá để phân tích các khung 1h, 4h, 1 ngày, 1 tuần và 1 tháng.</p>
+      </article>
+    `;
+    return;
+  }
+
+  fields.aiBadge.textContent = "Đang phân tích...";
+  fields.aiBadge.className = "neutral";
+  fields.aiAnalysisBody.innerHTML = `
+    <article>
+      <span>Đang phân tích</span>
+      <h3>Đang tải dữ liệu đa khung cho ${escapeHtml(currentSymbol)}...</h3>
+      <p>Khung 1h và 4h cần gọi thêm dữ liệu intraday từ VCI.</p>
+    </article>
+  `;
+
+  const [oneHourResult, fourHourResult] = await Promise.allSettled([
+    requestVciData(currentSymbol, "1h"),
+    requestVciData(currentSymbol, "4h")
+  ]);
+
+  const analyses = [];
+  if (oneHourResult.status === "fulfilled") {
+    const parsed = parseVciData(oneHourResult.value);
+    const bars = parsed?.bars?.length ? aggregateBarsForPreset(parsed.bars, CHART_PRESETS["1h"]) : [];
+    if (bars.length) analyses.push({ label: "1h", data: scoreTimeframeSignals(bars) });
+  }
+  if (fourHourResult.status === "fulfilled") {
+    const parsed = parseVciData(fourHourResult.value);
+    const bars = parsed?.bars?.length ? aggregateBarsForPreset(parsed.bars, CHART_PRESETS["4h"]) : [];
+    if (bars.length) analyses.push({ label: "4h", data: scoreTimeframeSignals(bars) });
+  }
+
+  [
+    ["1 ngày", "1d"],
+    ["1 tuần", "1w"],
+    ["1 tháng", "1m"]
+  ].forEach(([label, key]) => {
+    const bars = aggregateBarsForPreset(currentDailyBars, CHART_PRESETS[key]);
+    if (bars.length) analyses.push({ label, data: scoreTimeframeSignals(bars) });
+  });
+
+  renderAiCards(currentSymbol, analyses);
+}
+
 function updatePriceColor(price, reference, target) {
   target.classList.remove("positive", "negative", "neutral", "ceiling", "floor");
   const current = toNumber(price);
@@ -1287,11 +1499,17 @@ function renderNews(items, symbol = currentSymbol, companyName = fields.companyN
     ${displayItems.map((item) => {
       const relatedClass = related.includes(item) ? " related" : "";
       const label = related.includes(item) ? `Liên quan ${escapeHtml(symbol || "mã đang xem")}` : "Tin thị trường";
+      const thumbnail = item.thumbnail
+        ? `<img class="news-thumb" src="${escapeHtml(item.thumbnail)}" alt="${escapeHtml(item.title)}" loading="lazy">`
+        : `<div class="news-thumb" aria-hidden="true"></div>`;
       return `
         <article class="${relatedClass.trim()}">
-          <span>${escapeHtml(item.source)} · ${formatNewsDate(item.pubDate)} · ${label}</span>
-          <h3><a href="${escapeHtml(item.link)}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.title)}</a></h3>
-          <p>${escapeHtml(item.description || "Bấm để xem chi tiết bài viết từ nguồn gốc.")}</p>
+          ${thumbnail}
+          <div class="news-content">
+            <span>${escapeHtml(item.source)} · ${formatNewsDate(item.pubDate)} · ${label}</span>
+            <h3><a href="${escapeHtml(item.link)}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.title)}</a></h3>
+            <p>${escapeHtml(item.description || "Bấm để xem chi tiết bài viết từ nguồn gốc.")}</p>
+          </div>
         </article>
       `;
     }).join("")}
@@ -1999,11 +2217,18 @@ tabs.forEach((tab) => {
     if (tab.dataset.tab === "news") {
       loadNews(currentSymbol);
     }
+    if (tab.dataset.tab === "ai") {
+      loadAiAnalysis();
+    }
   });
 });
 
 refreshNewsButton?.addEventListener("click", () => {
   loadNews(currentSymbol);
+});
+
+refreshAiButton?.addEventListener("click", () => {
+  loadAiAnalysis();
 });
 
 copyButton.addEventListener("click", async () => {

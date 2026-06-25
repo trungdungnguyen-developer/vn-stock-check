@@ -109,6 +109,7 @@ h1 {
 .flow-section,
 .history-section,
 .news-section,
+.ai-section,
 .details-grid,
 .fundamental-analysis-section,
 .raw-section {
@@ -722,7 +723,15 @@ strong.neutral {
   background: #ffffff;
 }
 
-.news-section .section-head p {
+.ai-section {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  background: #ffffff;
+}
+
+.news-section .section-head p,
+.ai-section .section-head p {
   margin: 6px 0 0;
   color: var(--muted);
   font-size: var(--font-small);
@@ -735,10 +744,26 @@ strong.neutral {
 }
 
 .news-list article {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  gap: 14px;
+  align-items: start;
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 14px;
   background: #ffffff;
+}
+
+.news-thumb {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 8px;
+  background: var(--soft);
+}
+
+.news-content {
+  min-width: 0;
 }
 
 .news-list article.related {
@@ -780,6 +805,62 @@ strong.neutral {
   margin-top: 12px;
   color: var(--muted);
   font-size: var(--font-small);
+}
+
+.ai-analysis {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.ai-analysis article {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  background: #ffffff;
+}
+
+.ai-analysis article.summary {
+  background: var(--soft);
+  border-color: rgba(136, 0, 133, 0.3);
+}
+
+.ai-analysis span {
+  display: block;
+  color: var(--muted);
+  font-size: var(--font-small);
+  font-weight: 700;
+}
+
+.ai-analysis h3 {
+  margin: 8px 0;
+  font-size: 20px;
+}
+
+.ai-analysis p {
+  margin: 6px 0;
+  line-height: 1.55;
+}
+
+.ai-points {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  line-height: 1.6;
+}
+
+.ai-points .positive {
+  color: var(--green);
+  font-weight: 700;
+}
+
+.ai-points .negative {
+  color: var(--red);
+  font-weight: 700;
+}
+
+.ai-points .neutral {
+  color: var(--orange);
+  font-weight: 700;
 }
 
 .score-analysis {
@@ -895,8 +976,8 @@ pre {
   border-top: 1px solid var(--border);
   color: var(--muted);
   text-align: center;
-  font-size: var(--font-small);
-  font-weight: 700;
+  font-size: 12px;
+  font-weight: 400;
 }
 
 @media (max-width: 860px) {
@@ -944,6 +1025,10 @@ pre {
   .fundamental-analysis {
     grid-template-columns: 1fr;
   }
+
+  .news-list article {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 520px) {
@@ -961,6 +1046,7 @@ pre {
     .flow-section,
   .history-section,
   .news-section,
+  .ai-section,
   .fundamental-analysis-section,
   .details-grid,
   .raw-section {

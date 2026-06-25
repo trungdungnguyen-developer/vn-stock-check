@@ -42,6 +42,7 @@
           <button id="overviewTab" class="tab active" type="button" data-tab="overview" aria-selected="true">Theo dõi</button>
           <button id="scoreTab" class="tab" type="button" data-tab="score" aria-selected="false">Bảng đánh giá</button>
           <button id="newsTab" class="tab" type="button" data-tab="news" aria-selected="false">Tin tức</button>
+          <button id="aiTab" class="tab" type="button" data-tab="ai" aria-selected="false">Phân tích cùng AI</button>
         </nav>
 
         <section id="overviewPanel" class="tab-panel active">
@@ -271,6 +272,28 @@
                 <span>Chưa có dữ liệu</span>
                 <h3>Hãy tra cứu mã cổ phiếu hoặc bấm Cập nhật tin.</h3>
                 <p>App sẽ hiển thị tin liên quan đến mã đang xem và các tin quan trọng của thị trường chứng khoán Việt Nam.</p>
+              </article>
+            </div>
+          </section>
+        </section>
+
+        <section id="aiPanel" class="tab-panel" hidden>
+          <section class="ai-section">
+            <div class="section-head">
+              <div>
+                <h2>Phân tích cùng AI</h2>
+                <p>Nhận định tự động dựa trên dữ liệu thực tế: MA, RSI, MACD, volume và biến động giá theo từng khung thời gian.</p>
+              </div>
+              <div class="chart-actions">
+                <span id="aiBadge">Chưa có dữ liệu</span>
+                <button id="refreshAiButton" type="button" class="secondary">Phân tích lại</button>
+              </div>
+            </div>
+            <div id="aiAnalysisBody" class="ai-analysis">
+              <article>
+                <span>Chưa có dữ liệu</span>
+                <h3>Hãy tra cứu một mã cổ phiếu trước.</h3>
+                <p>Sau đó mở tab này để xem nhận định khung 1h, 4h, 1 ngày, 1 tuần và 1 tháng.</p>
               </article>
             </div>
           </section>

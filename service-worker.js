@@ -1,4 +1,4 @@
-const CACHE_NAME = "stock-tracker-vietnam-app-v27";
+const CACHE_NAME = "stock-tracker-vietnam-app-v28";
 const FILES_TO_CACHE = [
   "./",
   "./index.html",

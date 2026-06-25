@@ -74,6 +74,29 @@ function getTag(item, tag) {
   return match ? decodeXml(match[1]).trim() : "";
 }
 
+function getAttribute(tagText, attribute) {
+  const match = String(tagText || "").match(new RegExp(`${attribute}=["']([^"']+)["']`, "i"));
+  return match ? decodeXml(match[1]).trim() : "";
+}
+
+function getThumbnail(item) {
+  const mediaMatch = item.match(/<media:(?:content|thumbnail)\b[^>]*>/i);
+  if (mediaMatch) {
+    const url = getAttribute(mediaMatch[0], "url");
+    if (url) return url;
+  }
+
+  const enclosureMatch = item.match(/<enclosure\b[^>]*>/i);
+  if (enclosureMatch) {
+    const url = getAttribute(enclosureMatch[0], "url");
+    if (url) return url;
+  }
+
+  const description = getTag(item, "description");
+  const imageMatch = description.match(/<img\b[^>]*>/i);
+  return imageMatch ? getAttribute(imageMatch[0], "src") : "";
+}
+
 function parseRss(xml, sourceName) {
   return [...String(xml || "").matchAll(/<item\b[\s\S]*?<\/item>/gi)]
     .map((match) => {
@@ -83,7 +106,8 @@ function parseRss(xml, sourceName) {
         title: stripHtml(getTag(item, "title")),
         link: stripHtml(getTag(item, "link")),
         pubDate: stripHtml(getTag(item, "pubDate")),
-        description: stripHtml(getTag(item, "description"))
+        description: stripHtml(getTag(item, "description")),
+        thumbnail: getThumbnail(item)
       };
     })
     .filter((item) => item.title && item.link);
