@@ -43,6 +43,14 @@ const fields = {
   companyDescription: document.getElementById("companyDescription"),
   currentPrice: document.getElementById("currentPrice"),
   priceChange: document.getElementById("priceChange"),
+  marketVni: document.getElementById("marketVni"),
+  marketVniChange: document.getElementById("marketVniChange"),
+  marketGold: document.getElementById("marketGold"),
+  marketGoldChange: document.getElementById("marketGoldChange"),
+  marketBitcoin: document.getElementById("marketBitcoin"),
+  marketBitcoinChange: document.getElementById("marketBitcoinChange"),
+  marketOil: document.getElementById("marketOil"),
+  marketOilChange: document.getElementById("marketOilChange"),
   referencePrice: document.getElementById("referencePrice"),
   ceilingPrice: document.getElementById("ceilingPrice"),
   floorPrice: document.getElementById("floorPrice"),
@@ -336,6 +344,74 @@ async function requestFundamentalsData(symbol) {
     throw new Error(`Không tải được chỉ số cơ bản. HTTP ${response.status}`);
   }
   return response.json();
+}
+
+async function requestYahooQuote(symbol) {
+  const raw = await requestJson(`/v8/finance/chart/${encodeURIComponent(symbol)}?range=1d&interval=5m`);
+  const parsed = parseYahooChart(raw);
+  if (!parsed?.quote) throw new Error(`Không có dữ liệu ${symbol}`);
+  return parsed.quote;
+}
+
+function formatMarketValue(value, digits = 2) {
+  const number = toNumber(value);
+  if (number === null) return "-";
+  return number.toLocaleString("vi-VN", {
+    maximumFractionDigits: digits,
+    minimumFractionDigits: digits
+  });
+}
+
+function updateMarketCell(valueTarget, changeTarget, quote, options = {}) {
+  const price = toNumber(quote?.price);
+  const changePercent = toNumber(quote?.changePercent);
+  valueTarget.textContent = price === null ? "-" : `${formatMarketValue(price, options.digits ?? 2)}${options.suffix || ""}`;
+  changeTarget.textContent = changePercent === null ? "-" : formatPercent(changePercent);
+  changeTarget.classList.remove("positive", "negative", "neutral");
+  const className = valueClass(changePercent);
+  if (className) changeTarget.classList.add(className);
+}
+
+async function loadMarketStrip() {
+  const loaders = [
+    {
+      valueTarget: fields.marketVni,
+      changeTarget: fields.marketVniChange,
+      options: { digits: 2 },
+      load: async () => parseVciData(await requestVciData("VNINDEX", "1d"))?.quote
+    },
+    {
+      valueTarget: fields.marketGold,
+      changeTarget: fields.marketGoldChange,
+      options: { digits: 2 },
+      load: () => requestYahooQuote("GC=F")
+    },
+    {
+      valueTarget: fields.marketBitcoin,
+      changeTarget: fields.marketBitcoinChange,
+      options: { digits: 0 },
+      load: () => requestYahooQuote("BTC-USD")
+    },
+    {
+      valueTarget: fields.marketOil,
+      changeTarget: fields.marketOilChange,
+      options: { digits: 2 },
+      load: () => requestYahooQuote("CL=F")
+    }
+  ];
+
+  await Promise.all(loaders.map(async (item) => {
+    if (!item.valueTarget || !item.changeTarget) return;
+    try {
+      const quote = await item.load();
+      updateMarketCell(item.valueTarget, item.changeTarget, quote, item.options);
+    } catch {
+      item.valueTarget.textContent = "-";
+      item.changeTarget.textContent = "Không tải được";
+      item.changeTarget.classList.remove("positive", "negative");
+      item.changeTarget.classList.add("neutral");
+    }
+  }));
 }
 
 function getFirstRecord(data) {
@@ -2248,6 +2324,8 @@ copyButton.addEventListener("click", async () => {
 drawChart([]);
 drawLineCanvas(rsiCanvas, []);
 drawMacdCanvas(macdCanvas, { macd: [], signal: [], histogram: [] });
+loadMarketStrip();
+setInterval(loadMarketStrip, 60000);
 symbolInput.focus();
 
 if ("serviceWorker" in navigator) {

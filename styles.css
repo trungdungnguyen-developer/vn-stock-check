@@ -212,6 +212,53 @@ button:hover {
   font-size: var(--font-small);
 }
 
+.market-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.market-strip article {
+  display: grid;
+  gap: 4px;
+  min-height: 76px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: #ffffff;
+}
+
+.market-strip span {
+  color: var(--muted);
+  font-size: var(--font-small);
+  font-weight: 800;
+}
+
+.market-strip strong {
+  color: var(--text);
+  font-size: 20px;
+  line-height: 1.1;
+}
+
+.market-strip em {
+  font-style: normal;
+  font-size: var(--font-small);
+  font-weight: 800;
+}
+
+.market-strip em.positive {
+  color: var(--green);
+}
+
+.market-strip em.negative {
+  color: var(--red);
+}
+
+.market-strip em.neutral {
+  color: var(--orange);
+}
+
 .message {
   min-height: 22px;
   margin-bottom: 0;
@@ -1002,6 +1049,10 @@ pre {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .market-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .flow-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1062,6 +1113,10 @@ pre {
   }
 
   .metrics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .market-strip {
     grid-template-columns: 1fr;
   }
 
