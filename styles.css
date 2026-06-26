@@ -214,49 +214,104 @@ button:hover {
 
 .market-strip {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
-  margin-top: 6px;
+  grid-template-columns: minmax(220px, 1.35fr) repeat(3, minmax(150px, 1fr));
+  gap: 12px;
+  align-items: stretch;
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid rgba(136, 0, 133, 0.16);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.5);
 }
 
-.market-strip article {
+.market-strip-head {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  padding: 0 2px;
+}
+
+.market-strip-head span {
+  color: var(--primary);
+  font-size: var(--font-small);
+  font-weight: 800;
+}
+
+.market-strip-head small {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.market-card {
   display: grid;
-  gap: 4px;
-  min-height: 76px;
+  grid-template-columns: 1fr auto;
+  grid-template-areas:
+    "label change"
+    "value change";
+  gap: 6px 10px;
+  align-items: center;
+  min-height: 74px;
   border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 10px 12px;
+  padding: 12px 14px;
   background: #ffffff;
+  box-shadow: 0 8px 22px rgba(136, 0, 133, 0.06);
 }
 
-.market-strip span {
+.market-card-main {
+  background: linear-gradient(135deg, #ffffff, #fff6ff);
+  border-color: rgba(136, 0, 133, 0.28);
+}
+
+.market-card span {
+  grid-area: label;
   color: var(--muted);
   font-size: var(--font-small);
   font-weight: 800;
 }
 
-.market-strip strong {
+.market-card strong {
+  grid-area: value;
   color: var(--text);
-  font-size: 20px;
+  font-size: 22px;
   line-height: 1.1;
 }
 
-.market-strip em {
+.market-card-main strong {
+  color: var(--primary);
+  font-size: 28px;
+}
+
+.market-card em {
+  grid-area: change;
+  align-self: center;
+  justify-self: end;
+  min-width: 66px;
+  border-radius: 999px;
+  padding: 6px 8px;
+  background: var(--soft);
+  text-align: center;
   font-style: normal;
   font-size: var(--font-small);
   font-weight: 800;
 }
 
-.market-strip em.positive {
+.market-card em.positive {
   color: var(--green);
+  background: rgba(34, 189, 63, 0.1);
 }
 
-.market-strip em.negative {
+.market-card em.negative {
   color: var(--red);
+  background: rgba(175, 42, 1, 0.1);
 }
 
-.market-strip em.neutral {
+.market-card em.neutral {
   color: var(--orange);
+  background: rgba(224, 140, 22, 0.12);
 }
 
 .message {
