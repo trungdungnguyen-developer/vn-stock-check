@@ -111,6 +111,7 @@ h1 {
 .news-section,
 .ai-section,
 .trade-section,
+.scanner-section,
 .details-grid,
 .fundamental-analysis-section,
 .raw-section {
@@ -1065,23 +1066,78 @@ strong.neutral {
 
 .scanner-section {
   display: grid;
-  gap: 14px;
+  gap: 18px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(247, 232, 247, 0.72), rgba(255, 255, 255, 0.96) 180px),
+    #ffffff;
+}
+
+.scanner-section > .section-head {
+  align-items: flex-start;
+  gap: 18px;
+  margin: -4px -4px 2px;
+  padding: 18px;
+  border: 1px solid rgba(136, 0, 133, 0.16);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 10px 26px rgba(136, 0, 133, 0.08);
+}
+
+.scanner-section > .section-head h2 {
+  margin-bottom: 6px;
+  color: var(--primary);
+  font-size: 26px;
+}
+
+.scanner-section > .section-head p {
+  max-width: 760px;
+  margin-bottom: 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+#scannerBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  border-radius: 999px;
+  padding: 7px 12px;
+  background: var(--soft);
+  color: var(--primary);
+  font-size: var(--font-small);
+  font-weight: 800;
 }
 
 .scanner-controls {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid rgba(136, 0, 133, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.72);
 }
 
 .scanner-controls button {
   border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 10px 14px;
+  padding: 11px 16px;
   background: #ffffff;
   color: var(--primary);
   font-weight: 800;
   cursor: pointer;
+  box-shadow: 0 5px 14px rgba(136, 0, 133, 0.06);
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+
+.scanner-controls button:hover {
+  transform: translateY(-1px);
+  border-color: rgba(136, 0, 133, 0.38);
 }
 
 .scanner-controls button.active {
@@ -1093,7 +1149,7 @@ strong.neutral {
 .scanner-summary {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  gap: 14px;
 }
 
 .scanner-summary article,
@@ -1101,12 +1157,23 @@ strong.neutral {
 .scanner-card {
   border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 14px;
+  padding: 18px;
   background: #ffffff;
 }
 
 .scanner-summary article {
-  background: var(--soft);
+  position: relative;
+  overflow: hidden;
+  background: #ffffff;
+  box-shadow: 0 8px 22px rgba(136, 0, 133, 0.06);
+}
+
+.scanner-summary article::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: var(--primary);
 }
 
 .scanner-summary span,
@@ -1122,7 +1189,8 @@ strong.neutral {
   display: block;
   margin-top: 6px;
   color: var(--primary);
-  font-size: 22px;
+  font-size: 24px;
+  line-height: 1.25;
 }
 
 .scanner-summary p,
@@ -1135,13 +1203,161 @@ strong.neutral {
 
 .scanner-results {
   display: grid;
+  gap: 18px;
+  min-width: 0;
+}
+
+.scanner-trade-box {
+  display: grid;
   gap: 14px;
+  padding: 16px;
+  border: 1px solid rgba(34, 189, 63, 0.24);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(34, 189, 63, 0.11), rgba(136, 0, 133, 0.08)),
+    #ffffff;
+}
+
+.scanner-trade-box > article,
+.trade-pick-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  background: #ffffff;
+}
+
+.scanner-trade-box > article {
+  box-shadow: 0 10px 28px rgba(34, 189, 63, 0.08);
+}
+
+.trade-pick-hero {
+  position: relative;
+  overflow: hidden;
+}
+
+.trade-pick-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 5px;
+  background: var(--green);
+}
+
+.trade-pick-hero > span,
+.scanner-trade-box > article > span {
+  display: block;
+  color: var(--muted);
+  font-size: var(--font-small);
+  font-weight: 800;
+}
+
+.trade-pick-hero div,
+.trade-pick-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.trade-pick-hero h3 {
+  margin: 8px 0 6px;
+  font-size: 30px;
+  line-height: 1.1;
+}
+
+.trade-pick-hero strong,
+.trade-pick-title strong {
+  font-size: 24px;
+}
+
+.trade-pick-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 12px;
+}
+
+.trade-pick-card {
+  min-width: 0;
+}
+
+.trade-pick-title span {
+  color: var(--text);
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.trade-pick-card p,
+.trade-pick-hero p,
+.scanner-trade-box > article p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.trade-pick-card h4 {
+  margin: 16px 0 8px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(136, 0, 133, 0.14);
+  color: var(--primary);
+  font-size: 14px;
+}
+
+.trade-pick-checks {
+  display: grid;
+  gap: 6px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.trade-pick-checks li {
+  display: grid;
+  grid-template-columns: 18px 112px 1fr;
+  gap: 8px;
+  align-items: start;
+  padding: 7px 0;
+  border-top: 1px solid rgba(234, 214, 234, 0.75);
+  font-size: 12px;
+}
+
+.risk-checks li {
+  grid-template-columns: 18px 140px 1fr;
+}
+
+.trade-pick-checks b {
+  font-weight: 900;
+}
+
+.trade-pick-checks span {
+  color: var(--text);
+  font-weight: 800;
+}
+
+.trade-pick-checks em {
+  color: var(--muted);
+  font-style: normal;
+  line-height: 1.45;
 }
 
 .scanner-card-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
+  gap: 14px;
+}
+
+.scanner-card {
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 10px 26px rgba(136, 0, 133, 0.07);
+}
+
+.scanner-card::after {
+  content: "";
+  position: absolute;
+  inset: auto 18px 0 18px;
+  height: 3px;
+  border-radius: 999px 999px 0 0;
+  background: linear-gradient(90deg, var(--primary), var(--green));
 }
 
 .scanner-card div:first-of-type {
@@ -1154,12 +1370,15 @@ strong.neutral {
 
 .scanner-card h3 {
   margin: 0;
-  font-size: 24px;
+  color: var(--text);
+  font-size: 26px;
+  line-height: 1.1;
 }
 
 .scanner-card strong {
   color: var(--primary);
-  font-size: 22px;
+  font-size: 24px;
+  line-height: 1.1;
 }
 
 .scanner-tags {
@@ -1171,7 +1390,7 @@ strong.neutral {
 
 .scanner-tags em {
   border-radius: 999px;
-  padding: 5px 8px;
+  padding: 6px 9px;
   background: #f7e8f7;
   color: var(--primary);
   font-size: 12px;
@@ -1179,11 +1398,27 @@ strong.neutral {
   font-weight: 800;
 }
 
+.scanner-table-wrap {
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #ffffff;
+  box-shadow: 0 8px 22px rgba(136, 0, 133, 0.05);
+}
+
 .scanner-table-wrap table {
   min-width: 920px;
 }
 
+.scanner-table-wrap th {
+  background: #f3def3;
+}
+
 .scanner-results .positive {
+  color: var(--green);
+  font-weight: 800;
+}
+
+.scanner-trade-box .positive {
   color: var(--green);
   font-weight: 800;
 }
@@ -1193,7 +1428,17 @@ strong.neutral {
   font-weight: 800;
 }
 
+.scanner-trade-box .negative {
+  color: var(--red);
+  font-weight: 800;
+}
+
 .scanner-results .neutral {
+  color: var(--orange);
+  font-weight: 800;
+}
+
+.scanner-trade-box .neutral {
   color: var(--orange);
   font-weight: 800;
 }
@@ -1368,12 +1613,17 @@ pre {
   .trade-grid,
   .trade-plan,
   .scanner-summary,
+  .trade-pick-grid,
   .scanner-card-grid {
     grid-template-columns: 1fr;
   }
 
   .news-list article {
     grid-template-columns: 1fr;
+  }
+
+  .scanner-section > .section-head {
+    display: grid;
   }
 }
 
@@ -1385,20 +1635,50 @@ pre {
   .search-panel,
   .quote-card,
   .metrics-grid,
-    .chart-section,
-    .indicator-grid,
-    .change-section,
-    .recommendation-section,
-    .flow-section,
+  .chart-section,
+  .indicator-grid,
+  .change-section,
+  .recommendation-section,
+  .flow-section,
   .history-section,
   .news-section,
   .ai-section,
   .trade-section,
+  .scanner-section,
   .fundamental-analysis-section,
   .details-grid,
   .raw-section {
     margin-left: 14px;
     margin-right: 14px;
+  }
+
+  .scanner-section {
+    padding: 14px;
+  }
+
+  .scanner-section > .section-head {
+    margin: 0;
+    padding: 14px;
+  }
+
+  .scanner-section > .section-head h2 {
+    font-size: 22px;
+  }
+
+  .scanner-controls {
+    padding: 8px;
+  }
+
+  .scanner-controls button {
+    flex: 1 1 100%;
+  }
+
+  .trade-pick-checks li {
+    grid-template-columns: 18px 1fr;
+  }
+
+  .trade-pick-checks em {
+    grid-column: 2;
   }
 
   .tabs,

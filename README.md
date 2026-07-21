@@ -45,6 +45,7 @@ CoinMarketCap chưa bật mặc định vì API chính thức thường cần AP
 - Tab tin tức thị trường từ RSS CafeF và VnExpress.
 - Tab phân tích cùng AI dựa trên dữ liệu kỹ thuật hiện có trong app.
 - Tab Market Scanner lọc nhanh coin và cổ phiếu Việt Nam theo thanh khoản, biến động, xu hướng 1D/4H, relative strength và volume bất thường để tạo watchlist 10-20 mã đáng phân tích.
+- Trong Market Scanner có ô Trade Analysis chọn 1-3 coin tốt nhất để tìm entry theo 4H, 1H, 30m với momentum, RSI, MACD, ADX, BOS/CHOCH, liquidity, Order Block, FVG, volume và RR. Phần này có thêm Giai đoạn 4 xác nhận entry trên 15m/5m và Giai đoạn 5 quản trị rủi ro trước khi bấm Buy.
 - Giá trị mua/bán nước ngoài và ước tính trong nước lấy từ dữ liệu bảng giá VCI khi nguồn trả về.
 
 ## Đưa lên website

@@ -44,6 +44,7 @@ const VCI_RANGE_CONFIG = {
 
 const CRYPTO_RANGE_CONFIG = {
   "5m": { binanceInterval: "5m", okxBar: "5m", limit: 500 },
+  "15m": { binanceInterval: "15m", okxBar: "15m", limit: 500 },
   "30m": { binanceInterval: "30m", okxBar: "30m", limit: 500 },
   "1h": { binanceInterval: "1h", okxBar: "1H", limit: 500 },
   "2h": { binanceInterval: "2h", okxBar: "2H", limit: 500 },

@@ -103,6 +103,7 @@ const fields = {
   tradeAnalysisBody: document.getElementById("tradeAnalysisBody"),
   scannerBadge: document.getElementById("scannerBadge"),
   scannerSummary: document.getElementById("scannerSummary"),
+  scannerTradeBox: document.getElementById("scannerTradeBox"),
   scannerBody: document.getElementById("scannerBody"),
   fundamentalBadge: document.getElementById("fundamentalBadge"),
   fundamentalAnalysis: document.getElementById("fundamentalAnalysis"),
@@ -1511,6 +1512,19 @@ function isStrongGreenCandle(bars) {
   return bodyRatio >= 0.62 || engulfing;
 }
 
+function isHammerCandle(bar) {
+  const open = toNumber(bar?.open);
+  const close = toNumber(bar?.close);
+  const high = toNumber(bar?.high);
+  const low = toNumber(bar?.low);
+  if (open === null || close === null || high === null || low === null) return false;
+  const body = Math.abs(close - open);
+  const range = high - low || 1;
+  const lowerWick = Math.min(open, close) - low;
+  const upperWick = high - Math.max(open, close);
+  return lowerWick >= body * 2 && upperWick <= range * 0.35 && body / range <= 0.45;
+}
+
 function hasHigherLow(bars) {
   if (bars.length < 12) return false;
   const recentLow = Math.min(...bars.slice(-5).map((bar) => toNumber(bar.low)).filter((value) => value !== null));
@@ -1782,6 +1796,276 @@ function calculateAtr(points, period = 14) {
   return atr;
 }
 
+function calculateAdx(points, period = 14) {
+  const adx = Array(points.length).fill(null);
+  const plusDi = Array(points.length).fill(null);
+  const minusDi = Array(points.length).fill(null);
+  if (points.length <= period * 2) return { adx, plusDi, minusDi };
+
+  const trueRanges = Array(points.length).fill(0);
+  const plusDm = Array(points.length).fill(0);
+  const minusDm = Array(points.length).fill(0);
+
+  for (let index = 1; index < points.length; index += 1) {
+    const current = points[index];
+    const previous = points[index - 1];
+    const upMove = current.high - previous.high;
+    const downMove = previous.low - current.low;
+    trueRanges[index] = Math.max(
+      current.high - current.low,
+      Math.abs(current.high - previous.close),
+      Math.abs(current.low - previous.close)
+    );
+    plusDm[index] = upMove > downMove && upMove > 0 ? upMove : 0;
+    minusDm[index] = downMove > upMove && downMove > 0 ? downMove : 0;
+  }
+
+  let trSmooth = trueRanges.slice(1, period + 1).reduce((sum, value) => sum + value, 0);
+  let plusSmooth = plusDm.slice(1, period + 1).reduce((sum, value) => sum + value, 0);
+  let minusSmooth = minusDm.slice(1, period + 1).reduce((sum, value) => sum + value, 0);
+  const dx = Array(points.length).fill(null);
+
+  for (let index = period; index < points.length; index += 1) {
+    if (index > period) {
+      trSmooth = trSmooth - trSmooth / period + trueRanges[index];
+      plusSmooth = plusSmooth - plusSmooth / period + plusDm[index];
+      minusSmooth = minusSmooth - minusSmooth / period + minusDm[index];
+    }
+    plusDi[index] = trSmooth ? (plusSmooth / trSmooth) * 100 : null;
+    minusDi[index] = trSmooth ? (minusSmooth / trSmooth) * 100 : null;
+    const sumDi = (plusDi[index] || 0) + (minusDi[index] || 0);
+    dx[index] = sumDi ? (Math.abs((plusDi[index] || 0) - (minusDi[index] || 0)) / sumDi) * 100 : null;
+  }
+
+  const firstDx = dx.slice(period, period * 2).filter((value) => value !== null);
+  if (firstDx.length === period) {
+    adx[period * 2 - 1] = average(firstDx);
+    for (let index = period * 2; index < points.length; index += 1) {
+      adx[index] = dx[index] === null ? adx[index - 1] : ((adx[index - 1] || 0) * (period - 1) + dx[index]) / period;
+    }
+  }
+
+  return { adx, plusDi, minusDi };
+}
+
+function swingHigh(bars, lookback = 24, excludeRecent = 3) {
+  const values = bars
+    .slice(Math.max(0, bars.length - lookback - excludeRecent), Math.max(0, bars.length - excludeRecent))
+    .map((bar) => toNumber(bar.high))
+    .filter((value) => value !== null);
+  return values.length ? Math.max(...values) : null;
+}
+
+function swingLow(bars, lookback = 24, excludeRecent = 3) {
+  const values = bars
+    .slice(Math.max(0, bars.length - lookback - excludeRecent), Math.max(0, bars.length - excludeRecent))
+    .map((bar) => toNumber(bar.low))
+    .filter((value) => value !== null);
+  return values.length ? Math.min(...values) : null;
+}
+
+function detectBos(bars) {
+  const latest = bars[bars.length - 1] || {};
+  const previousSwingHigh = swingHigh(bars, 30, 4);
+  return previousSwingHigh !== null && latest.close > previousSwingHigh;
+}
+
+function detectChoch(bars) {
+  if (bars.length < 45) return false;
+  const latest = bars[bars.length - 1] || {};
+  const ema20 = calculateEmaForBars(bars, 20);
+  const previousEma20 = ema20[ema20.length - 8];
+  const latestEma20 = latestNonNull(ema20);
+  const previousSwingHigh = swingHigh(bars, 36, 5);
+  const recentLowerLow = Math.min(...bars.slice(-18, -6).map((bar) => bar.low)) < Math.min(...bars.slice(-36, -18).map((bar) => bar.low));
+  return Boolean(recentLowerLow && latest.close > latestEma20 && previousEma20 && bars[bars.length - 8].close < previousEma20 && previousSwingHigh && latest.close > previousSwingHigh * 0.995);
+}
+
+function detectBullishOrderBlock(bars) {
+  if (bars.length < 28) return { pass: false, distance: null };
+  const recent = bars.slice(-24);
+  const latest = bars[bars.length - 1] || {};
+  for (let index = recent.length - 4; index >= 1; index -= 1) {
+    const candle = recent[index];
+    const nextBars = recent.slice(index + 1, Math.min(recent.length, index + 6));
+    const impulseHigh = Math.max(...nextBars.map((bar) => bar.high));
+    const redCandle = candle.close < candle.open;
+    const impulse = candle.high && impulseHigh > candle.high * 1.018;
+    if (redCandle && impulse) {
+      const zoneMid = (candle.open + candle.low) / 2;
+      const distance = latest.close ? Math.abs((latest.close - zoneMid) / latest.close) * 100 : null;
+      return { pass: distance !== null && distance <= 5, distance };
+    }
+  }
+  return { pass: false, distance: null };
+}
+
+function detectUnfilledFvg(bars) {
+  if (bars.length < 8) return { pass: false, distance: null };
+  const latest = bars[bars.length - 1] || {};
+  for (let index = bars.length - 2; index >= Math.max(2, bars.length - 34); index -= 1) {
+    const previousTwo = bars[index - 2];
+    const current = bars[index];
+    if (current.low > previousTwo.high) {
+      const gapLow = previousTwo.high;
+      const gapHigh = current.low;
+      const filled = bars.slice(index + 1).some((bar) => bar.low <= gapLow);
+      const distance = latest.close ? Math.abs((latest.close - gapHigh) / latest.close) * 100 : null;
+      if (!filled) return { pass: distance !== null && distance <= 7, distance };
+    }
+  }
+  return { pass: false, distance: null };
+}
+
+function hasConfirmedVolume(bars, multiplier = 1.35) {
+  const latestVolume = toNumber(bars[bars.length - 1]?.volume);
+  const avgVolume20 = average(bars.slice(-21, -1).map((bar) => bar.volume));
+  return {
+    pass: latestVolume !== null && avgVolume20 && latestVolume >= avgVolume20 * multiplier,
+    ratio: latestVolume !== null && avgVolume20 ? latestVolume / avgVolume20 : null
+  };
+}
+
+function calculateRiskReward(bars) {
+  const latest = bars[bars.length - 1] || {};
+  const entry = latest.close;
+  const support = swingLow(bars, 30, 1);
+  const resistance = swingHigh(bars, 50, 1);
+  if (!entry || !support || !resistance || entry <= support) return { pass: false, rr: null };
+  const stopLoss = Math.max(support, entry * 0.98);
+  const risk = entry - stopLoss;
+  const target = Math.max(resistance, entry * 1.04);
+  const reward = target - entry;
+  const rr = risk > 0 ? reward / risk : null;
+  return { pass: rr !== null && rr >= 2, rr, entry, stopLoss, target, support, resistance, riskPercent: risk > 0 ? (risk / entry) * 100 : null };
+}
+
+function checkMomentum(bars4h, bars1h) {
+  const ema20_4h = latestNonNull(calculateEmaForBars(bars4h, 20));
+  const ema50_4h = latestNonNull(calculateEmaForBars(bars4h, 50));
+  const ema20_1h = latestNonNull(calculateEmaForBars(bars1h, 20));
+  const latest4h = bars4h[bars4h.length - 1] || {};
+  const latest1h = bars1h[bars1h.length - 1] || {};
+  return latest4h.close > ema20_4h && ema20_4h > ema50_4h && latest1h.close > ema20_1h;
+}
+
+function buildTradeAnalysisForCoin(symbol, quote, bars4h, bars1h, bars30m) {
+  const normalized4h = normalizeTechnicalBars(bars4h);
+  const normalized1h = normalizeTechnicalBars(bars1h);
+  const normalized30m = normalizeTechnicalBars(bars30m);
+  const rsi4h = latestNonNull(calculateRsi(normalized4h));
+  const rsi1h = latestNonNull(calculateRsi(normalized1h));
+  const rsi30m = latestNonNull(calculateRsi(normalized30m));
+  const macd1h = calculateMacd(normalized1h);
+  const latestMacd = latestNonNull(macd1h.macd);
+  const latestSignal = latestNonNull(macd1h.signal);
+  const latestHistogram = latestNonNull(macd1h.histogram);
+  const previousHistogram = macd1h.histogram.slice().reverse().find((value, index) => index > 0 && value !== null);
+  const adxData = calculateAdx(normalized1h);
+  const latestAdx = latestNonNull(adxData.adx);
+  const latestPlusDi = latestNonNull(adxData.plusDi);
+  const latestMinusDi = latestNonNull(adxData.minusDi);
+  const liquidity = scannerLiquidityScore("crypto", quote, bars4h[bars4h.length - 1]);
+  const orderBlock = detectBullishOrderBlock(normalized1h);
+  const fvg = detectUnfilledFvg(normalized1h);
+  const volume = hasConfirmedVolume(bars30m);
+  const rr = calculateRiskReward(normalized1h);
+
+  const checks = [
+    { label: "Momentum 4H/1H", pass: checkMomentum(normalized4h, normalized1h), detail: "Giá trên EMA20 và EMA20 4H trên EMA50." },
+    { label: "RSI", pass: rsi4h >= 50 && rsi1h >= 50 && rsi30m >= 45 && rsi30m <= 70, detail: `4H ${formatOptional(rsi4h, 1)} · 1H ${formatOptional(rsi1h, 1)} · 30m ${formatOptional(rsi30m, 1)}` },
+    { label: "MACD", pass: latestMacd > latestSignal && latestHistogram > 0 && (previousHistogram === undefined || latestHistogram >= previousHistogram * 0.75), detail: `MACD ${formatOptional(latestMacd, 4)} / Signal ${formatOptional(latestSignal, 4)}` },
+    { label: "ADX", pass: latestAdx >= 18 && latestPlusDi > latestMinusDi, detail: `ADX ${formatOptional(latestAdx, 1)} · +DI ${formatOptional(latestPlusDi, 1)} · -DI ${formatOptional(latestMinusDi, 1)}` },
+    { label: "BOS", pass: detectBos(normalized1h), detail: "Close 1H vượt swing high gần nhất." },
+    { label: "CHOCH", pass: detectChoch(normalized1h), detail: "Có dấu hiệu đổi tính chất từ giảm/yếu sang hồi phục." },
+    { label: "Liquidity", pass: liquidity.value >= 10_000_000 && (liquidity.spread === null || liquidity.spread <= 0.2), detail: `Volume 24h ${formatLargeNumber(liquidity.value)} USD · Spread ${formatPercent(liquidity.spread)}` },
+    { label: "Order Block", pass: orderBlock.pass, detail: orderBlock.distance === null ? "Chưa thấy OB rõ." : `Giá cách vùng OB khoảng ${formatPercent(orderBlock.distance)}` },
+    { label: "FVG", pass: fvg.pass, detail: fvg.distance === null ? "Chưa thấy FVG chưa lấp." : `Giá cách FVG khoảng ${formatPercent(fvg.distance)}` },
+    { label: "Volume + RR", pass: volume.pass && rr.pass, detail: `Volume x${volume.ratio ? formatNumber(volume.ratio, 2) : "-"} · RR ${rr.rr ? formatNumber(rr.rr, 2) + " : 1" : "-"}` }
+  ];
+
+  const passed = checks.filter((item) => item.pass).length;
+  return {
+    symbol,
+    passed,
+    total: checks.length,
+    allowed: passed >= 7,
+    checks,
+    rr,
+    summary: passed >= 8
+      ? "Được phép tìm Entry"
+      : passed >= 7
+        ? "Có thể tìm Entry nhưng cần xác nhận thêm"
+        : "Chưa đủ điều kiện giao dịch"
+  };
+}
+
+function detectBreakRetest(bars15m, bars5m) {
+  const normalized15m = normalizeTechnicalBars(bars15m);
+  const normalized5m = normalizeTechnicalBars(bars5m);
+  const latest15m = normalized15m[normalized15m.length - 1] || {};
+  const latest5m = normalized5m[normalized5m.length - 1] || {};
+  const level = swingHigh(normalized15m, 36, 4);
+  const breakPass = level !== null && latest15m.close > level;
+  const recentRetest = level !== null && normalized5m.slice(-10).some((bar) => bar.low <= level * 1.004 && bar.close >= level * 0.996);
+  return {
+    level,
+    breakPass,
+    retestPass: breakPass && recentRetest,
+    latest5m
+  };
+}
+
+function buildEntryConfirmationForCoin(bars15m, bars5m) {
+  const normalized15m = normalizeTechnicalBars(bars15m);
+  const normalized5m = normalizeTechnicalBars(bars5m);
+  const breakRetest = detectBreakRetest(bars15m, bars5m);
+  const latest5m = normalized5m[normalized5m.length - 1] || {};
+  const volume = hasConfirmedVolume(bars5m, 1.5);
+  const bullishCandle = isStrongGreenCandle(normalized5m);
+  const hammer = isHammerCandle(latest5m);
+  const checks = [
+    { label: "Break 15m", pass: breakRetest.breakPass, detail: breakRetest.level ? `Close 15m vượt vùng ${formatOptional(breakRetest.level, 4)}` : "Chưa có swing high rõ để xác nhận break." },
+    { label: "Retest 5m", pass: breakRetest.retestPass, detail: breakRetest.level ? `Giá retest quanh ${formatOptional(breakRetest.level, 4)}` : "Chưa có vùng retest rõ." },
+    { label: "Bullish Engulfing", pass: bullishCandle, detail: bullishCandle ? "Có nến xanh mạnh/engulfing trên 5m." : "Chưa có nến engulfing đủ rõ." },
+    { label: "Hammer", pass: hammer, detail: hammer ? "Có hammer/rút chân trên 5m." : "Chưa thấy hammer đẹp." },
+    { label: "Volume Spike", pass: volume.pass, detail: `Volume 5m x${volume.ratio ? formatNumber(volume.ratio, 2) : "-"} so với TB20.` },
+    { label: "Delta dương", pass: false, detail: "Chưa có dữ liệu order flow/delta thật từ nguồn hiện tại." }
+  ];
+  const passed = checks.filter((item) => item.pass).length;
+  return {
+    passed,
+    total: checks.length,
+    confirmed: breakRetest.breakPass && breakRetest.retestPass && (bullishCandle || hammer) && volume.pass,
+    checks,
+    note: "Chỉ vào lệnh khi có xác nhận. Không mua chỉ vì giá đang tăng."
+  };
+}
+
+function buildRiskManagementForCoin(tradeAnalysis, entryConfirmation) {
+  const rr = tradeAnalysis.rr || {};
+  const riskPerTrade = rr.entry && rr.stopLoss ? "0,5-1% tổng tài khoản" : "-";
+  const positionFormula = rr.entry && rr.stopLoss
+    ? "Vị thế = số tiền rủi ro / (Entry - Stop Loss)"
+    : "-";
+  const checks = [
+    { label: "Điểm vào ở đâu?", pass: entryConfirmation.confirmed && rr.entry, detail: rr.entry ? `Entry tham chiếu ${formatOptional(rr.entry, 4)}` : "Chưa có entry cụ thể." },
+    { label: "Stop Loss ở đâu?", pass: rr.stopLoss && rr.stopLoss < rr.entry, detail: rr.stopLoss ? `Dưới hỗ trợ/OB: ${formatOptional(rr.stopLoss, 4)}` : "Chưa xác định stop loss." },
+    { label: "Take Profit ở đâu?", pass: rr.target && rr.target > rr.entry, detail: rr.target ? `Theo kháng cự/RR: ${formatOptional(rr.target, 4)}` : "Chưa xác định take profit." },
+    { label: "RR đạt bao nhiêu?", pass: rr.rr >= 2, detail: rr.rr ? `${formatNumber(rr.rr, 2)} : 1${rr.rr >= 3 ? " · ưu tiên tốt" : ""}` : "Chưa tính được RR." },
+    { label: "Rủi ro mỗi lệnh?", pass: Boolean(riskPerTrade !== "-"), detail: riskPerTrade },
+    { label: "Kích thước vị thế?", pass: Boolean(positionFormula !== "-"), detail: positionFormula }
+  ];
+  const passed = checks.filter((item) => item.pass).length;
+  return {
+    passed,
+    total: checks.length,
+    approved: checks.every((item) => item.pass),
+    checks,
+    warning: "Nếu không trả lời được một trong các câu hỏi trên thì không giao dịch."
+  };
+}
+
 function scannerPercentChange(bars, periods) {
   if (!bars?.length || bars.length <= periods) return null;
   const latest = toNumber(bars[bars.length - 1].close);
@@ -1904,11 +2188,15 @@ async function runWithConcurrency(items, limit, worker) {
 
 async function loadScannerCandidate(symbol, type, baseDailyBars) {
   if (type === "crypto") {
-    const [daily, fourHour] = await Promise.all([
+    const [daily, fourHour, oneHour, thirtyMinute, fifteenMinute, fiveMinute] = await Promise.all([
       requestCryptoData(symbol, "2y"),
-      requestCryptoData(symbol, "4h")
+      requestCryptoData(symbol, "4h"),
+      requestCryptoData(symbol, "1h"),
+      requestCryptoData(symbol, "30m"),
+      requestCryptoData(symbol, "15m"),
+      requestCryptoData(symbol, "5m")
     ]);
-    return analyzeScannerCandidate({
+    const candidate = analyzeScannerCandidate({
       symbol,
       type,
       source: daily.source,
@@ -1917,6 +2205,20 @@ async function loadScannerCandidate(symbol, type, baseDailyBars) {
       fourHourBars: fourHour.bars,
       baseDailyBars
     });
+    if (fourHour?.bars?.length >= 80 && oneHour?.bars?.length >= 80 && thirtyMinute?.bars?.length >= 50) {
+      candidate.tradeAnalysis = buildTradeAnalysisForCoin(symbol, daily.quote, fourHour.bars, oneHour.bars, thirtyMinute.bars);
+      if (fifteenMinute?.bars?.length >= 40 && fiveMinute?.bars?.length >= 40) {
+        candidate.entryConfirmation = buildEntryConfirmationForCoin(fifteenMinute.bars, fiveMinute.bars);
+        candidate.riskManagement = buildRiskManagementForCoin(candidate.tradeAnalysis, candidate.entryConfirmation);
+        candidate.tradeAnalysis.finalAllowed = candidate.tradeAnalysis.allowed && candidate.entryConfirmation.confirmed && candidate.riskManagement.approved;
+        candidate.tradeAnalysis.summary = candidate.tradeAnalysis.finalAllowed
+          ? "Được phép tìm Entry"
+          : candidate.tradeAnalysis.allowed
+            ? "Chờ xác nhận entry/risk trước khi giao dịch"
+            : candidate.tradeAnalysis.summary;
+      }
+    }
+    return candidate;
   }
 
   const [dailyRaw, fourHourRaw] = await Promise.allSettled([
@@ -1961,6 +2263,7 @@ function renderScannerResults(results, errors = []) {
       <p>Ưu tiên mã thanh khoản tốt, biến động đủ lớn, xu hướng 1D/4H ổn, mạnh hơn BTC/VNINDEX và volume tăng bất thường.</p>
     </article>
   `;
+  renderScannerTradeBox(results);
 
   if (!items.length) {
     fields.scannerBody.innerHTML = `
@@ -2024,6 +2327,91 @@ function renderScannerResults(results, errors = []) {
   `;
 }
 
+function renderScannerTradeBox(results) {
+  if (!fields.scannerTradeBox) return;
+  const tradeCoins = results
+    .filter((item) => item.type === "crypto" && item.tradeAnalysis)
+    .sort((a, b) => {
+      const finalDiff = Number(Boolean(b.tradeAnalysis.finalAllowed)) - Number(Boolean(a.tradeAnalysis.finalAllowed));
+      if (finalDiff) return finalDiff;
+      const passDiff = b.tradeAnalysis.passed - a.tradeAnalysis.passed;
+      return passDiff || b.score - a.score;
+    })
+    .slice(0, 3);
+  const allowedCoins = tradeCoins.filter((item) => item.tradeAnalysis.finalAllowed || item.tradeAnalysis.allowed);
+  const displayCoins = (allowedCoins.length ? allowedCoins : tradeCoins).slice(0, 3);
+
+  if (!displayCoins.length) {
+    fields.scannerTradeBox.innerHTML = `
+      <article>
+        <span>Trade Analysis</span>
+        <h3>Chưa có coin đủ dữ liệu 4H, 1H và 30m.</h3>
+        <p>Scanner vẫn có thể tạo watchlist, nhưng chưa đủ dữ liệu đa khung để chọn coin giao dịch.</p>
+      </article>
+    `;
+    return;
+  }
+
+  const leader = displayCoins[0];
+  fields.scannerTradeBox.innerHTML = `
+    <article class="trade-pick-hero">
+      <span>Trade Analysis · Chọn coin giao dịch</span>
+      <div>
+        <h3>${escapeHtml(leader.symbol)}</h3>
+        <strong class="${leader.tradeAnalysis.finalAllowed ? "positive" : leader.tradeAnalysis.allowed ? "neutral" : "negative"}">${leader.tradeAnalysis.passed}/${leader.tradeAnalysis.total}</strong>
+      </div>
+      <p>${escapeHtml(leader.tradeAnalysis.summary)}. Đây mới là bước được phép tìm entry, không phải lệnh mua tự động.</p>
+    </article>
+    <div class="trade-pick-grid">
+      ${displayCoins.map((item) => `
+        <article class="trade-pick-card">
+          <div class="trade-pick-title">
+            <span>${escapeHtml(item.symbol)}</span>
+            <strong class="${item.tradeAnalysis.finalAllowed ? "positive" : item.tradeAnalysis.allowed ? "neutral" : "negative"}">${item.tradeAnalysis.passed}/${item.tradeAnalysis.total}</strong>
+          </div>
+          <p>${escapeHtml(item.tradeAnalysis.summary)}</p>
+          <h4>Trade Analysis</h4>
+          <ul class="trade-pick-checks">
+            ${item.tradeAnalysis.checks.map((check) => `
+              <li class="${check.pass ? "positive" : "negative"}">
+                <b>${check.pass ? "✓" : "×"}</b>
+                <span>${escapeHtml(check.label)}</span>
+                <em>${escapeHtml(check.detail)}</em>
+              </li>
+            `).join("")}
+          </ul>
+          ${item.entryConfirmation ? `
+            <h4>Giai đoạn 4 · Entry Confirmation</h4>
+            <p>${escapeHtml(item.entryConfirmation.note)}</p>
+            <ul class="trade-pick-checks">
+              ${item.entryConfirmation.checks.map((check) => `
+                <li class="${check.pass ? "positive" : "negative"}">
+                  <b>${check.pass ? "✓" : "×"}</b>
+                  <span>${escapeHtml(check.label)}</span>
+                  <em>${escapeHtml(check.detail)}</em>
+                </li>
+              `).join("")}
+            </ul>
+          ` : ""}
+          ${item.riskManagement ? `
+            <h4>Giai đoạn 5 · Risk Management</h4>
+            <p>${escapeHtml(item.riskManagement.warning)}</p>
+            <ul class="trade-pick-checks risk-checks">
+              ${item.riskManagement.checks.map((check) => `
+                <li class="${check.pass ? "positive" : "negative"}">
+                  <b>${check.pass ? "✓" : "×"}</b>
+                  <span>${escapeHtml(check.label)}</span>
+                  <em>${escapeHtml(check.detail)}</em>
+                </li>
+              `).join("")}
+            </ul>
+          ` : ""}
+        </article>
+      `).join("")}
+    </div>
+  `;
+}
+
 async function loadMarketScanner() {
   if (!fields.scannerBadge || !fields.scannerBody) return;
   fields.scannerBadge.textContent = "Đang quét...";
@@ -2035,6 +2423,15 @@ async function loadMarketScanner() {
       <p>Scanner chạy theo nhóm nhỏ để tránh quá tải nguồn dữ liệu.</p>
     </article>
   `;
+  if (fields.scannerTradeBox) {
+    fields.scannerTradeBox.innerHTML = `
+      <article>
+        <span>Trade Analysis</span>
+        <h3>Đang lọc 1-3 coin tốt để giao dịch...</h3>
+        <p>Hệ thống đang kiểm tra 4H, 1H, 30m theo momentum, RSI, MACD, ADX, BOS/CHOCH, liquidity, OB, FVG, volume và RR.</p>
+      </article>
+    `;
+  }
 
   try {
     const tasks = [];
@@ -2069,6 +2466,15 @@ async function loadMarketScanner() {
         <p>Hãy kiểm tra lại local server hoặc Netlify Function rồi quét lại.</p>
       </article>
     `;
+    if (fields.scannerTradeBox) {
+      fields.scannerTradeBox.innerHTML = `
+        <article>
+          <span>Trade Analysis</span>
+          <h3>Chưa lọc được coin giao dịch.</h3>
+          <p>Phần này cần dữ liệu coin đa khung 4H, 1H và 30m.</p>
+        </article>
+      `;
+    }
   }
 }
 
