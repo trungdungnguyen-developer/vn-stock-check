@@ -110,6 +110,7 @@ h1 {
 .history-section,
 .news-section,
 .ai-section,
+.trade-section,
 .details-grid,
 .fundamental-analysis-section,
 .raw-section {
@@ -832,8 +833,16 @@ strong.neutral {
   background: #ffffff;
 }
 
+.trade-section {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  background: #ffffff;
+}
+
 .news-section .section-head p,
-.ai-section .section-head p {
+.ai-section .section-head p,
+.trade-section .section-head p {
   margin: 6px 0 0;
   color: var(--muted);
   font-size: var(--font-small);
@@ -963,6 +972,95 @@ strong.neutral {
 .ai-points .neutral {
   color: var(--orange);
   font-weight: 700;
+}
+
+.trade-analysis {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.trade-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.trade-analysis article {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  background: #ffffff;
+}
+
+.trade-analysis article.trade-summary {
+  background: var(--soft);
+  border-color: rgba(136, 0, 133, 0.32);
+}
+
+.trade-analysis span {
+  display: block;
+  color: var(--muted);
+  font-size: var(--font-small);
+  font-weight: 800;
+}
+
+.trade-analysis h3 {
+  margin: 8px 0;
+  font-size: 20px;
+}
+
+.trade-analysis p {
+  margin: 6px 0;
+  line-height: 1.55;
+}
+
+.trade-points,
+.trade-checklist {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  line-height: 1.65;
+}
+
+.trade-checklist {
+  list-style: none;
+  padding-left: 0;
+}
+
+.trade-checklist li {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 4px 0;
+}
+
+.trade-checklist b {
+  min-width: 24px;
+}
+
+.trade-plan {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.trade-plan article {
+  background: var(--soft);
+}
+
+.trade-analysis .positive {
+  color: var(--green);
+  font-weight: 800;
+}
+
+.trade-analysis .negative {
+  color: var(--red);
+  font-weight: 800;
+}
+
+.trade-analysis .neutral {
+  color: var(--orange);
+  font-weight: 800;
 }
 
 .score-analysis {
@@ -1132,6 +1230,11 @@ pre {
     grid-template-columns: 1fr;
   }
 
+  .trade-grid,
+  .trade-plan {
+    grid-template-columns: 1fr;
+  }
+
   .news-list article {
     grid-template-columns: 1fr;
   }
@@ -1153,6 +1256,7 @@ pre {
   .history-section,
   .news-section,
   .ai-section,
+  .trade-section,
   .fundamental-analysis-section,
   .details-grid,
   .raw-section {

@@ -1,6 +1,6 @@
 # Theo dõi chứng khoán Việt Nam
 
-Website để theo dõi các mã cổ phiếu Việt Nam như `FPT`, `VNM`, `VCB`, `HPG`, `MWG`, `SSI`.
+Website để theo dõi các mã cổ phiếu Việt Nam như `FPT`, `VNM`, `VCB`, `HPG`, `MWG`, `SSI` và coin phổ biến như `BTC`, `ETH`, `SOL`.
 
 ## Cách dùng
 
@@ -23,14 +23,15 @@ http://localhost:8787
 
 1. Deploy app lên Netlify kèm thư mục `netlify/functions`.
 2. Mở website Netlify.
-3. Nhập mã chứng khoán Việt Nam.
+3. Nhập mã chứng khoán Việt Nam hoặc mã coin.
 4. Bấm `Tải dữ liệu`.
 
-Không cần Alpha Vantage API key. App ưu tiên lấy dữ liệu từ Vietcap/VCI để hỗ trợ HOSE, HNX, UPCOM; nếu VCI lỗi mới fallback sang Yahoo Finance.
+Không cần Alpha Vantage API key. App ưu tiên lấy dữ liệu từ Vietcap/VCI để hỗ trợ HOSE, HNX, UPCOM; coin và dữ liệu fallback được lấy qua Yahoo Finance.
 
 ## Tính năng
 
 - Giá hiện tại, biến động, khối lượng và biểu đồ giá đóng cửa.
+- Tra cứu coin bằng mã ngắn như `BTC`, `ETH`, `SOL` hoặc mã Yahoo như `BTC-USD`.
 - Đóng trước là giá đóng cửa của phiên liền trước, dùng làm mốc tính tăng/giảm.
 - Giá trần/sàn được lấy từ nguồn VCI khi có dữ liệu; nếu thiếu thì app tự tính theo biên độ HOSE 7%, HNX 10%, UPCOM 15% và làm tròn theo bước giá.
 - MA 20, MA 50, MA 100, MA 200 tính từ giá đóng cửa của khung biểu đồ đang chọn, hiển thị ngay dưới biểu đồ giá và vẽ trên biểu đồ.

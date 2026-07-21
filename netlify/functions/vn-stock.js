@@ -27,6 +27,7 @@ const FUNDAMENTAL_COLUMNS = [
 
 const VCI_RANGE_CONFIG = {
   "2y": { timeFrame: "ONE_DAY", lookbackDays: 7300 },
+  "5m": { timeFrame: "ONE_MINUTE", lookbackDays: 30 },
   "30m": { timeFrame: "ONE_MINUTE", lookbackDays: 120 },
   "1h": { timeFrame: "ONE_HOUR", lookbackDays: 365 },
   "2h": { timeFrame: "ONE_HOUR", lookbackDays: 500 },

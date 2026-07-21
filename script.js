@@ -28,12 +28,14 @@ const chartWorkspace = document.getElementById("chartWorkspace");
 const fullscreenChartButton = document.getElementById("fullscreenChart");
 const refreshNewsButton = document.getElementById("refreshNewsButton");
 const refreshAiButton = document.getElementById("refreshAiButton");
+const refreshTradeButton = document.getElementById("refreshTradeButton");
 const tabs = document.querySelectorAll(".tab");
 const tabPanels = {
   overview: document.getElementById("overviewPanel"),
   score: document.getElementById("scorePanel"),
   news: document.getElementById("newsPanel"),
-  ai: document.getElementById("aiPanel")
+  ai: document.getElementById("aiPanel"),
+  trade: document.getElementById("tradePanel")
 };
 
 const fields = {
@@ -94,6 +96,8 @@ const fields = {
   newsBody: document.getElementById("newsBody"),
   aiBadge: document.getElementById("aiBadge"),
   aiAnalysisBody: document.getElementById("aiAnalysisBody"),
+  tradeBadge: document.getElementById("tradeBadge"),
+  tradeAnalysisBody: document.getElementById("tradeAnalysisBody"),
   fundamentalBadge: document.getElementById("fundamentalBadge"),
   fundamentalAnalysis: document.getElementById("fundamentalAnalysis"),
   recommendationBody: document.getElementById("recommendationBody"),
@@ -101,6 +105,7 @@ const fields = {
 };
 
 const CHART_PRESETS = {
+  "5m": { label: "5p", sourceRange: "5m", intervalMs: 5 * 60 * 1000, intraday: true },
   "30m": { label: "30p", sourceRange: "30m", intervalMs: 30 * 60 * 1000, intraday: true },
   "1h": { label: "1h", sourceRange: "1h", intervalMs: 60 * 60 * 1000, intraday: true },
   "2h": { label: "2h", sourceRange: "2h", intervalMs: 2 * 60 * 60 * 1000, intraday: true },
@@ -120,8 +125,16 @@ const HISTORY_LIMITS = {
   "60": { label: "60 ngày", rows: 60 }
 };
 
+const CRYPTO_SYMBOLS = new Set([
+  "BTC", "ETH", "BNB", "SOL", "XRP", "ADA", "DOGE", "TRX", "TON", "DOT",
+  "LINK", "LTC", "BCH", "AVAX", "SHIB", "UNI", "AAVE", "ETC", "ATOM", "NEAR",
+  "APT", "ARB", "OP", "FIL", "ICP", "XLM", "HBAR", "PEPE", "SUI", "MATIC"
+]);
+
 let latestPayload = null;
 let currentSymbol = "";
+let currentAssetType = "stock";
+let currentDataSymbol = "";
 let currentDailyBars = [];
 let currentChartSourceBars = [];
 let activeChartRange = "1d";
@@ -318,6 +331,10 @@ async function requestVciData(symbol, range = "2y") {
   return response.json();
 }
 
+async function requestYahooChartData(symbol, range = "2y", interval = "1d") {
+  return requestJson(`/v8/finance/chart/${encodeURIComponent(symbol)}?range=${encodeURIComponent(range)}&interval=${encodeURIComponent(interval)}`);
+}
+
 async function requestNewsData() {
   if (location.protocol === "file:") {
     throw new Error("Đang mở bằng file:// nên không có proxy dữ liệu. Hãy chạy local-server.js rồi mở http://localhost:8787.");
@@ -347,7 +364,7 @@ async function requestFundamentalsData(symbol) {
 }
 
 async function requestYahooQuote(symbol) {
-  const raw = await requestJson(`/v8/finance/chart/${encodeURIComponent(symbol)}?range=1d&interval=5m`);
+  const raw = await requestYahooChartData(symbol, "1d", "5m");
   const parsed = parseYahooChart(raw);
   if (!parsed?.quote) throw new Error(`Không có dữ liệu ${symbol}`);
   return parsed.quote;
@@ -420,7 +437,27 @@ function getFirstRecord(data) {
   return data || {};
 }
 
+function normalizeSymbolInput(symbol) {
+  return safeText(symbol).trim().toUpperCase().replace(/\s+/g, "");
+}
+
+function toYahooCryptoSymbol(symbol) {
+  const normalized = normalizeSymbolInput(symbol)
+    .replace("/USDT", "-USD")
+    .replace("USDT", "-USD")
+    .replace("/USD", "-USD");
+  if (/^[A-Z0-9]+-USD$/.test(normalized)) return normalized;
+  if (CRYPTO_SYMBOLS.has(normalized)) return `${normalized}-USD`;
+  return "";
+}
+
+function isCryptoSymbol(symbol) {
+  return Boolean(toYahooCryptoSymbol(symbol));
+}
+
 function makeYahooCandidates(symbol) {
+  const cryptoSymbol = toYahooCryptoSymbol(symbol);
+  if (cryptoSymbol) return [cryptoSymbol];
   if (symbol.includes(".")) return [symbol];
   return [`${symbol}.VN`, `${symbol}.HM`, `${symbol}.HN`, symbol];
 }
@@ -447,6 +484,7 @@ function parseYahooChart(rawData) {
   const latestBar = bars[bars.length - 1] || {};
   const previousClose = meta.previousClose ?? meta.chartPreviousClose;
   const price = meta.regularMarketPrice ?? latestBar.close;
+  const isCrypto = meta.quoteType === "CRYPTOCURRENCY" || String(meta.symbol || "").endsWith("-USD");
   const change = toNumber(price) !== null && toNumber(previousClose) !== null
     ? toNumber(price) - toNumber(previousClose)
     : null;
@@ -472,10 +510,12 @@ function parseYahooChart(rawData) {
     overview: {
       ticker: meta.symbol,
       name: meta.longName || meta.shortName || meta.symbol,
-      exchange: meta.fullExchangeName || meta.exchangeName,
-      industry: "-",
-      sector: "-",
-      description: `Dữ liệu giá lấy từ Yahoo Finance cho mã ${meta.symbol}. Tiền tệ: ${meta.currency || "VND"}.`,
+      exchange: isCrypto ? "Crypto" : (meta.fullExchangeName || meta.exchangeName),
+      industry: isCrypto ? "Tiền mã hóa" : "-",
+      sector: isCrypto ? "Crypto" : "-",
+      description: isCrypto
+        ? `Dữ liệu giá coin lấy từ Yahoo Finance cho mã ${meta.symbol}. Tiền tệ: ${meta.currency || "USD"}.`
+        : `Dữ liệu giá lấy từ Yahoo Finance cho mã ${meta.symbol}. Tiền tệ: ${meta.currency || "VND"}.`,
       marketCap: null,
       pe: null,
       pb: null,
@@ -483,6 +523,7 @@ function parseYahooChart(rawData) {
       eps: null,
       beta: null,
       currency: meta.currency,
+      assetType: isCrypto ? "crypto" : "stock",
       fiftyTwoWeekHigh: meta.fiftyTwoWeekHigh,
       fiftyTwoWeekLow: meta.fiftyTwoWeekLow
     },
@@ -567,6 +608,29 @@ function parseVciData(rawData) {
     },
     bars
   };
+}
+
+function yahooParamsForRange(rangeKey) {
+  if (rangeKey === "5m") return { range: "30d", interval: "5m" };
+  if (rangeKey === "30m") return { range: "60d", interval: "30m" };
+  if (["1h", "2h", "4h"].includes(rangeKey)) return { range: "730d", interval: "60m" };
+  return { range: "2y", interval: "1d" };
+}
+
+async function requestBarsForRange(symbol, rangeKey) {
+  if (currentAssetType === "crypto") {
+    const params = yahooParamsForRange(rangeKey);
+    const raw = await requestYahooChartData(currentDataSymbol || toYahooCryptoSymbol(symbol), params.range, params.interval);
+    const parsed = parseYahooChart(raw);
+    if (!parsed?.bars?.length) throw new Error("Không có dữ liệu coin cho khung này.");
+    return parsed.bars;
+  }
+
+  const preset = CHART_PRESETS[rangeKey] || CHART_PRESETS["1d"];
+  const raw = await requestVciData(symbol, preset.sourceRange);
+  const parsed = parseVciData(raw);
+  if (!parsed?.bars?.length) throw new Error("Không có dữ liệu cho khung này.");
+  return parsed.bars;
 }
 
 function syncCanvasSize(canvas) {
@@ -1271,19 +1335,17 @@ async function loadAiAnalysis() {
   `;
 
   const [oneHourResult, fourHourResult] = await Promise.allSettled([
-    requestVciData(currentSymbol, "1h"),
-    requestVciData(currentSymbol, "4h")
+    requestBarsForRange(currentSymbol, "1h"),
+    requestBarsForRange(currentSymbol, "4h")
   ]);
 
   const analyses = [];
   if (oneHourResult.status === "fulfilled") {
-    const parsed = parseVciData(oneHourResult.value);
-    const bars = parsed?.bars?.length ? aggregateBarsForPreset(parsed.bars, CHART_PRESETS["1h"]) : [];
+    const bars = aggregateBarsForPreset(oneHourResult.value, CHART_PRESETS["1h"]);
     if (bars.length) analyses.push({ label: "1h", data: scoreTimeframeSignals(bars) });
   }
   if (fourHourResult.status === "fulfilled") {
-    const parsed = parseVciData(fourHourResult.value);
-    const bars = parsed?.bars?.length ? aggregateBarsForPreset(parsed.bars, CHART_PRESETS["4h"]) : [];
+    const bars = aggregateBarsForPreset(fourHourResult.value, CHART_PRESETS["4h"]);
     if (bars.length) analyses.push({ label: "4h", data: scoreTimeframeSignals(bars) });
   }
 
@@ -1297,6 +1359,317 @@ async function loadAiAnalysis() {
   });
 
   renderAiCards(currentSymbol, analyses);
+}
+
+function calculateEmaForBars(bars, period) {
+  return calculateEma(bars.map((bar) => bar.close), period);
+}
+
+function latestBarSnapshot(bars) {
+  const ema9 = calculateEmaForBars(bars, 9);
+  const ema21 = calculateEmaForBars(bars, 21);
+  const rsi = calculateRsi(bars);
+  const latest = bars[bars.length - 1] || {};
+  const previous = bars[bars.length - 2] || {};
+  const volumes = bars.map((bar) => bar.volume);
+  return {
+    latest,
+    previous,
+    ema9,
+    ema21,
+    rsi,
+    latestEma9: latestNonNull(ema9),
+    previousEma9: ema9[ema9.length - 2],
+    latestEma21: latestNonNull(ema21),
+    latestRsi: latestNonNull(rsi),
+    previousRsi: rsi[rsi.length - 2],
+    latestVolume: latest.volume,
+    avgVolume20: average(volumes.slice(-20))
+  };
+}
+
+function passIcon(pass) {
+  return pass ? "✓" : "×";
+}
+
+function pctDistance(price, base) {
+  if (!toNumber(price) || !toNumber(base)) return null;
+  return Math.abs((price - base) / base) * 100;
+}
+
+function isVolumeDeclining(bars) {
+  const last = bars.slice(-4).map((bar) => toNumber(bar.volume)).filter((value) => value !== null);
+  return last.length >= 4 && last[3] < last[2] && last[2] < last[1];
+}
+
+function isNearEma(price, ema9, ema21, maxDistance = 0.8) {
+  const distance9 = pctDistance(price, ema9);
+  const distance21 = pctDistance(price, ema21);
+  return {
+    pass: (distance9 !== null && distance9 <= maxDistance) || (distance21 !== null && distance21 <= maxDistance),
+    distance9,
+    distance21
+  };
+}
+
+function isStrongGreenCandle(bars) {
+  const latest = bars[bars.length - 1] || {};
+  const previous = bars[bars.length - 2] || {};
+  const open = toNumber(latest.open);
+  const close = toNumber(latest.close);
+  const high = toNumber(latest.high);
+  const low = toNumber(latest.low);
+  if (open === null || close === null || high === null || low === null || close <= open) return false;
+  const range = high - low || 1;
+  const bodyRatio = (close - open) / range;
+  const engulfing = previous.open && previous.close && open <= previous.close && close >= previous.open;
+  return bodyRatio >= 0.62 || engulfing;
+}
+
+function hasHigherLow(bars) {
+  if (bars.length < 12) return false;
+  const recentLow = Math.min(...bars.slice(-5).map((bar) => toNumber(bar.low)).filter((value) => value !== null));
+  const previousLow = Math.min(...bars.slice(-12, -5).map((bar) => toNumber(bar.low)).filter((value) => value !== null));
+  return Number.isFinite(recentLow) && Number.isFinite(previousLow) && recentLow > previousLow;
+}
+
+function classifyOneHourTrend(bars) {
+  const data = latestBarSnapshot(bars);
+  const buyChecks = [
+    { label: "Giá trên EMA9", pass: data.latest.close > data.latestEma9 },
+    { label: "EMA9 > EMA21", pass: data.latestEma9 > data.latestEma21 },
+    { label: "RSI14 > 50", pass: data.latestRsi > 50 }
+  ];
+  const sellChecks = [
+    { label: "Giá dưới EMA9", pass: data.latest.close < data.latestEma9 },
+    { label: "EMA9 < EMA21", pass: data.latestEma9 < data.latestEma21 },
+    { label: "RSI14 < 50", pass: data.latestRsi < 50 }
+  ];
+  const buyPass = buyChecks.every((item) => item.pass);
+  const sellPass = sellChecks.every((item) => item.pass);
+  const direction = buyPass ? "BUY" : sellPass ? "SELL" : "NO_TRADE";
+  return { ...data, direction, buyChecks, sellChecks };
+}
+
+function evaluateThirtyMinuteSetup(bars, direction) {
+  const data = latestBarSnapshot(bars);
+  const near = isNearEma(data.latest.close, data.latestEma9, data.latestEma21);
+  const volumeEasing = isVolumeDeclining(bars) || (data.latestVolume && data.avgVolume20 && data.latestVolume < data.avgVolume20);
+  const checks = direction === "BUY"
+    ? [
+      { label: "Giá điều chỉnh về EMA9 hoặc EMA21", pass: near.pass },
+      { label: "RSI 30m nằm trong vùng 35-50", pass: data.latestRsi >= 35 && data.latestRsi <= 50 },
+      { label: "Volume giảm dần hoặc dưới TB20", pass: volumeEasing }
+    ]
+    : direction === "SELL"
+      ? [
+        { label: "Giá hồi về EMA9 hoặc EMA21", pass: near.pass },
+        { label: "RSI 30m nằm trong vùng 50-65", pass: data.latestRsi >= 50 && data.latestRsi <= 65 },
+        { label: "Volume hồi giảm dần hoặc dưới TB20", pass: volumeEasing }
+      ]
+      : [
+        { label: "Chưa xét setup vì khung 1H lẫn lộn", pass: false }
+      ];
+  return { ...data, near, checks, pass: checks.every((item) => item.pass) };
+}
+
+function evaluateFiveMinuteEntry(bars, direction) {
+  const data = latestBarSnapshot(bars);
+  const recentLow = Math.min(...bars.slice(-8).map((bar) => toNumber(bar.low)).filter((value) => value !== null));
+  const volumeDeclining = isVolumeDeclining(bars);
+  const rsiCross45 = data.latestRsi > 45 && (data.previousRsi === null || data.previousRsi <= 45 || data.latestRsi <= 55);
+  const volumeBreakout = data.latestVolume && data.avgVolume20 && data.latestVolume >= data.avgVolume20 * 1.5;
+  const greenCandle = isStrongGreenCandle(bars);
+  const higherLow = hasHigherLow(bars);
+  const priceOverEma9 = data.latest.close > data.latestEma9 && (data.previous.close <= data.previousEma9 || data.latest.close > data.latestEma9);
+  const checks = direction === "BUY"
+    ? [
+      { label: "Giá vượt EMA9", pass: priceOverEma9 },
+      { label: "RSI 5m vượt 45", pass: rsiCross45 },
+      { label: "Volume >= 1.5 x Volume TB20", pass: volumeBreakout },
+      { label: "Có nến xanh mạnh hoặc engulfing", pass: greenCandle },
+      { label: "Đáy sau cao hơn đáy trước", pass: higherLow }
+    ]
+    : direction === "SELL"
+      ? [
+        { label: "Giá thủng EMA9", pass: data.latest.close < data.latestEma9 },
+        { label: "RSI 5m dưới 55", pass: data.latestRsi < 55 },
+        { label: "Volume >= 1.5 x Volume TB20", pass: volumeBreakout },
+        { label: "Có nến đỏ mạnh", pass: data.latest.close < data.latest.open },
+        { label: "Đỉnh sau thấp hơn đỉnh trước", pass: !higherLow }
+      ]
+      : [
+        { label: "Chưa xét entry vì khung lớn chưa đạt", pass: false }
+      ];
+  const passed = checks.filter((item) => item.pass).length;
+  return { ...data, checks, passed, pass: passed >= 4, recentLow, volumeDeclining };
+}
+
+function buildNoTradeFilters(oneHour, thirtyMinute, fiveMinute) {
+  const latest = fiveMinute.latest || {};
+  const candleChange = latest.open ? ((latest.close - latest.open) / latest.open) * 100 : null;
+  const farFromEma9 = pctDistance(latest.close, fiveMinute.latestEma9);
+  return [
+    { label: "RSI 5m > 70", active: fiveMinute.latestRsi > 70 },
+    { label: "RSI 30m > 70", active: thirtyMinute.latestRsi > 70 },
+    { label: "Volume 5m giảm liên tục", active: fiveMinute.volumeDeclining },
+    { label: "Giá quá xa EMA9 5m (>1,5%)", active: farFromEma9 !== null && farFromEma9 > 1.5 },
+    { label: "Nến 5m tăng >4%", active: candleChange !== null && candleChange > 4 }
+  ];
+}
+
+function buildTradePlan(fiveMinute) {
+  const entry = fiveMinute.latest.close;
+  const stopByPercent = entry * 0.992;
+  const stopLoss = Math.max(fiveMinute.recentLow || stopByPercent, stopByPercent);
+  const riskPercent = ((entry - stopLoss) / entry) * 100;
+  return {
+    entry,
+    stopLoss,
+    riskPercent,
+    tp1: entry * 1.01,
+    tp2: entry * 1.02,
+    tp3: entry * 1.04,
+    rr: riskPercent > 0 ? 2 / riskPercent : null
+  };
+}
+
+function renderTradeDecision(symbol, oneHour, thirtyMinute, fiveMinute, filters) {
+  const blockers = filters.filter((item) => item.active);
+  const plan = buildTradePlan(fiveMinute);
+  const canBuy = oneHour.direction === "BUY" && thirtyMinute.pass && fiveMinute.pass && !blockers.length;
+  const canSell = oneHour.direction === "SELL" && thirtyMinute.pass && fiveMinute.pass && !blockers.length;
+  const decision = canBuy
+    ? { text: "Có điểm BUY", className: "positive", detail: "Khung 1H, 30m và 5m đang đồng thuận. Vẫn cần đặt stop loss ngay khi vào lệnh." }
+    : canSell
+      ? { text: "Có điểm SELL", className: "negative", detail: "Chỉ phù hợp nếu sàn/tài khoản hỗ trợ bán xuống. Nếu không, coi đây là tín hiệu tránh mua." }
+      : { text: "Không giao dịch", className: "neutral", detail: "Chưa đủ đồng thuận hoặc có bộ lọc rủi ro kích hoạt. Không nên ép lệnh." };
+
+  fields.tradeBadge.textContent = decision.text;
+  fields.tradeBadge.className = decision.className;
+  fields.tradeAnalysisBody.innerHTML = `
+    <article class="trade-summary">
+      <span>Kết luận cho ${escapeHtml(symbol)}</span>
+      <h3 class="${decision.className}">${decision.text}</h3>
+      <p>${decision.detail}</p>
+      <p>Entry tham chiếu: ${formatOptional(plan.entry, 2)}. Stop loss: ${formatOptional(plan.stopLoss, 2)} (${formatPercent(-plan.riskPercent)}). RR tới TP2: ${plan.rr ? formatNumber(plan.rr, 2) + " : 1" : "-"}.</p>
+    </article>
+
+    <div class="trade-grid">
+      <article>
+        <span>Bước 1 - Xu hướng 1H</span>
+        <h3 class="${oneHour.direction === "BUY" ? "positive" : oneHour.direction === "SELL" ? "negative" : "neutral"}">${oneHour.direction === "BUY" ? "Chỉ tìm BUY" : oneHour.direction === "SELL" ? "Chỉ tìm SELL" : "Không giao dịch"}</h3>
+        <p>Giá ${formatOptional(oneHour.latest.close, 2)}, EMA9 ${formatOptional(oneHour.latestEma9, 2)}, EMA21 ${formatOptional(oneHour.latestEma21, 2)}, RSI ${formatOptional(oneHour.latestRsi, 2)}.</p>
+        <ul class="trade-checklist">
+          ${oneHour.buyChecks.map((item) => `<li class="${item.pass ? "positive" : "negative"}"><b>${passIcon(item.pass)}</b>${escapeHtml(item.label)}</li>`).join("")}
+        </ul>
+      </article>
+      <article>
+        <span>Bước 2 - Setup 30 phút</span>
+        <h3 class="${thirtyMinute.pass ? "positive" : "neutral"}">${thirtyMinute.pass ? "Setup đẹp" : "Chưa có setup"}</h3>
+        <p>RSI ${formatOptional(thirtyMinute.latestRsi, 2)}, Volume ${formatInteger(thirtyMinute.latestVolume)}, TB20 ${formatInteger(thirtyMinute.avgVolume20)}.</p>
+        <ul class="trade-checklist">
+          ${thirtyMinute.checks.map((item) => `<li class="${item.pass ? "positive" : "negative"}"><b>${passIcon(item.pass)}</b>${escapeHtml(item.label)}</li>`).join("")}
+        </ul>
+      </article>
+      <article>
+        <span>Bước 3 - Vào lệnh 5 phút</span>
+        <h3 class="${fiveMinute.pass ? "positive" : "neutral"}">${fiveMinute.passed}/5 điều kiện</h3>
+        <p>Cần đạt ít nhất 4/5. RSI ${formatOptional(fiveMinute.latestRsi, 2)}, Volume ${formatInteger(fiveMinute.latestVolume)}, TB20 ${formatInteger(fiveMinute.avgVolume20)}.</p>
+        <ul class="trade-checklist">
+          ${fiveMinute.checks.map((item) => `<li class="${item.pass ? "positive" : "negative"}"><b>${passIcon(item.pass)}</b>${escapeHtml(item.label)}</li>`).join("")}
+        </ul>
+      </article>
+    </div>
+
+    <div class="trade-plan">
+      <article>
+        <span>Take Profit</span>
+        <h3>Kế hoạch chốt lời</h3>
+        <p>TP1 ${formatOptional(plan.tp1, 2)}: bán 50%. TP2 ${formatOptional(plan.tp2, 2)}: bán 30%. TP3 ${formatOptional(plan.tp3, 2)}: giữ 20% nếu giá chạy khỏe.</p>
+      </article>
+      <article>
+        <span>Điều kiện hủy</span>
+        <h3>${blockers.length ? "Có rủi ro cần né" : "Chưa kích hoạt"}</h3>
+        <ul class="trade-checklist">
+          ${filters.map((item) => `<li class="${item.active ? "negative" : "positive"}"><b>${item.active ? "!" : "✓"}</b>${escapeHtml(item.label)}</li>`).join("")}
+        </ul>
+      </article>
+      <article>
+        <span>Checklist 30 giây</span>
+        <h3>Trước khi bấm BUY</h3>
+        <ul class="trade-checklist">
+          ${[
+            ["1H đang tăng", oneHour.direction === "BUY"],
+            ["Giá trên EMA9", oneHour.latest.close > oneHour.latestEma9],
+            ["EMA9 trên EMA21", oneHour.latestEma9 > oneHour.latestEma21],
+            ["RSI 1H > 50", oneHour.latestRsi > 50],
+            ["RSI 30m từ 35 đến 50", thirtyMinute.latestRsi >= 35 && thirtyMinute.latestRsi <= 50],
+            ["Volume 5m đủ mạnh", fiveMinute.latestVolume >= fiveMinute.avgVolume20 * 1.5],
+            ["5m vượt EMA9", fiveMinute.checks[0]?.pass],
+            ["Có nến xác nhận", fiveMinute.checks[3]?.pass],
+            ["RR >= 1:2", plan.rr >= 2]
+          ].map(([label, pass]) => `<li class="${pass ? "positive" : "negative"}"><b>${passIcon(pass)}</b>${escapeHtml(label)}</li>`).join("")}
+        </ul>
+      </article>
+    </div>
+  `;
+}
+
+async function loadTradeAnalysis() {
+  if (!currentSymbol) {
+    fields.tradeBadge.textContent = "Chưa có dữ liệu";
+    fields.tradeBadge.className = "neutral";
+    fields.tradeAnalysisBody.innerHTML = `
+      <article>
+        <span>Chưa có dữ liệu</span>
+        <h3>Hãy tra cứu một mã cổ phiếu trước.</h3>
+        <p>Hệ thống cần dữ liệu 1H, 30 phút và 5 phút để tìm điểm mua/bán.</p>
+      </article>
+    `;
+    return;
+  }
+
+  fields.tradeBadge.textContent = "Đang quét...";
+  fields.tradeBadge.className = "neutral";
+  fields.tradeAnalysisBody.innerHTML = `
+    <article>
+      <span>Đang quét tín hiệu</span>
+      <h3>Đang tải dữ liệu 1H, 30 phút và 5 phút cho ${escapeHtml(currentSymbol)}...</h3>
+      <p>Nếu dữ liệu intraday không khả dụng, hệ thống sẽ báo thiếu dữ liệu thay vì tự đoán.</p>
+    </article>
+  `;
+
+  try {
+    const [oneHourRaw, thirtyRaw, fiveRaw] = await Promise.all([
+      requestBarsForRange(currentSymbol, "1h"),
+      requestBarsForRange(currentSymbol, "30m"),
+      requestBarsForRange(currentSymbol, "5m")
+    ]);
+    const oneHourBars = aggregateBarsForPreset(oneHourRaw, CHART_PRESETS["1h"]);
+    const thirtyBars = aggregateBarsForPreset(thirtyRaw, CHART_PRESETS["30m"]);
+    const fiveBars = aggregateBarsForPreset(fiveRaw, CHART_PRESETS["5m"]);
+
+    if (oneHourBars.length < 30 || thirtyBars.length < 30 || fiveBars.length < 30) {
+      throw new Error("Không đủ dữ liệu intraday để quét điểm mua/bán.");
+    }
+
+    const oneHour = classifyOneHourTrend(oneHourBars);
+    const thirtyMinute = evaluateThirtyMinuteSetup(thirtyBars, oneHour.direction);
+    const fiveMinute = evaluateFiveMinuteEntry(fiveBars, oneHour.direction);
+    const filters = buildNoTradeFilters(oneHour, thirtyMinute, fiveMinute);
+    renderTradeDecision(currentSymbol, oneHour, thirtyMinute, fiveMinute, filters);
+  } catch (error) {
+    fields.tradeBadge.textContent = "Thiếu dữ liệu";
+    fields.tradeBadge.className = "negative";
+    fields.tradeAnalysisBody.innerHTML = `
+      <article>
+        <span>Lỗi dữ liệu</span>
+        <h3>${escapeHtml(error.message || "Không quét được tín hiệu.")}</h3>
+        <p>Hãy kiểm tra lại local server hoặc Netlify Function đã upload bản mới có hỗ trợ khung 5 phút.</p>
+      </article>
+    `;
+  }
 }
 
 function updatePriceColor(price, reference, target) {
@@ -1482,13 +1855,9 @@ async function applyChartRange(rangeKey) {
   fields.chartRange.textContent = `Đang tải biểu đồ ${preset.label}...`;
 
   try {
-    const raw = await requestVciData(currentSymbol, preset.sourceRange);
+    const bars = await requestBarsForRange(currentSymbol, rangeKey);
     if (requestId !== chartRequestId) return;
-    const parsed = parseVciData(raw);
-    if (!parsed || !parsed.bars.length) {
-      throw new Error("Không có dữ liệu cho khung biểu đồ này.");
-    }
-    renderSelectedChart(parsed.bars, rangeKey);
+    renderSelectedChart(bars, rangeKey);
     setMessage("");
   } catch (error) {
     renderSelectedChart(currentDailyBars, "1d");
@@ -2064,6 +2433,7 @@ function renderTradingRecommendations(bars) {
 }
 
 function fillData(symbol, quote, overview, bars) {
+  const isCrypto = overview.assetType === "crypto";
   const latestBar = bars[bars.length - 1] || {};
   const previousBar = bars[bars.length - 2] || {};
   const currentPrice = latestBar.close ?? quote.price;
@@ -2074,22 +2444,28 @@ function fillData(symbol, quote, overview, bars) {
   const changePercent = toNumber(change) !== null && toNumber(reference)
     ? (toNumber(change) / toNumber(reference)) * 100
     : null;
-  const priceLimits = calculateCeilingFloor(reference, overview.exchange || quote.exchange);
+  const priceLimits = isCrypto ? { ceiling: null, floor: null } : calculateCeilingFloor(reference, overview.exchange || quote.exchange);
 
   fields.exchange.textContent = `${symbol} ${overview.exchange || quote.exchange ? "- " + safeText(overview.exchange || quote.exchange) : ""}`;
   fields.companyName.textContent = safeText(overview.name) !== "-" ? overview.name : symbol;
   fields.companyDescription.textContent = safeText(overview.description) !== "-"
     ? overview.description
-    : "Dữ liệu được lấy từ nguồn công khai. Một số trường có thể trống tùy theo mã cổ phiếu.";
+    : isCrypto
+      ? "Dữ liệu coin được lấy từ Yahoo Finance. Một số chỉ số cơ bản kiểu cổ phiếu sẽ không áp dụng cho coin."
+      : "Dữ liệu được lấy từ nguồn công khai. Một số trường có thể trống tùy theo mã cổ phiếu.";
   fields.currentPrice.textContent = formatPrice(currentPrice);
   fields.priceChange.textContent = `${toNumber(change) > 0 ? "+" : ""}${formatPrice(change)} (${formatPercent(changePercent)})`;
   updatePriceColor(currentPrice, reference, fields.priceChange);
 
   fields.referencePrice.textContent = formatPrice(reference);
-  fields.ceilingPrice.textContent = formatPrice(quote.ceilingPrice ?? priceLimits.ceiling);
-  fields.ceilingPrice.classList.add("ceiling");
-  fields.floorPrice.textContent = formatPrice(quote.floorPrice ?? priceLimits.floor);
-  fields.floorPrice.classList.add("floor");
+  fields.ceilingPrice.classList.remove("ceiling");
+  fields.floorPrice.classList.remove("floor");
+  fields.ceilingPrice.textContent = isCrypto ? "-" : formatPrice(quote.ceilingPrice ?? priceLimits.ceiling);
+  fields.floorPrice.textContent = isCrypto ? "-" : formatPrice(quote.floorPrice ?? priceLimits.floor);
+  if (!isCrypto) {
+    fields.ceilingPrice.classList.add("ceiling");
+    fields.floorPrice.classList.add("floor");
+  }
   fields.highPrice.textContent = formatPrice(quote.highPrice ?? latestBar.high);
   fields.lowPrice.textContent = formatPrice(quote.lowPrice ?? latestBar.low);
   fields.volume.textContent = formatInteger(quote.volume ?? latestBar.volume);
@@ -2106,6 +2482,8 @@ function fillData(symbol, quote, overview, bars) {
   fields.beta.textContent = formatFundamentalNumber(overview.beta, 2);
 
   currentSymbol = symbol;
+  currentAssetType = isCrypto ? "crypto" : "stock";
+  currentDataSymbol = quote.ticker || overview.ticker || symbol;
   currentDailyBars = bars;
   activeChartRange = "1d";
   activeHistoryLimit = 30;
@@ -2130,6 +2508,12 @@ function fillData(symbol, quote, overview, bars) {
 
 async function loadVietnamStock(symbol) {
   setMessage("Đang tải dữ liệu...");
+  const normalizedSymbol = normalizeSymbolInput(symbol);
+  const cryptoSymbol = toYahooCryptoSymbol(normalizedSymbol);
+  if (cryptoSymbol) {
+    await loadCryptoAsset(normalizedSymbol, cryptoSymbol);
+    return;
+  }
 
   let parsed = null;
   let lastError = null;
@@ -2186,6 +2570,7 @@ async function loadVietnamStock(symbol) {
   const analysis = fillData(symbol, quote, overview, bars);
   latestPayload = {
     source: parsed.source,
+    assetType: currentAssetType,
     symbol,
     resolvedSymbol: quote.ticker,
     activeTimeframe: CHART_PRESETS[activeChartRange]?.label || activeChartRange,
@@ -2229,12 +2614,75 @@ async function loadVietnamStock(symbol) {
   setMessage("");
 }
 
+async function loadCryptoAsset(inputSymbol, yahooSymbol) {
+  let parsed = null;
+  let lastError = null;
+
+  try {
+    parsed = parseYahooChart(await requestYahooChartData(yahooSymbol, "2y", "1d"));
+  } catch (error) {
+    lastError = error;
+  }
+
+  if (!parsed || !parsed.bars.length) {
+    throw new Error(lastError?.message || "Không tìm thấy coin này trên nguồn dữ liệu hiện tại.");
+  }
+
+  latestMarketStrength = null;
+  const newsResult = await Promise.allSettled([
+    loadNews(inputSymbol, { silent: true })
+  ]);
+  if (newsResult[0].status !== "fulfilled") {
+    latestNewsItems = [];
+  }
+
+  const quote = parsed.quote;
+  const overview = {
+    ...parsed.overview,
+    ticker: yahooSymbol,
+    assetType: "crypto"
+  };
+  const bars = parsed.bars;
+  const analysis = fillData(inputSymbol, quote, overview, bars);
+
+  latestPayload = {
+    source: parsed.source,
+    assetType: "crypto",
+    symbol: inputSymbol,
+    resolvedSymbol: yahooSymbol,
+    activeTimeframe: CHART_PRESETS[activeChartRange]?.label || activeChartRange,
+    quote,
+    overview,
+    recentBars: bars.slice(-30),
+    indicators: {
+      rsi14: fields.rsiValue.textContent,
+      macd: fields.macdValue.textContent,
+      movingAverages: {
+        ma20: fields.ma10.textContent,
+        ma50: fields.ma50.textContent,
+        ma100: fields.ma100.textContent,
+        ma200: fields.ma200.textContent
+      }
+    },
+    score: analysis.score,
+    news: {
+      sources: "CafeF RSS, VnExpress RSS",
+      relatedCount: analysis.score.relatedNews.length,
+      topRelated: analysis.score.relatedNews.slice(0, 3)
+    },
+    note: "Coin không có giá trần/sàn và các chỉ số P/E, P/B, ROE như cổ phiếu."
+  };
+  fields.rawData.textContent = JSON.stringify(latestPayload, null, 2);
+  fields.lastUpdated.textContent = `Cập nhật: ${new Date().toLocaleString("vi-VN")}`;
+  setMessage("");
+}
+
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
   const symbol = symbolInput.value.trim().toUpperCase();
 
   if (!symbol) {
-    setMessage("Hãy nhập mã chứng khoán Việt Nam.");
+    setMessage("Hãy nhập mã chứng khoán Việt Nam hoặc mã coin.");
     symbolInput.focus();
     return;
   }
@@ -2296,6 +2744,9 @@ tabs.forEach((tab) => {
     if (tab.dataset.tab === "ai") {
       loadAiAnalysis();
     }
+    if (tab.dataset.tab === "trade") {
+      loadTradeAnalysis();
+    }
   });
 });
 
@@ -2305,6 +2756,10 @@ refreshNewsButton?.addEventListener("click", () => {
 
 refreshAiButton?.addEventListener("click", () => {
   loadAiAnalysis();
+});
+
+refreshTradeButton?.addEventListener("click", () => {
+  loadTradeAnalysis();
 });
 
 copyButton.addEventListener("click", async () => {

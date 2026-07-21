@@ -15,16 +15,16 @@
         <header class="hero">
           <div>
             <span class="eyebrow">HOSE / HNX / UPCOM</span>
-            <h1>Theo dõi chứng khoán Việt Nam</h1>
-            <p>Nhập mã cổ phiếu Việt Nam để xem giá, sàn giao dịch, khối lượng, biến động và biểu đồ lịch sử.</p>
+            <h1>Theo dõi chứng khoán Việt Nam và Coin</h1>
+            <p>Nhập mã cổ phiếu Việt Nam hoặc coin để xem giá, khối lượng, biến động và biểu đồ lịch sử.</p>
           </div>
           <span id="lastUpdated" class="pill">Chưa tải dữ liệu</span>
         </header>
 
         <form id="stockForm" class="search-panel">
-          <label for="symbol">Mã chứng khoán</label>
+          <label for="symbol">Mã chứng khoán / Coin</label>
           <div class="input-row">
-            <input id="symbol" type="text" autocomplete="off" placeholder="Ví dụ: FPT, VNM, VCB, HPG">
+            <input id="symbol" type="text" autocomplete="off" placeholder="Ví dụ: FPT, HPG, BTC, ETH, SOL">
             <button type="submit">Tải dữ liệu</button>
           </div>
           <div class="quick-symbols" aria-label="Mã phổ biến">
@@ -34,6 +34,9 @@
             <button type="button" data-symbol="HPG">HPG</button>
             <button type="button" data-symbol="MWG">MWG</button>
             <button type="button" data-symbol="SSI">SSI</button>
+            <button type="button" data-symbol="BTC">BTC</button>
+            <button type="button" data-symbol="ETH">ETH</button>
+            <button type="button" data-symbol="SOL">SOL</button>
           </div>
           <div class="market-strip" aria-label="Chỉ số thị trường realtime">
             <div class="market-strip-head">
@@ -69,14 +72,15 @@
           <button id="scoreTab" class="tab" type="button" data-tab="score" aria-selected="false">Bảng đánh giá</button>
           <button id="newsTab" class="tab" type="button" data-tab="news" aria-selected="false">Tin tức</button>
           <button id="aiTab" class="tab" type="button" data-tab="ai" aria-selected="false">Phân tích cùng AI</button>
+          <button id="tradeTab" class="tab" type="button" data-tab="trade" aria-selected="false">Tìm điểm mua và bán</button>
         </nav>
 
         <section id="overviewPanel" class="tab-panel active">
         <section class="quote-card">
           <div>
             <span id="exchange" class="eyebrow">-</span>
-            <h2 id="companyName">Nhập mã chứng khoán Việt Nam để bắt đầu</h2>
-            <p id="companyDescription">App chỉ theo dõi các mã cổ phiếu Việt Nam. Không cần Alpha Vantage API key.</p>
+            <h2 id="companyName">Nhập mã chứng khoán hoặc coin để bắt đầu</h2>
+            <p id="companyDescription">App theo dõi cổ phiếu Việt Nam và các coin phổ biến như BTC, ETH, SOL. Không cần Alpha Vantage API key.</p>
           </div>
           <div class="price-box">
             <span>Giá hiện tại</span>
@@ -320,6 +324,28 @@
                 <span>Chưa có dữ liệu</span>
                 <h3>Hãy tra cứu một mã cổ phiếu trước.</h3>
                 <p>Sau đó mở tab này để xem nhận định khung 1h, 4h, 1 ngày, 1 tuần và 1 tháng.</p>
+              </article>
+            </div>
+          </section>
+        </section>
+
+        <section id="tradePanel" class="tab-panel" hidden>
+          <section class="trade-section">
+            <div class="section-head">
+              <div>
+                <h2>Tìm điểm mua và bán</h2>
+                <p>Hệ thống lọc lệnh theo 1H, 30 phút và 5 phút với EMA9, EMA21, RSI14 và volume. Nếu tín hiệu lẫn lộn thì ưu tiên không giao dịch.</p>
+              </div>
+              <div class="chart-actions">
+                <span id="tradeBadge">Chưa có dữ liệu</span>
+                <button id="refreshTradeButton" type="button" class="secondary">Quét lại</button>
+              </div>
+            </div>
+            <div id="tradeAnalysisBody" class="trade-analysis">
+              <article>
+                <span>Chưa có dữ liệu</span>
+                <h3>Hãy tra cứu một mã cổ phiếu trước.</h3>
+                <p>Sau đó mở tab này để hệ thống kiểm tra xu hướng 1H, setup 30 phút, tín hiệu vào lệnh 5 phút, stop loss, take profit và checklist trước khi mua.</p>
               </article>
             </div>
           </section>
