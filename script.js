@@ -29,13 +29,16 @@ const fullscreenChartButton = document.getElementById("fullscreenChart");
 const refreshNewsButton = document.getElementById("refreshNewsButton");
 const refreshAiButton = document.getElementById("refreshAiButton");
 const refreshTradeButton = document.getElementById("refreshTradeButton");
+const refreshScannerButton = document.getElementById("refreshScannerButton");
+const scannerControls = document.querySelector(".scanner-controls");
 const tabs = document.querySelectorAll(".tab");
 const tabPanels = {
   overview: document.getElementById("overviewPanel"),
   score: document.getElementById("scorePanel"),
   news: document.getElementById("newsPanel"),
   ai: document.getElementById("aiPanel"),
-  trade: document.getElementById("tradePanel")
+  trade: document.getElementById("tradePanel"),
+  scanner: document.getElementById("scannerPanel")
 };
 
 const fields = {
@@ -98,6 +101,9 @@ const fields = {
   aiAnalysisBody: document.getElementById("aiAnalysisBody"),
   tradeBadge: document.getElementById("tradeBadge"),
   tradeAnalysisBody: document.getElementById("tradeAnalysisBody"),
+  scannerBadge: document.getElementById("scannerBadge"),
+  scannerSummary: document.getElementById("scannerSummary"),
+  scannerBody: document.getElementById("scannerBody"),
   fundamentalBadge: document.getElementById("fundamentalBadge"),
   fundamentalAnalysis: document.getElementById("fundamentalAnalysis"),
   recommendationBody: document.getElementById("recommendationBody"),
@@ -128,8 +134,44 @@ const HISTORY_LIMITS = {
 const CRYPTO_SYMBOLS = new Set([
   "BTC", "ETH", "BNB", "SOL", "XRP", "ADA", "DOGE", "TRX", "TON", "DOT",
   "LINK", "LTC", "BCH", "AVAX", "SHIB", "UNI", "AAVE", "ETC", "ATOM", "NEAR",
-  "APT", "ARB", "OP", "FIL", "ICP", "XLM", "HBAR", "PEPE", "SUI", "MATIC"
+  "APT", "ARB", "OP", "FIL", "ICP", "XLM", "HBAR", "PEPE", "SUI", "MATIC",
+  "USDC", "WLD", "TAO", "INJ", "SEI", "TIA", "FET", "ENA", "JUP", "BONK"
 ]);
+
+const CRYPTO_ALIASES = {
+  PI: "PI35697-USD",
+  PIUSDT: "PI35697-USD",
+  "PI/USDT": "PI35697-USD",
+  "PI-USD": "PI35697-USD",
+  "PI/USD": "PI35697-USD",
+  PINETWORK: "PI35697-USD"
+};
+
+const CRYPTO_EXCHANGE_ALIASES = {
+  PI: "PI-USDT",
+  PIUSDT: "PI-USDT",
+  "PI/USDT": "PI-USDT",
+  "PI-USD": "PI-USDT",
+  "PI/USD": "PI-USDT",
+  "PI35697-USD": "PI-USDT",
+  PINETWORK: "PI-USDT"
+};
+
+const SCANNER_CRYPTO_SYMBOLS = [
+  "BTC", "ETH", "SOL", "BNB", "XRP", "DOGE", "SUI", "LINK", "AVAX", "INJ",
+  "ARB", "OP", "APT", "NEAR", "DOT", "ADA", "LTC", "BCH", "TON", "PEPE",
+  "WLD", "SEI", "TIA", "FET", "ENA", "JUP", "BONK", "PI"
+];
+
+const SCANNER_STOCK_SYMBOLS = [
+  "FPT", "HPG", "SSI", "VND", "VCI", "HCM", "MBS", "VCB", "BID", "CTG",
+  "TCB", "MBB", "VPB", "ACB", "VIB", "STB", "VIC", "VHM", "VRE", "KDH",
+  "DIG", "DXG", "NVL", "MWG", "FRT", "DGW", "VNM", "MSN", "GAS", "PVD",
+  "PVS", "PLX", "DGC", "GVR", "HSG", "NKG", "VIX", "SHB", "EIB", "POW"
+];
+
+let activeScannerType = "all";
+let latestScannerResults = [];
 
 let latestPayload = null;
 let currentSymbol = "";
@@ -335,6 +377,20 @@ async function requestYahooChartData(symbol, range = "2y", interval = "1d") {
   return requestJson(`/v8/finance/chart/${encodeURIComponent(symbol)}?range=${encodeURIComponent(range)}&interval=${encodeURIComponent(interval)}`);
 }
 
+async function requestCryptoData(symbol, range = "2y") {
+  if (location.protocol === "file:") {
+    throw new Error("Đang mở bằng file:// nên không có proxy dữ liệu. Hãy chạy local-server.js rồi mở http://localhost:8787.");
+  }
+
+  const response = await fetch(`${PROXY_BASE}?source=crypto&symbol=${encodeURIComponent(symbol)}&range=${encodeURIComponent(range)}`, {
+    headers: { accept: "application/json" }
+  });
+  if (!response.ok) {
+    throw new Error(`Không tải được dữ liệu coin. HTTP ${response.status}`);
+  }
+  return response.json();
+}
+
 async function requestNewsData() {
   if (location.protocol === "file:") {
     throw new Error("Đang mở bằng file:// nên không có proxy dữ liệu. Hãy chạy local-server.js rồi mở http://localhost:8787.");
@@ -368,6 +424,12 @@ async function requestYahooQuote(symbol) {
   const parsed = parseYahooChart(raw);
   if (!parsed?.quote) throw new Error(`Không có dữ liệu ${symbol}`);
   return parsed.quote;
+}
+
+async function requestCryptoQuote(symbol) {
+  const raw = await requestCryptoData(symbol, "1d");
+  if (!raw?.quote) throw new Error(`Không có dữ liệu ${symbol}`);
+  return raw.quote;
 }
 
 function formatMarketValue(value, digits = 2) {
@@ -407,7 +469,7 @@ async function loadMarketStrip() {
       valueTarget: fields.marketBitcoin,
       changeTarget: fields.marketBitcoinChange,
       options: { digits: 0 },
-      load: () => requestYahooQuote("BTC-USD")
+      load: () => requestCryptoQuote("BTC-USDT")
     },
     {
       valueTarget: fields.marketOil,
@@ -442,17 +504,34 @@ function normalizeSymbolInput(symbol) {
 }
 
 function toYahooCryptoSymbol(symbol) {
+  const raw = normalizeSymbolInput(symbol);
+  if (CRYPTO_ALIASES[raw]) return CRYPTO_ALIASES[raw];
   const normalized = normalizeSymbolInput(symbol)
     .replace("/USDT", "-USD")
     .replace("USDT", "-USD")
     .replace("/USD", "-USD");
+  if (CRYPTO_ALIASES[normalized]) return CRYPTO_ALIASES[normalized];
   if (/^[A-Z0-9]+-USD$/.test(normalized)) return normalized;
   if (CRYPTO_SYMBOLS.has(normalized)) return `${normalized}-USD`;
   return "";
 }
 
 function isCryptoSymbol(symbol) {
-  return Boolean(toYahooCryptoSymbol(symbol));
+  return Boolean(toCryptoPairSymbol(symbol) || toYahooCryptoSymbol(symbol));
+}
+
+function toCryptoPairSymbol(symbol) {
+  const raw = normalizeSymbolInput(symbol);
+  if (CRYPTO_EXCHANGE_ALIASES[raw]) return CRYPTO_EXCHANGE_ALIASES[raw];
+  const normalized = raw
+    .replace("/USDT", "-USDT")
+    .replace("USDT", "-USDT")
+    .replace("/USD", "-USDT")
+    .replace("-USD", "-USDT");
+  if (CRYPTO_EXCHANGE_ALIASES[normalized]) return CRYPTO_EXCHANGE_ALIASES[normalized];
+  if (/^[A-Z0-9]+-USDT$/.test(normalized)) return normalized;
+  if (CRYPTO_SYMBOLS.has(normalized)) return `${normalized}-USDT`;
+  return "";
 }
 
 function makeYahooCandidates(symbol) {
@@ -619,11 +698,17 @@ function yahooParamsForRange(rangeKey) {
 
 async function requestBarsForRange(symbol, rangeKey) {
   if (currentAssetType === "crypto") {
-    const params = yahooParamsForRange(rangeKey);
-    const raw = await requestYahooChartData(currentDataSymbol || toYahooCryptoSymbol(symbol), params.range, params.interval);
-    const parsed = parseYahooChart(raw);
-    if (!parsed?.bars?.length) throw new Error("Không có dữ liệu coin cho khung này.");
-    return parsed.bars;
+    try {
+      const raw = await requestCryptoData(toCryptoPairSymbol(currentDataSymbol) || toCryptoPairSymbol(symbol) || currentDataSymbol || symbol, rangeKey);
+      if (!raw?.bars?.length) throw new Error("Không có dữ liệu coin cho khung này.");
+      return raw.bars;
+    } catch (error) {
+      const params = yahooParamsForRange(rangeKey);
+      const raw = await requestYahooChartData(toYahooCryptoSymbol(currentDataSymbol) || toYahooCryptoSymbol(symbol), params.range, params.interval);
+      const parsed = parseYahooChart(raw);
+      if (!parsed?.bars?.length) throw error;
+      return parsed.bars;
+    }
   }
 
   const preset = CHART_PRESETS[rangeKey] || CHART_PRESETS["1d"];
@@ -1672,6 +1757,321 @@ async function loadTradeAnalysis() {
   }
 }
 
+function calculateAtr(points, period = 14) {
+  const atr = Array(points.length).fill(null);
+  if (points.length <= period) return atr;
+  const trueRanges = points.map((point, index) => {
+    if (index === 0) return (point.high || 0) - (point.low || 0);
+    const previousClose = points[index - 1].close;
+    return Math.max(
+      (point.high || 0) - (point.low || 0),
+      Math.abs((point.high || 0) - previousClose),
+      Math.abs((point.low || 0) - previousClose)
+    );
+  });
+
+  let sum = 0;
+  for (let index = 1; index <= period; index += 1) {
+    sum += trueRanges[index] || 0;
+  }
+  atr[period] = sum / period;
+
+  for (let index = period + 1; index < points.length; index += 1) {
+    atr[index] = ((atr[index - 1] || 0) * (period - 1) + (trueRanges[index] || 0)) / period;
+  }
+  return atr;
+}
+
+function scannerPercentChange(bars, periods) {
+  if (!bars?.length || bars.length <= periods) return null;
+  const latest = toNumber(bars[bars.length - 1].close);
+  const previous = toNumber(bars[bars.length - 1 - periods].close);
+  if (latest === null || previous === null || !previous) return null;
+  return ((latest - previous) / previous) * 100;
+}
+
+function scannerTrendLabel(dailyBars, fourHourBars) {
+  const dailyClose = dailyBars[dailyBars.length - 1]?.close;
+  const dailyEma20 = latestNonNull(calculateEmaForBars(dailyBars, 20));
+  const dailyEma50 = latestNonNull(calculateEmaForBars(dailyBars, 50));
+  const dailyEma200 = latestNonNull(calculateEmaForBars(dailyBars, 200));
+  const fourHourClose = fourHourBars[fourHourBars.length - 1]?.close;
+  const fourHourEma20 = latestNonNull(calculateEmaForBars(fourHourBars, 20));
+  const rsi = latestNonNull(calculateRsi(dailyBars));
+
+  const uptrend = dailyClose > dailyEma20 && dailyEma20 > dailyEma50 && dailyEma50 > dailyEma200 && fourHourClose > fourHourEma20;
+  const reversal = dailyClose > dailyEma20 && dailyEma20 > dailyEma50 && rsi >= 45 && rsi <= 62;
+  const weak = dailyClose < dailyEma50 && dailyEma20 < dailyEma50;
+
+  return {
+    text: uptrend ? "Uptrend" : reversal ? "Chuẩn bị đảo chiều" : weak ? "Yếu" : "Trung tính",
+    className: uptrend || reversal ? "positive" : weak ? "negative" : "neutral",
+    score: uptrend ? 25 : reversal ? 19 : weak ? 5 : 12,
+    dailyClose,
+    dailyEma20,
+    dailyEma50,
+    dailyEma200,
+    fourHourEma20,
+    rsi
+  };
+}
+
+function scannerLiquidityScore(type, quote, latestBar) {
+  const price = toNumber(quote?.price ?? latestBar?.close);
+  const volume = toNumber(quote?.quoteVolume) ?? (toNumber(quote?.volume ?? latestBar?.volume) * (price || 0));
+  const spread = toNumber(quote?.spreadPercent);
+
+  if (type === "crypto") {
+    let score = volume >= 50_000_000 ? 25 : volume >= 10_000_000 ? 20 : volume >= 3_000_000 ? 12 : 4;
+    if (spread !== null && spread > 0.25) score -= 5;
+    return { score: Math.max(0, score), value: volume, spread };
+  }
+
+  const value = toNumber(latestBar?.volume) * (price || 0);
+  const score = value >= 100_000_000_000 ? 25 : value >= 20_000_000_000 ? 20 : value >= 5_000_000_000 ? 12 : 4;
+  return { score, value, spread: null };
+}
+
+function analyzeScannerCandidate(input) {
+  const { symbol, type, source, quote, dailyBars, fourHourBars, baseDailyBars } = input;
+  const latestBar = dailyBars[dailyBars.length - 1] || {};
+  const trend = scannerTrendLabel(dailyBars, fourHourBars.length ? fourHourBars : dailyBars);
+  const liquidity = scannerLiquidityScore(type, quote, latestBar);
+  const atr = latestNonNull(calculateAtr(dailyBars));
+  const atrPercent = atr && latestBar.close ? (atr / latestBar.close) * 100 : null;
+  const change24h = toNumber(quote?.changePercent) ?? scannerPercentChange(dailyBars, 1);
+  const change20 = scannerPercentChange(dailyBars, 20);
+  const baseChange20 = scannerPercentChange(baseDailyBars, 20);
+  const relativeStrength = change20 !== null && baseChange20 !== null ? change20 - baseChange20 : null;
+  const avgVolume20 = average(dailyBars.slice(-20).map((bar) => bar.volume));
+  const volumeRatio = avgVolume20 ? (latestBar.volume || 0) / avgVolume20 : null;
+
+  const volatilityScore = atrPercent === null
+    ? 5
+    : atrPercent >= 4 && atrPercent <= 12
+      ? 15
+      : atrPercent >= 2 && atrPercent < 4
+        ? 9
+        : atrPercent > 12 && atrPercent <= 20
+          ? 10
+          : 5;
+  const relativeScore = relativeStrength === null ? 6 : relativeStrength >= 10 ? 15 : relativeStrength >= 4 ? 12 : relativeStrength >= 0 ? 8 : 3;
+  const volumeScore = volumeRatio === null ? 5 : volumeRatio >= 3 ? 15 : volumeRatio >= 1.5 ? 12 : volumeRatio >= 1 ? 7 : 3;
+  const newsScore = latestNewsItems.some((item) => normalizeSearchText(`${item.title} ${item.description}`).includes(normalizeSearchText(symbol))) ? 5 : 2;
+  const score = Math.round(liquidity.score + volatilityScore + trend.score + relativeScore + volumeScore + newsScore);
+
+  const tags = [
+    liquidity.score >= 20 ? "Thanh khoản tốt" : "Thanh khoản cần kiểm tra",
+    atrPercent !== null && atrPercent >= 4 && atrPercent <= 12 ? "Biến động vừa trade" : atrPercent > 12 ? "Biến động mạnh" : "Biến động thấp",
+    trend.text,
+    relativeStrength !== null && relativeStrength > 0 ? "Mạnh hơn thị trường" : "Yếu hơn thị trường",
+    volumeRatio !== null && volumeRatio >= 1.5 ? `Volume x${formatNumber(volumeRatio, 1)}` : "Volume chưa nổi bật"
+  ];
+
+  return {
+    symbol,
+    type,
+    source,
+    price: quote?.price ?? latestBar.close,
+    score,
+    tags,
+    trend,
+    liquidity,
+    atrPercent,
+    change24h,
+    relativeStrength,
+    volumeRatio
+  };
+}
+
+async function runWithConcurrency(items, limit, worker) {
+  const results = [];
+  let index = 0;
+  async function next() {
+    const currentIndex = index;
+    index += 1;
+    if (currentIndex >= items.length) return;
+    try {
+      results[currentIndex] = await worker(items[currentIndex], currentIndex);
+    } catch (error) {
+      results[currentIndex] = { error, item: items[currentIndex] };
+    }
+    await next();
+  }
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, next));
+  return results;
+}
+
+async function loadScannerCandidate(symbol, type, baseDailyBars) {
+  if (type === "crypto") {
+    const [daily, fourHour] = await Promise.all([
+      requestCryptoData(symbol, "2y"),
+      requestCryptoData(symbol, "4h")
+    ]);
+    return analyzeScannerCandidate({
+      symbol,
+      type,
+      source: daily.source,
+      quote: daily.quote,
+      dailyBars: daily.bars,
+      fourHourBars: fourHour.bars,
+      baseDailyBars
+    });
+  }
+
+  const [dailyRaw, fourHourRaw] = await Promise.allSettled([
+    requestVciData(symbol, "2y"),
+    requestVciData(symbol, "4h")
+  ]);
+  if (dailyRaw.status !== "fulfilled") throw dailyRaw.reason;
+  const daily = parseVciData(dailyRaw.value);
+  const fourHour = fourHourRaw.status === "fulfilled" ? parseVciData(fourHourRaw.value) : null;
+  if (!daily?.bars?.length) throw new Error(`Không có dữ liệu ${symbol}`);
+  return analyzeScannerCandidate({
+    symbol,
+    type,
+    source: daily.source,
+    quote: daily.quote,
+    dailyBars: daily.bars,
+    fourHourBars: fourHour?.bars?.length ? fourHour.bars : daily.bars,
+    baseDailyBars
+  });
+}
+
+function renderScannerResults(results, errors = []) {
+  latestScannerResults = results;
+  const display = results
+    .filter((item) => item.score >= 50)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 20);
+  const fallback = results.sort((a, b) => b.score - a.score).slice(0, 10);
+  const items = display.length ? display : fallback;
+
+  fields.scannerBadge.textContent = `${items.length} mã đáng xem`;
+  fields.scannerBadge.className = items.length ? "positive" : "neutral";
+  fields.scannerSummary.innerHTML = `
+    <article>
+      <span>Kết quả quét</span>
+      <strong>${items.length}/${results.length} mã qua lọc</strong>
+      <p>Bỏ qua ${errors.length} mã thiếu dữ liệu. Điểm cao nghĩa là đáng đưa vào watchlist để phân tích tiếp, không phải tín hiệu mua ngay.</p>
+    </article>
+    <article>
+      <span>Tiêu chí chính</span>
+      <strong>Liquidity + Trend + RS</strong>
+      <p>Ưu tiên mã thanh khoản tốt, biến động đủ lớn, xu hướng 1D/4H ổn, mạnh hơn BTC/VNINDEX và volume tăng bất thường.</p>
+    </article>
+  `;
+
+  if (!items.length) {
+    fields.scannerBody.innerHTML = `
+      <article>
+        <span>Không có mã phù hợp</span>
+        <h3>Scanner chưa tìm được mã đáng xem.</h3>
+        <p>Thị trường có thể đang yếu, thiếu thanh khoản hoặc nguồn dữ liệu tạm thời không phản hồi.</p>
+      </article>
+    `;
+    return;
+  }
+
+  fields.scannerBody.innerHTML = `
+    <div class="scanner-card-grid">
+      ${items.slice(0, 6).map((item) => `
+        <article class="scanner-card">
+          <span>${item.type === "crypto" ? "Coin" : "Cổ phiếu"} · ${escapeHtml(item.source || "-")}</span>
+          <div>
+            <h3>${escapeHtml(item.symbol)}</h3>
+            <strong>${item.score}/100</strong>
+          </div>
+          <p>Giá ${formatOptional(item.price, item.type === "crypto" ? 4 : 2)} · 24h ${formatPercent(item.change24h)} · RS ${formatPercent(item.relativeStrength)}</p>
+          <div class="scanner-tags">
+            ${item.tags.map((tag) => `<em>${escapeHtml(tag)}</em>`).join("")}
+          </div>
+        </article>
+      `).join("")}
+    </div>
+    <div class="table-wrap scanner-table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Mã</th>
+            <th>Loại</th>
+            <th>Điểm</th>
+            <th>Giá</th>
+            <th>Thanh khoản</th>
+            <th>ATR%</th>
+            <th>RS</th>
+            <th>Volume spike</th>
+            <th>Xu hướng</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${items.map((item) => `
+            <tr>
+              <td><strong>${escapeHtml(item.symbol)}</strong></td>
+              <td>${item.type === "crypto" ? "Coin" : "CK Việt Nam"}</td>
+              <td><strong class="${item.score >= 70 ? "positive" : item.score >= 55 ? "neutral" : "negative"}">${item.score}</strong></td>
+              <td>${formatOptional(item.price, item.type === "crypto" ? 4 : 2)}</td>
+              <td>${item.type === "crypto" ? `${formatLargeNumber(item.liquidity.value)} USD` : `${formatLargeNumber(item.liquidity.value)} VND`}</td>
+              <td>${formatPercent(item.atrPercent)}</td>
+              <td class="${valueClass(item.relativeStrength)}">${formatPercent(item.relativeStrength)}</td>
+              <td>${item.volumeRatio ? `x${formatNumber(item.volumeRatio, 2)}` : "-"}</td>
+              <td><span class="${item.trend.className}">${escapeHtml(item.trend.text)}</span></td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+async function loadMarketScanner() {
+  if (!fields.scannerBadge || !fields.scannerBody) return;
+  fields.scannerBadge.textContent = "Đang quét...";
+  fields.scannerBadge.className = "neutral";
+  fields.scannerBody.innerHTML = `
+    <article>
+      <span>Đang quét thị trường</span>
+      <h3>Đang lọc thanh khoản, biến động, xu hướng và relative strength...</h3>
+      <p>Scanner chạy theo nhóm nhỏ để tránh quá tải nguồn dữ liệu.</p>
+    </article>
+  `;
+
+  try {
+    const tasks = [];
+    const includeCrypto = activeScannerType === "all" || activeScannerType === "crypto";
+    const includeStock = activeScannerType === "all" || activeScannerType === "stock";
+    const [btcBase, vnBase] = await Promise.allSettled([
+      includeCrypto ? requestCryptoData("BTC", "2y") : Promise.resolve(null),
+      includeStock ? requestVciData("VNINDEX", "2y") : Promise.resolve(null)
+    ]);
+    const btcBars = btcBase.status === "fulfilled" ? btcBase.value?.bars || [] : [];
+    const vnParsed = vnBase.status === "fulfilled" ? parseVciData(vnBase.value) : null;
+    const vnBars = vnParsed?.bars || [];
+
+    if (includeCrypto) {
+      SCANNER_CRYPTO_SYMBOLS.forEach((symbol) => tasks.push({ symbol, type: "crypto", base: btcBars }));
+    }
+    if (includeStock) {
+      SCANNER_STOCK_SYMBOLS.forEach((symbol) => tasks.push({ symbol, type: "stock", base: vnBars }));
+    }
+
+    const rawResults = await runWithConcurrency(tasks, 4, (item) => loadScannerCandidate(item.symbol, item.type, item.base));
+    const results = rawResults.filter((item) => item && !item.error);
+    const errors = rawResults.filter((item) => item?.error);
+    renderScannerResults(results, errors);
+  } catch (error) {
+    fields.scannerBadge.textContent = "Lỗi dữ liệu";
+    fields.scannerBadge.className = "negative";
+    fields.scannerBody.innerHTML = `
+      <article>
+        <span>Lỗi scanner</span>
+        <h3>${escapeHtml(error.message || "Không quét được thị trường.")}</h3>
+        <p>Hãy kiểm tra lại local server hoặc Netlify Function rồi quét lại.</p>
+      </article>
+    `;
+  }
+}
+
 function updatePriceColor(price, reference, target) {
   target.classList.remove("positive", "negative", "neutral", "ceiling", "floor");
   const current = toNumber(price);
@@ -2451,7 +2851,7 @@ function fillData(symbol, quote, overview, bars) {
   fields.companyDescription.textContent = safeText(overview.description) !== "-"
     ? overview.description
     : isCrypto
-      ? "Dữ liệu coin được lấy từ Yahoo Finance. Một số chỉ số cơ bản kiểu cổ phiếu sẽ không áp dụng cho coin."
+      ? "Dữ liệu coin được ưu tiên lấy từ Binance, sau đó OKX; Yahoo Finance chỉ dùng làm dự phòng. Một số chỉ số cơ bản kiểu cổ phiếu sẽ không áp dụng cho coin."
       : "Dữ liệu được lấy từ nguồn công khai. Một số trường có thể trống tùy theo mã cổ phiếu.";
   fields.currentPrice.textContent = formatPrice(currentPrice);
   fields.priceChange.textContent = `${toNumber(change) > 0 ? "+" : ""}${formatPrice(change)} (${formatPercent(changePercent)})`;
@@ -2509,9 +2909,10 @@ function fillData(symbol, quote, overview, bars) {
 async function loadVietnamStock(symbol) {
   setMessage("Đang tải dữ liệu...");
   const normalizedSymbol = normalizeSymbolInput(symbol);
-  const cryptoSymbol = toYahooCryptoSymbol(normalizedSymbol);
-  if (cryptoSymbol) {
-    await loadCryptoAsset(normalizedSymbol, cryptoSymbol);
+  const cryptoSymbol = toCryptoPairSymbol(normalizedSymbol);
+  const yahooCryptoSymbol = toYahooCryptoSymbol(normalizedSymbol);
+  if (cryptoSymbol || yahooCryptoSymbol) {
+    await loadCryptoAsset(normalizedSymbol, cryptoSymbol || yahooCryptoSymbol);
     return;
   }
 
@@ -2606,7 +3007,7 @@ async function loadVietnamStock(symbol) {
     investorFlow: {
       status: parsed.source === "Vietcap/VCI"
         ? "Dữ liệu bảng giá VCI nếu có"
-        : "Yahoo Finance không cung cấp dữ liệu mua/bán theo nhóm nhà đầu tư"
+        : `${parsed.source} không cung cấp dữ liệu mua/bán theo nhóm nhà đầu tư`
     }
   };
   fields.rawData.textContent = JSON.stringify(latestPayload, null, 2);
@@ -2614,14 +3015,25 @@ async function loadVietnamStock(symbol) {
   setMessage("");
 }
 
-async function loadCryptoAsset(inputSymbol, yahooSymbol) {
+async function loadCryptoAsset(inputSymbol, cryptoSymbol) {
   let parsed = null;
   let lastError = null;
 
   try {
-    parsed = parseYahooChart(await requestYahooChartData(yahooSymbol, "2y", "1d"));
+    parsed = await requestCryptoData(cryptoSymbol, "2y");
   } catch (error) {
     lastError = error;
+  }
+
+  if (!parsed?.bars?.length) {
+    const yahooSymbol = toYahooCryptoSymbol(inputSymbol) || toYahooCryptoSymbol(cryptoSymbol);
+    if (yahooSymbol) {
+      try {
+        parsed = parseYahooChart(await requestYahooChartData(yahooSymbol, "2y", "1d"));
+      } catch (error) {
+        lastError = error;
+      }
+    }
   }
 
   if (!parsed || !parsed.bars.length) {
@@ -2639,7 +3051,7 @@ async function loadCryptoAsset(inputSymbol, yahooSymbol) {
   const quote = parsed.quote;
   const overview = {
     ...parsed.overview,
-    ticker: yahooSymbol,
+    ticker: parsed.resolvedSymbol || parsed.quote?.ticker || cryptoSymbol,
     assetType: "crypto"
   };
   const bars = parsed.bars;
@@ -2649,7 +3061,7 @@ async function loadCryptoAsset(inputSymbol, yahooSymbol) {
     source: parsed.source,
     assetType: "crypto",
     symbol: inputSymbol,
-    resolvedSymbol: yahooSymbol,
+    resolvedSymbol: parsed.resolvedSymbol || cryptoSymbol,
     activeTimeframe: CHART_PRESETS[activeChartRange]?.label || activeChartRange,
     quote,
     overview,
@@ -2747,6 +3159,9 @@ tabs.forEach((tab) => {
     if (tab.dataset.tab === "trade") {
       loadTradeAnalysis();
     }
+    if (tab.dataset.tab === "scanner" && !latestScannerResults.length) {
+      loadMarketScanner();
+    }
   });
 });
 
@@ -2760,6 +3175,20 @@ refreshAiButton?.addEventListener("click", () => {
 
 refreshTradeButton?.addEventListener("click", () => {
   loadTradeAnalysis();
+});
+
+refreshScannerButton?.addEventListener("click", () => {
+  loadMarketScanner();
+});
+
+scannerControls?.addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-scanner-type]");
+  if (!button) return;
+  activeScannerType = button.dataset.scannerType || "all";
+  scannerControls.querySelectorAll("button").forEach((item) => {
+    item.classList.toggle("active", item === button);
+  });
+  loadMarketScanner();
 });
 
 copyButton.addEventListener("click", async () => {

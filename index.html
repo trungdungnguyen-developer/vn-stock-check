@@ -24,7 +24,7 @@
         <form id="stockForm" class="search-panel">
           <label for="symbol">Mã chứng khoán / Coin</label>
           <div class="input-row">
-            <input id="symbol" type="text" autocomplete="off" placeholder="Ví dụ: FPT, HPG, BTC, ETH, SOL">
+            <input id="symbol" type="text" autocomplete="off" placeholder="Ví dụ: FPT, HPG, BTC, ETH, SOL, PI">
             <button type="submit">Tải dữ liệu</button>
           </div>
           <div class="quick-symbols" aria-label="Mã phổ biến">
@@ -37,6 +37,7 @@
             <button type="button" data-symbol="BTC">BTC</button>
             <button type="button" data-symbol="ETH">ETH</button>
             <button type="button" data-symbol="SOL">SOL</button>
+            <button type="button" data-symbol="PI">PI</button>
           </div>
           <div class="market-strip" aria-label="Chỉ số thị trường realtime">
             <div class="market-strip-head">
@@ -73,6 +74,7 @@
           <button id="newsTab" class="tab" type="button" data-tab="news" aria-selected="false">Tin tức</button>
           <button id="aiTab" class="tab" type="button" data-tab="ai" aria-selected="false">Phân tích cùng AI</button>
           <button id="tradeTab" class="tab" type="button" data-tab="trade" aria-selected="false">Tìm điểm mua và bán</button>
+          <button id="scannerTab" class="tab" type="button" data-tab="scanner" aria-selected="false">Market Scanner</button>
         </nav>
 
         <section id="overviewPanel" class="tab-panel active">
@@ -80,7 +82,7 @@
           <div>
             <span id="exchange" class="eyebrow">-</span>
             <h2 id="companyName">Nhập mã chứng khoán hoặc coin để bắt đầu</h2>
-            <p id="companyDescription">App theo dõi cổ phiếu Việt Nam và các coin phổ biến như BTC, ETH, SOL. Không cần Alpha Vantage API key.</p>
+            <p id="companyDescription">App theo dõi cổ phiếu Việt Nam và các coin phổ biến như BTC, ETH, SOL, PI Network. Không cần Alpha Vantage API key.</p>
           </div>
           <div class="price-box">
             <span>Giá hiện tại</span>
@@ -346,6 +348,40 @@
                 <span>Chưa có dữ liệu</span>
                 <h3>Hãy tra cứu một mã cổ phiếu trước.</h3>
                 <p>Sau đó mở tab này để hệ thống kiểm tra xu hướng 1H, setup 30 phút, tín hiệu vào lệnh 5 phút, stop loss, take profit và checklist trước khi mua.</p>
+              </article>
+            </div>
+          </section>
+        </section>
+
+        <section id="scannerPanel" class="tab-panel" hidden>
+          <section class="scanner-section">
+            <div class="section-head">
+              <div>
+                <h2>Market Scanner</h2>
+                <p>Lọc nhanh coin và cổ phiếu đáng xem theo thanh khoản, biến động, xu hướng, relative strength và volume bất thường. Đây là bước chọn watchlist, chưa phải khuyến nghị mua bán.</p>
+              </div>
+              <div class="chart-actions">
+                <span id="scannerBadge">Chưa quét</span>
+                <button id="refreshScannerButton" type="button" class="secondary">Quét thị trường</button>
+              </div>
+            </div>
+            <div class="scanner-controls" aria-label="Chọn nhóm tài sản để quét">
+              <button type="button" data-scanner-type="all" class="active">Tất cả</button>
+              <button type="button" data-scanner-type="crypto">Coin OKX/Binance</button>
+              <button type="button" data-scanner-type="stock">Cổ phiếu Việt Nam</button>
+            </div>
+            <div id="scannerSummary" class="scanner-summary">
+              <article>
+                <span>Mục tiêu</span>
+                <strong>10-20 mã đáng phân tích</strong>
+                <p>Scanner loại bỏ mã thanh khoản yếu, biến động quá thấp, xu hướng xấu hoặc yếu hơn thị trường chung.</p>
+              </article>
+            </div>
+            <div id="scannerBody" class="scanner-results">
+              <article>
+                <span>Chưa có dữ liệu</span>
+                <h3>Bấm Quét thị trường để bắt đầu.</h3>
+                <p>Coin sẽ lấy dữ liệu qua nguồn crypto hiện có; cổ phiếu Việt Nam lấy qua Vietcap/VCI.</p>
               </article>
             </div>
           </section>

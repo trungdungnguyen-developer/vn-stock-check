@@ -1063,6 +1063,141 @@ strong.neutral {
   font-weight: 800;
 }
 
+.scanner-section {
+  display: grid;
+  gap: 14px;
+}
+
+.scanner-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.scanner-controls button {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  background: #ffffff;
+  color: var(--primary);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.scanner-controls button.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #ffffff;
+}
+
+.scanner-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.scanner-summary article,
+.scanner-results > article,
+.scanner-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  background: #ffffff;
+}
+
+.scanner-summary article {
+  background: var(--soft);
+}
+
+.scanner-summary span,
+.scanner-card span,
+.scanner-results > article span {
+  display: block;
+  color: var(--muted);
+  font-size: var(--font-small);
+  font-weight: 800;
+}
+
+.scanner-summary strong {
+  display: block;
+  margin-top: 6px;
+  color: var(--primary);
+  font-size: 22px;
+}
+
+.scanner-summary p,
+.scanner-card p,
+.scanner-results > article p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.scanner-results {
+  display: grid;
+  gap: 14px;
+}
+
+.scanner-card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.scanner-card div:first-of-type {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.scanner-card h3 {
+  margin: 0;
+  font-size: 24px;
+}
+
+.scanner-card strong {
+  color: var(--primary);
+  font-size: 22px;
+}
+
+.scanner-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.scanner-tags em {
+  border-radius: 999px;
+  padding: 5px 8px;
+  background: #f7e8f7;
+  color: var(--primary);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.scanner-table-wrap table {
+  min-width: 920px;
+}
+
+.scanner-results .positive {
+  color: var(--green);
+  font-weight: 800;
+}
+
+.scanner-results .negative {
+  color: var(--red);
+  font-weight: 800;
+}
+
+.scanner-results .neutral {
+  color: var(--orange);
+  font-weight: 800;
+}
+
 .score-analysis {
   display: grid;
   gap: 14px;
@@ -1231,7 +1366,9 @@ pre {
   }
 
   .trade-grid,
-  .trade-plan {
+  .trade-plan,
+  .scanner-summary,
+  .scanner-card-grid {
     grid-template-columns: 1fr;
   }
 

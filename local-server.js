@@ -6,6 +6,8 @@ const PORT = 8787;
 const API_BASE = "https://query1.finance.yahoo.com";
 const VCI_TRADING_BASE = "https://trading.vietcap.com.vn/api";
 const TRADINGVIEW_SCAN_BASE = "https://scanner.tradingview.com/vietnam/scan";
+const BINANCE_BASE = "https://data-api.binance.vision/api/v3";
+const OKX_BASE = "https://www.okx.com/api/v5";
 const ROOT = __dirname;
 
 const MIME_TYPES = {
@@ -53,6 +55,31 @@ const VCI_RANGE_CONFIG = {
   "1w": { timeFrame: "ONE_DAY", lookbackDays: 7300 },
   "1m": { timeFrame: "ONE_DAY", lookbackDays: 7300 },
   "3m": { timeFrame: "ONE_DAY", lookbackDays: 7300 }
+};
+
+const CRYPTO_RANGE_CONFIG = {
+  "5m": { binanceInterval: "5m", okxBar: "5m", limit: 500 },
+  "30m": { binanceInterval: "30m", okxBar: "30m", limit: 500 },
+  "1h": { binanceInterval: "1h", okxBar: "1H", limit: 500 },
+  "2h": { binanceInterval: "2h", okxBar: "2H", limit: 500 },
+  "4h": { binanceInterval: "4h", okxBar: "4H", limit: 500 },
+  "1d": { binanceInterval: "1d", okxBar: "1D", limit: 730 },
+  "2y": { binanceInterval: "1d", okxBar: "1D", limit: 730 },
+  "3d": { binanceInterval: "3d", okxBar: "3D", limit: 500 },
+  "5d": { binanceInterval: "1d", okxBar: "1D", limit: 730 },
+  "1w": { binanceInterval: "1w", okxBar: "1W", limit: 500 },
+  "1m": { binanceInterval: "1M", okxBar: "1M", limit: 500 },
+  "3m": { binanceInterval: "1M", okxBar: "1M", limit: 500 }
+};
+
+const CRYPTO_EXCHANGE_ALIASES = {
+  PI: "PI-USDT",
+  PIUSDT: "PI-USDT",
+  "PI/USDT": "PI-USDT",
+  "PI-USD": "PI-USDT",
+  "PI/USD": "PI-USDT",
+  "PI35697-USD": "PI-USDT",
+  PINETWORK: "PI-USDT"
 };
 
 function sendJson(res, statusCode, body) {
@@ -209,7 +236,189 @@ async function fetchFundamentals(symbol) {
   };
 }
 
+function normalizeCryptoInput(symbol) {
+  return String(symbol || "").toUpperCase().trim().replace(/\s+/g, "");
+}
+
+function toCryptoPair(symbol) {
+  const raw = normalizeCryptoInput(symbol);
+  if (CRYPTO_EXCHANGE_ALIASES[raw]) return CRYPTO_EXCHANGE_ALIASES[raw];
+
+  const normalized = raw
+    .replace("/USDT", "-USDT")
+    .replace("USDT", "-USDT")
+    .replace("/USD", "-USDT")
+    .replace("-USD", "-USDT");
+
+  if (CRYPTO_EXCHANGE_ALIASES[normalized]) return CRYPTO_EXCHANGE_ALIASES[normalized];
+  if (/^[A-Z0-9]+-USDT$/.test(normalized)) return normalized;
+  if (/^[A-Z0-9]{2,20}$/.test(normalized)) return `${normalized}-USDT`;
+  throw new Error("Missing or invalid crypto symbol");
+}
+
+function parseBinanceKlines(klines) {
+  return (Array.isArray(klines) ? klines : [])
+    .map((item) => ({
+      timestamp: Number(item[0]),
+      time: new Date(Number(item[0])).toLocaleDateString("vi-VN"),
+      open: Number(item[1]),
+      high: Number(item[2]),
+      low: Number(item[3]),
+      close: Number(item[4]),
+      volume: Number(item[5])
+    }))
+    .filter((bar) => Number.isFinite(bar.timestamp) && Number.isFinite(bar.close));
+}
+
+function parseOkxCandles(candles) {
+  return (Array.isArray(candles) ? candles : [])
+    .map((item) => ({
+      timestamp: Number(item[0]),
+      time: new Date(Number(item[0])).toLocaleDateString("vi-VN"),
+      open: Number(item[1]),
+      high: Number(item[2]),
+      low: Number(item[3]),
+      close: Number(item[4]),
+      volume: Number(item[5])
+    }))
+    .filter((bar) => Number.isFinite(bar.timestamp) && Number.isFinite(bar.close))
+    .sort((a, b) => a.timestamp - b.timestamp);
+}
+
+function makeCryptoPayload(source, pair, ticker, bars, book = {}) {
+  const latestBar = bars[bars.length - 1] || {};
+  const price = Number(ticker.last ?? ticker.lastPrice ?? latestBar.close);
+  const referencePrice = Number(ticker.open24h ?? ticker.openPrice ?? bars[bars.length - 2]?.close);
+  const change = Number.isFinite(price) && Number.isFinite(referencePrice) ? price - referencePrice : null;
+  const changePercent = change !== null && referencePrice ? (change / referencePrice) * 100 : null;
+  const bidPrice = Number(ticker.bidPx ?? book.bidPrice);
+  const askPrice = Number(ticker.askPx ?? book.askPrice);
+  const spreadPercent = Number.isFinite(bidPrice) && Number.isFinite(askPrice) && price
+    ? ((askPrice - bidPrice) / price) * 100
+    : null;
+  const quoteVolume = Number(ticker.quoteVolume ?? ticker.volCcy24h);
+
+  return {
+    source,
+    symbol: pair.replace("-USDT", ""),
+    resolvedSymbol: pair,
+    quote: {
+      ticker: pair,
+      exchange: source,
+      price,
+      referencePrice,
+      ceilingPrice: null,
+      floorPrice: null,
+      highPrice: Number(ticker.high24h ?? ticker.highPrice ?? latestBar.high),
+      lowPrice: Number(ticker.low24h ?? ticker.lowPrice ?? latestBar.low),
+      volume: Number(ticker.vol24h ?? ticker.volume ?? latestBar.volume),
+      quoteVolume: Number.isFinite(quoteVolume) ? quoteVolume : Number(ticker.vol24h ?? ticker.volume ?? latestBar.volume) * price,
+      bidPrice: Number.isFinite(bidPrice) ? bidPrice : null,
+      askPrice: Number.isFinite(askPrice) ? askPrice : null,
+      spreadPercent,
+      change,
+      changePercent
+    },
+    overview: {
+      ticker: pair,
+      name: `${pair.replace("-USDT", "")} / USDT`,
+      exchange: source,
+      industry: "Tiền mã hóa",
+      sector: "Crypto",
+      description: `Dữ liệu coin lấy từ ${source} cho cặp ${pair}. Tiền tệ: USDT.`,
+      marketCap: null,
+      pe: null,
+      pb: null,
+      roe: null,
+      eps: null,
+      beta: null,
+      currency: "USDT",
+      assetType: "crypto"
+    },
+    bars
+  };
+}
+
+async function fetchBinanceCrypto(symbol, range) {
+  const pair = toCryptoPair(symbol);
+  const config = CRYPTO_RANGE_CONFIG[range] || CRYPTO_RANGE_CONFIG["2y"];
+  const binanceSymbol = pair.replace("-", "");
+  const [tickerResponse, klinesResponse, bookResponse] = await Promise.all([
+    fetch(`${BINANCE_BASE}/ticker/24hr?symbol=${encodeURIComponent(binanceSymbol)}`, {
+      headers: { accept: "application/json", "user-agent": "stock-tracker-vietnam-crypto/1.0" }
+    }),
+    fetch(`${BINANCE_BASE}/klines?symbol=${encodeURIComponent(binanceSymbol)}&interval=${encodeURIComponent(config.binanceInterval)}&limit=${config.limit}`, {
+      headers: { accept: "application/json", "user-agent": "stock-tracker-vietnam-crypto/1.0" }
+    }),
+    fetch(`${BINANCE_BASE}/ticker/bookTicker?symbol=${encodeURIComponent(binanceSymbol)}`, {
+      headers: { accept: "application/json", "user-agent": "stock-tracker-vietnam-crypto/1.0" }
+    })
+  ]);
+
+  if (!tickerResponse.ok || !klinesResponse.ok) {
+    throw new Error(`Binance HTTP ${tickerResponse.status}/${klinesResponse.status}`);
+  }
+
+  const ticker = await tickerResponse.json();
+  const book = bookResponse.ok ? await bookResponse.json() : {};
+  const bars = parseBinanceKlines(await klinesResponse.json());
+  if (!bars.length) throw new Error("Binance không có dữ liệu nến");
+  return makeCryptoPayload("Binance", pair, ticker, bars, book);
+}
+
+async function fetchOkxCrypto(symbol, range) {
+  const pair = toCryptoPair(symbol);
+  const config = CRYPTO_RANGE_CONFIG[range] || CRYPTO_RANGE_CONFIG["2y"];
+  const [tickerResponse, candlesResponse] = await Promise.all([
+    fetch(`${OKX_BASE}/market/ticker?instId=${encodeURIComponent(pair)}`, {
+      headers: { accept: "application/json", "user-agent": "stock-tracker-vietnam-crypto/1.0" }
+    }),
+    fetch(`${OKX_BASE}/market/candles?instId=${encodeURIComponent(pair)}&bar=${encodeURIComponent(config.okxBar)}&limit=${config.limit}`, {
+      headers: { accept: "application/json", "user-agent": "stock-tracker-vietnam-crypto/1.0" }
+    })
+  ]);
+
+  if (!tickerResponse.ok || !candlesResponse.ok) {
+    throw new Error(`OKX HTTP ${tickerResponse.status}/${candlesResponse.status}`);
+  }
+
+  const tickerPayload = await tickerResponse.json();
+  const candlesPayload = await candlesResponse.json();
+  if (tickerPayload.code !== "0" || candlesPayload.code !== "0") {
+    throw new Error(`OKX ${tickerPayload.msg || candlesPayload.msg || "không có dữ liệu"}`);
+  }
+
+  const ticker = tickerPayload.data?.[0] || {};
+  const bars = parseOkxCandles(candlesPayload.data);
+  if (!bars.length) throw new Error("OKX không có dữ liệu nến");
+  return makeCryptoPayload("OKX", pair, ticker, bars);
+}
+
+async function fetchCrypto(symbol, range = "2y") {
+  let binanceError = null;
+  try {
+    return await fetchBinanceCrypto(symbol, range);
+  } catch (error) {
+    binanceError = error;
+  }
+
+  try {
+    return await fetchOkxCrypto(symbol, range);
+  } catch (okxError) {
+    throw new Error(`Binance: ${binanceError.message}; OKX: ${okxError.message}`);
+  }
+}
+
 async function handleProxy(req, res, url) {
+  if (url.searchParams.get("source") === "crypto") {
+    try {
+      sendJson(res, 200, await fetchCrypto(url.searchParams.get("symbol"), url.searchParams.get("range") || "2y"));
+    } catch (error) {
+      sendJson(res, 502, { error: "Crypto request failed", details: error.message });
+    }
+    return;
+  }
+
   if (url.searchParams.get("source") === "fundamentals") {
     try {
       sendJson(res, 200, await fetchFundamentals(url.searchParams.get("symbol")));
