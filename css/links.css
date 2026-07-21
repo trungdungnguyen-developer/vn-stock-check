@@ -1,0 +1,4 @@
+/* Links and selection */
+.terminal-layout a { color: #7dd3fc !important; text-underline-offset: 3px; }
+.terminal-layout a:hover { color: #bae6fd !important; }
+::selection { background: #0369a1; color: #ffffff; }

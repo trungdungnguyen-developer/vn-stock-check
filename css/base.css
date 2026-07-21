@@ -1,0 +1,44 @@
+html { background: var(--ui-bg); }
+body,
+.app,
+.shell,
+.terminal-layout {
+  background: var(--ui-bg) !important;
+  color: var(--ui-text) !important;
+}
+
+body {
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Global text contrast */
+.terminal-layout h1,
+.terminal-layout h2,
+.terminal-layout h3,
+.terminal-layout h4,
+.terminal-layout h5,
+.terminal-layout h6,
+.terminal-layout strong,
+.terminal-layout b,
+.terminal-layout dd,
+.terminal-layout legend,
+.terminal-layout table,
+.terminal-layout label {
+  color: var(--ui-text) !important;
+}
+
+.terminal-layout p,
+.terminal-layout small,
+.terminal-layout em,
+.terminal-layout dt,
+.terminal-layout .muted,
+.terminal-layout .eyebrow,
+.terminal-layout .section-head > span,
+.terminal-layout [class*="description"],
+.terminal-layout [class*="subtitle"] {
+  color: var(--ui-muted) !important;
+  opacity: 1 !important;
+}

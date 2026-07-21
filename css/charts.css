@@ -1,0 +1,12 @@
+/* Charts: visible container and legends */
+.terminal-layout canvas {
+  background: #091524 !important;
+  border: 1px solid var(--ui-border) !important;
+  border-radius: 10px;
+}
+
+.terminal-layout .chart-legend,
+.terminal-layout .chart-legend span,
+.terminal-layout .timeframe-label {
+  color: var(--ui-text-secondary) !important;
+}

@@ -1,0 +1,26 @@
+/*
+ * Accessible UI refresh
+ * Design-only overrides: no application behavior or JavaScript hooks changed.
+ */
+:root {
+  color-scheme: dark;
+  --ui-bg: #07111f;
+  --ui-bg-elevated: #0b1728;
+  --ui-sidebar: #081321;
+  --ui-panel: #111f33;
+  --ui-panel-strong: #162840;
+  --ui-input: #0a1626;
+  --ui-border: #334b68;
+  --ui-border-strong: #4e6b8f;
+  --ui-text: #f8fafc;
+  --ui-text-secondary: #d6e2f0;
+  --ui-muted: #a9bbcf;
+  --ui-primary: #38bdf8;
+  --ui-primary-strong: #0284c7;
+  --ui-focus: #7dd3fc;
+  --ui-positive: #4ade80;
+  --ui-negative: #fb7185;
+  --ui-warning: #fbbf24;
+  --ui-shadow: 0 14px 34px rgba(0, 0, 0, 0.28);
+  --ui-radius: 12px;
+}

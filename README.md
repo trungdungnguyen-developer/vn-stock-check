@@ -65,3 +65,7 @@ Sau khi deploy đúng, app sẽ gọi dữ liệu qua:
 - App dùng dữ liệu công khai qua proxy, không phải API chính thức có SLA cho sản phẩm thương mại.
 - Nếu cần sản phẩm ổn định để kinh doanh, nên dùng nhà cung cấp dữ liệu có hợp đồng/API key riêng.
 - Dữ liệu hiển thị phụ thuộc vào các trường mà endpoint trả về cho từng mã cổ phiếu hoặc từng cặp coin.
+
+## UI architecture
+
+The design layer has been reorganized into modular files under `css/`. See `UI_GUIDE.md` for the loading order, accessibility rules, and safe maintenance guidelines. Existing JavaScript behavior and DOM hooks are unchanged.

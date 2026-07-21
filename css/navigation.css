@@ -1,0 +1,24 @@
+/* Sidebar navigation and watchlists */
+.terminal-sidebar .tab,
+.watchlist-block .quick-symbols button,
+.watchlist-item {
+  background: #102239 !important;
+  color: var(--ui-text-secondary) !important;
+  border: 1px solid var(--ui-border) !important;
+}
+
+.terminal-sidebar .tab:hover,
+.watchlist-item:hover {
+  background: #193653 !important;
+  color: #ffffff !important;
+  border-color: var(--ui-primary) !important;
+}
+
+.terminal-sidebar .tab.active {
+  background: #075f91 !important;
+  color: #ffffff !important;
+  border-color: var(--ui-primary) !important;
+  box-shadow: inset 4px 0 0 var(--ui-focus) !important;
+}
+
+.watchlist-group h3 { color: var(--ui-text-secondary) !important; }

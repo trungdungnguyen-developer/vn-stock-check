@@ -1,0 +1,16 @@
+/* Responsive readability */
+@media (max-width: 860px) {
+  .terminal-layout > .search-panel { background: var(--ui-sidebar) !important; }
+  .terminal-sidebar { border-right: 0 !important; border-bottom: 1px solid var(--ui-border) !important; }
+  .terminal-layout .table-wrap { overflow-x: auto; }
+  .terminal-layout button,
+  .terminal-layout input,
+  .terminal-layout select { min-height: 44px; }
+}
+
+@media (prefers-contrast: more) {
+  :root {
+    --ui-border: #6684a8;
+    --ui-muted: #c3d0df;
+  }
+}

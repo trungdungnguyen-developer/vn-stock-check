@@ -1,0 +1,73 @@
+/* Inputs and controls */
+.terminal-layout input,
+.terminal-layout textarea,
+.terminal-layout select {
+  background: var(--ui-input) !important;
+  color: var(--ui-text) !important;
+  border: 1px solid var(--ui-border-strong) !important;
+  caret-color: var(--ui-primary);
+}
+
+.terminal-layout input::placeholder,
+.terminal-layout textarea::placeholder {
+  color: #91a5bc !important;
+  opacity: 1 !important;
+}
+
+.terminal-layout input:hover,
+.terminal-layout textarea:hover,
+.terminal-layout select:hover { border-color: #6684a8 !important; }
+
+.terminal-layout input:focus,
+.terminal-layout textarea:focus,
+.terminal-layout select:focus,
+.terminal-layout button:focus-visible,
+.terminal-layout a:focus-visible,
+.terminal-layout [tabindex]:focus-visible {
+  outline: 3px solid rgba(125, 211, 252, 0.42) !important;
+  outline-offset: 2px !important;
+  border-color: var(--ui-focus) !important;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.18) !important;
+}
+
+.terminal-layout button,
+.terminal-layout .secondary,
+.terminal-layout .header-chip,
+.terminal-layout .header-icon,
+.terminal-layout .user-chip,
+.terminal-layout .quick-symbols button,
+.terminal-layout .chart-controls button,
+.terminal-layout .scanner-controls button,
+.terminal-layout .history-controls button {
+  background: #18304b !important;
+  color: var(--ui-text) !important;
+  border: 1px solid var(--ui-border-strong) !important;
+  box-shadow: none !important;
+  font-weight: 700;
+}
+
+.terminal-layout button:hover,
+.terminal-layout .secondary:hover,
+.terminal-layout .quick-symbols button:hover {
+  background: #244767 !important;
+  border-color: var(--ui-primary) !important;
+  color: #ffffff !important;
+}
+
+.terminal-layout .input-row > button,
+.terminal-layout button[type="submit"],
+.terminal-layout .tab.active,
+.terminal-layout .chart-controls button.active,
+.terminal-layout .scanner-controls button.active,
+.terminal-layout .history-controls button.active {
+  background: var(--ui-primary-strong) !important;
+  border-color: var(--ui-primary) !important;
+  color: #ffffff !important;
+}
+
+.terminal-layout button:disabled,
+.terminal-layout input:disabled,
+.terminal-layout select:disabled {
+  opacity: 0.62 !important;
+  cursor: not-allowed;
+}

@@ -1,0 +1,53 @@
+/* Cards and sections */
+.terminal-layout .quote-card,
+.terminal-layout .chart-section,
+.terminal-layout .indicator-card,
+.terminal-layout .change-section,
+.terminal-layout .recommendation-section,
+.terminal-layout .flow-section,
+.terminal-layout .history-section,
+.terminal-layout .news-section,
+.terminal-layout .ai-section,
+.terminal-layout .trade-section,
+.terminal-layout .scanner-section,
+.terminal-layout .crypto-trading-section,
+.terminal-layout .portfolio-section,
+.terminal-layout .risk-section,
+.terminal-layout .detail-card,
+.terminal-layout .fundamental-analysis-section,
+.terminal-layout .raw-section,
+.terminal-layout .score-block,
+.terminal-layout .score-hero,
+.terminal-layout .scanner-card,
+.terminal-layout .scanner-terminal-table,
+.terminal-layout .crypto-setup-card,
+.terminal-layout .crypto-stage-card,
+.terminal-layout .crypto-decision-card,
+.terminal-layout .trade-pick-card,
+.terminal-layout .table-wrap,
+.terminal-layout .market-strip,
+.terminal-layout .dashboard-strip article,
+.terminal-layout .metrics-grid article,
+.terminal-layout .ma-summary article,
+.terminal-layout .change-grid article,
+.terminal-layout .recommendation-grid article,
+.terminal-layout .flow-grid article,
+.terminal-layout .scanner-summary article,
+.terminal-layout .portfolio-summary article {
+  background: var(--ui-panel) !important;
+  border: 1px solid var(--ui-border) !important;
+  color: var(--ui-text) !important;
+  box-shadow: var(--ui-shadow) !important;
+}
+
+.terminal-layout .price-box,
+.terminal-layout .market-card,
+.terminal-layout .market-card-main,
+.terminal-layout [class*="hero"] article,
+.terminal-layout [class*="summary"] article,
+.terminal-layout [class*="grid"] > article,
+.terminal-layout [class*="grid"] > div {
+  background-color: var(--ui-panel-strong) !important;
+  border-color: var(--ui-border) !important;
+  color: var(--ui-text) !important;
+}

@@ -1,0 +1,22 @@
+/* Tables */
+.terminal-layout table {
+  width: 100%;
+  background: var(--ui-panel) !important;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.terminal-layout thead,
+.terminal-layout table th {
+  background: #0b1829 !important;
+  color: #eaf3fc !important;
+}
+
+.terminal-layout table th,
+.terminal-layout table td {
+  border-color: var(--ui-border) !important;
+  color: var(--ui-text-secondary) !important;
+}
+
+.terminal-layout tbody tr:nth-child(even) td { background: rgba(255,255,255,0.025) !important; }
+.terminal-layout tbody tr:hover td { background: #17304b !important; color: #ffffff !important; }

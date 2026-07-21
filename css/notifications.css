@@ -1,0 +1,6 @@
+/* Keep notifications readable */
+.notification-panel,
+.notification-dropdown,
+.notification-item {
+  color: var(--ui-text) !important;
+}

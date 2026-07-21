@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="vi">
   <head>
     <meta charset="utf-8">
@@ -9,7 +9,7 @@
     <link rel="icon" href="icon.svg" type="image/svg+xml">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
   </head>
   <body>
@@ -60,7 +60,7 @@
             </div>
           </div>
 
-          <nav class="tabs" aria-label="Chá»n ná»™i dung">
+          <nav class="tabs" aria-label="Chọn nội dung">
             <button id="overviewTab" class="tab active" type="button" data-tab="overview" aria-selected="true">Dashboard</button>
             <button id="scoreTab" class="tab" type="button" data-tab="score" aria-selected="false">Score</button>
             <button id="newsTab" class="tab" type="button" data-tab="news" aria-selected="false">News</button>
@@ -81,23 +81,23 @@
           <div>
             <span class="eyebrow">HOSE / HNX / UPCOM</span>
             <h1>AI Trading Terminal</h1>
-            <p>Nháº­p mÃ£ cá»• phiáº¿u Viá»‡t Nam hoáº·c coin Ä‘á»ƒ xem giÃ¡, khá»‘i lÆ°á»£ng, biáº¿n Ä‘á»™ng vÃ  biá»ƒu Ä‘á»“ lá»‹ch sá»­.</p>
+            <p>Nhập mã cổ phiếu Việt Nam hoặc coin để xem giá, khối lượng, biến động và biểu đồ lịch sử.</p>
           </div>
-          <span id="lastUpdated" class="pill">ChÆ°a táº£i dá»¯ liá»‡u</span>
+          <span id="lastUpdated" class="pill">Chưa tải dữ liệu</span>
         </header>
 
         <form id="stockForm" class="search-panel">
-          <label for="symbol">MÃ£ chá»©ng khoÃ¡n / Coin</label>
+          <label for="symbol">Mã chứng khoán / Coin</label>
           <div class="input-row">
-            <input id="symbol" type="text" autocomplete="off" placeholder="VÃ­ dá»¥: FPT, HPG, BTC, ETH, SOL, PI">
-            <button type="submit">Táº£i dá»¯ liá»‡u</button>
+            <input id="symbol" type="text" autocomplete="off" placeholder="Ví dụ: FPT, HPG, BTC, ETH, SOL, PI">
+            <button type="submit">Tải dữ liệu</button>
           </div>
           <div class="header-actions" aria-label="Header actions">
             <button id="favoriteToggle" type="button" class="header-chip">Favorite</button>
-            <button type="button" class="header-icon" aria-label="Notification">â€¢</button>
+            <button type="button" class="header-icon" aria-label="Notification">●</button>
             <button type="button" class="user-chip">User</button>
           </div>
-          <div class="quick-symbols" aria-label="MÃ£ phá»• biáº¿n">
+          <div class="quick-symbols" aria-label="Mã phổ biến">
             <button type="button" data-symbol="FPT">FPT</button>
             <button type="button" data-symbol="VNM">VNM</button>
             <button type="button" data-symbol="VCB">VCB</button>
@@ -109,10 +109,10 @@
             <button type="button" data-symbol="SOL">SOL</button>
             <button type="button" data-symbol="PI">PI</button>
           </div>
-          <div class="market-strip" aria-label="Chá»‰ sá»‘ thá»‹ trÆ°á»ng realtime">
+          <div class="market-strip" aria-label="Chỉ số thị trường realtime">
             <div class="market-strip-head">
-              <span>Thá»‹ trÆ°á»ng hÃ´m nay</span>
-              <small>Tá»± cáº­p nháº­t má»—i 60 giÃ¢y</small>
+              <span>Thị trường hôm nay</span>
+              <small>Tự cập nhật mỗi 60 giây</small>
             </div>
             <article class="market-card market-card-main">
               <span>VNI</span>
@@ -120,7 +120,7 @@
               <em id="marketVniChange">-</em>
             </article>
             <article class="market-card">
-              <span>VÃ ng</span>
+              <span>Vàng</span>
               <strong id="marketGold">-</strong>
               <em id="marketGoldChange">-</em>
             </article>
@@ -130,7 +130,7 @@
               <em id="marketBitcoinChange">-</em>
             </article>
             <article class="market-card">
-              <span>Dáº§u WTI</span>
+              <span>Dầu WTI</span>
               <strong id="marketOil">-</strong>
               <em id="marketOilChange">-</em>
             </article>
@@ -139,7 +139,7 @@
         </form>
 
         <section id="overviewPanel" class="tab-panel active">
-        <section class="dashboard-strip" aria-label="Dashboard tá»•ng quan">
+        <section class="dashboard-strip" aria-label="Dashboard tổng quan">
           <article>
             <span class="dashboard-icon" aria-hidden="true">P</span>
             <div><span>Current Price</span><strong id="currentPrice">-</strong></div>
@@ -172,59 +172,59 @@
         <section class="quote-card">
           <div>
             <span id="exchange" class="eyebrow">-</span>
-            <h2 id="companyName">Nháº­p mÃ£ chá»©ng khoÃ¡n hoáº·c coin Ä‘á»ƒ báº¯t Ä‘áº§u</h2>
-            <p id="companyDescription">App theo dÃµi cá»• phiáº¿u Viá»‡t Nam vÃ  cÃ¡c coin phá»• biáº¿n nhÆ° BTC, ETH, SOL, PI Network. KhÃ´ng cáº§n Alpha Vantage API key.</p>
+            <h2 id="companyName">Nhập mã chứng khoán hoặc coin để bắt đầu</h2>
+            <p id="companyDescription">App theo dõi cổ phiếu Việt Nam và các coin phổ biến như BTC, ETH, SOL, PI Network. Không cần Alpha Vantage API key.</p>
           </div>
           <div class="price-box">
-            <span>GiÃ¡ hiá»‡n táº¡i</span>
+            <span>Giá hiện tại</span>
             <strong>-</strong>
             <em>Xem dashboard</em>
           </div>
         </section>
 
-        <section class="metrics-grid" aria-label="Chá»‰ sá»‘ giao dá»‹ch">
-          <article><span>ÄÃ³ng trÆ°á»›c</span><strong id="referencePrice">-</strong></article>
-          <article><span>Tráº§n</span><strong id="ceilingPrice">-</strong></article>
-          <article><span>SÃ n</span><strong id="floorPrice">-</strong></article>
-          <article><span>Cao nháº¥t</span><strong id="highPrice">-</strong></article>
-          <article><span>Tháº¥p nháº¥t</span><strong id="lowPrice">-</strong></article>
-          <article><span>Khá»‘i lÆ°á»£ng</span><strong>-</strong></article>
+        <section class="metrics-grid" aria-label="Chỉ số giao dịch">
+          <article><span>Đóng trước</span><strong id="referencePrice">-</strong></article>
+          <article><span>Trần</span><strong id="ceilingPrice">-</strong></article>
+          <article><span>Sàn</span><strong id="floorPrice">-</strong></article>
+          <article><span>Cao nhất</span><strong id="highPrice">-</strong></article>
+          <article><span>Thấp nhất</span><strong id="lowPrice">-</strong></article>
+          <article><span>Khối lượng</span><strong>-</strong></article>
         </section>
 
         <div id="chartWorkspace" class="chart-workspace">
         <section class="chart-section">
           <div class="section-head chart-toolbar">
-            <h2>Biá»ƒu Ä‘á»“ giÃ¡ ká»¹ thuáº­t</h2>
+            <h2>Biểu đồ giá kỹ thuật</h2>
             <div class="chart-actions">
-              <span id="chartRange">GiÃ¡ + MA20/50/100/200</span>
+              <span id="chartRange">Giá + MA20/50/100/200</span>
               <button id="fullscreenChart" type="button" class="secondary chart-fullscreen">Fullscreen</button>
               <button type="button" class="secondary chart-tool-button" aria-label="Screenshot">Screenshot</button>
               <button type="button" class="secondary chart-tool-button" aria-label="Indicator">Indicator</button>
               <button type="button" class="secondary chart-tool-button" aria-label="Zoom">Zoom</button>
             </div>
           </div>
-          <div class="chart-controls" aria-label="Chá»n khung thá»i gian biá»ƒu Ä‘á»“">
+          <div class="chart-controls" aria-label="Chọn khung thời gian biểu đồ">
             <span class="timeframe-label">Timeframe</span>
             <button type="button" data-chart-range="30m">30p</button>
             <button type="button" data-chart-range="1h">1h</button>
             <button type="button" data-chart-range="2h">2h</button>
             <button type="button" data-chart-range="4h">4h</button>
-            <button type="button" data-chart-range="1d" class="active">1 ngÃ y</button>
-            <button type="button" data-chart-range="3d">3 ngÃ y</button>
-            <button type="button" data-chart-range="5d">5 ngÃ y</button>
-            <button type="button" data-chart-range="1w">1 tuáº§n</button>
-            <button type="button" data-chart-range="1m">1 thÃ¡ng</button>
-            <button type="button" data-chart-range="3m">3 thÃ¡ng</button>
+            <button type="button" data-chart-range="1d" class="active">1 ngày</button>
+            <button type="button" data-chart-range="3d">3 ngày</button>
+            <button type="button" data-chart-range="5d">5 ngày</button>
+            <button type="button" data-chart-range="1w">1 tuần</button>
+            <button type="button" data-chart-range="1m">1 tháng</button>
+            <button type="button" data-chart-range="3m">3 tháng</button>
           </div>
-          <canvas id="priceChart" width="960" height="420" aria-label="Biá»ƒu Ä‘á»“ giÃ¡ ká»¹ thuáº­t"></canvas>
+          <canvas id="priceChart" width="960" height="420" aria-label="Biểu đồ giá kỹ thuật"></canvas>
           <div class="chart-legend">
-            <span><i class="legend-price"></i>GiÃ¡</span>
+            <span><i class="legend-price"></i>Giá</span>
             <span><i class="legend-ma10"></i>MA20</span>
             <span><i class="legend-ma50"></i>MA50</span>
             <span><i class="legend-ma100"></i>MA100</span>
             <span><i class="legend-ma200"></i>MA200</span>
           </div>
-          <div class="ma-summary" aria-label="GiÃ¡ trá»‹ Ä‘Æ°á»ng trung bÃ¬nh Ä‘á»™ng">
+          <div class="ma-summary" aria-label="Giá trị đường trung bình động">
             <article><span>MA 20</span><strong id="ma10">-</strong></article>
             <article><span>MA 50</span><strong id="ma50">-</strong></article>
             <article><span>MA 100</span><strong id="ma100">-</strong></article>
@@ -238,7 +238,7 @@
               <h2>RSI 14</h2>
               <span id="rsiValue">-</span>
             </div>
-            <canvas id="rsiChart" width="460" height="220" aria-label="Biá»ƒu Ä‘á»“ RSI 14"></canvas>
+            <canvas id="rsiChart" width="460" height="220" aria-label="Biểu đồ RSI 14"></canvas>
           </article>
 
           <article class="indicator-card">
@@ -246,81 +246,81 @@
               <h2>MACD 12, 26, 9</h2>
               <span id="macdValue">-</span>
             </div>
-            <canvas id="macdChart" width="460" height="220" aria-label="Biá»ƒu Ä‘á»“ MACD"></canvas>
+            <canvas id="macdChart" width="460" height="220" aria-label="Biểu đồ MACD"></canvas>
           </article>
         </section>
         </div>
 
         <section class="change-section">
           <div class="section-head">
-            <h2>Biáº¿n Ä‘á»™ng giÃ¡</h2>
-            <span>% thay Ä‘á»•i theo sá»‘ phiÃªn gáº§n nháº¥t</span>
+            <h2>Biến động giá</h2>
+            <span>% thay đổi theo số phiên gần nhất</span>
           </div>
           <div class="change-grid">
-            <article><span>3 ngÃ y</span><strong id="change3">-</strong></article>
-            <article><span>7 ngÃ y</span><strong id="change7">-</strong></article>
-            <article><span>10 ngÃ y</span><strong id="change10">-</strong></article>
-            <article><span>14 ngÃ y</span><strong id="change14">-</strong></article>
-            <article><span>21 ngÃ y</span><strong id="change21">-</strong></article>
-            <article><span>30 ngÃ y</span><strong id="change30">-</strong></article>
+            <article><span>3 ngày</span><strong id="change3">-</strong></article>
+            <article><span>7 ngày</span><strong id="change7">-</strong></article>
+            <article><span>10 ngày</span><strong id="change10">-</strong></article>
+            <article><span>14 ngày</span><strong id="change14">-</strong></article>
+            <article><span>21 ngày</span><strong id="change21">-</strong></article>
+            <article><span>30 ngày</span><strong id="change30">-</strong></article>
           </div>
         </section>
 
         <section class="recommendation-section">
           <div class="section-head">
-            <h2>Gá»£i Ã½ theo thá»i háº¡n</h2>
-            <span>Dá»±a trÃªn MA, RSI, MACD, volume vÃ  vÃ¹ng giÃ¡</span>
+            <h2>Gợi ý theo thời hạn</h2>
+            <span>Dựa trên MA, RSI, MACD, volume và vùng giá</span>
           </div>
           <div id="recommendationBody" class="recommendation-grid">
-            <article><span>Ngáº¯n háº¡n</span><strong>-</strong><p>ChÆ°a cÃ³ dá»¯ liá»‡u.</p></article>
-            <article><span>Trung háº¡n</span><strong>-</strong><p>ChÆ°a cÃ³ dá»¯ liá»‡u.</p></article>
-            <article><span>DÃ i háº¡n</span><strong>-</strong><p>ChÆ°a cÃ³ dá»¯ liá»‡u.</p></article>
+            <article><span>Ngắn hạn</span><strong>-</strong><p>Chưa có dữ liệu.</p></article>
+            <article><span>Trung hạn</span><strong>-</strong><p>Chưa có dữ liệu.</p></article>
+            <article><span>Dài hạn</span><strong>-</strong><p>Chưa có dữ liệu.</p></article>
           </div>
         </section>
 
         <section class="flow-section">
           <div class="section-head">
-            <h2>GiÃ¡ trá»‹ mua bÃ¡n cá»§a nhÃ  Ä‘áº§u tÆ°</h2>
-            <span id="flowStatus">ChÆ°a cÃ³ nguá»“n dá»¯ liá»‡u</span>
+            <h2>Giá trị mua bán của nhà đầu tư</h2>
+            <span id="flowStatus">Chưa có nguồn dữ liệu</span>
           </div>
           <div class="metrics-grid flow-grid">
-            <article><span>NÆ°á»›c ngoÃ i mua</span><strong id="foreignBuy">-</strong></article>
-            <article><span>NÆ°á»›c ngoÃ i bÃ¡n</span><strong id="foreignSell">-</strong></article>
-            <article><span>NÆ°á»›c ngoÃ i rÃ²ng</span><strong id="foreignNet">-</strong></article>
-            <article><span>Trong nÆ°á»›c mua</span><strong id="domesticBuy">-</strong></article>
-            <article><span>Trong nÆ°á»›c bÃ¡n</span><strong id="domesticSell">-</strong></article>
-            <article><span>Trong nÆ°á»›c rÃ²ng</span><strong id="domesticNet">-</strong></article>
+            <article><span>Nước ngoài mua</span><strong id="foreignBuy">-</strong></article>
+            <article><span>Nước ngoài bán</span><strong id="foreignSell">-</strong></article>
+            <article><span>Nước ngoài ròng</span><strong id="foreignNet">-</strong></article>
+            <article><span>Trong nước mua</span><strong id="domesticBuy">-</strong></article>
+            <article><span>Trong nước bán</span><strong id="domesticSell">-</strong></article>
+            <article><span>Trong nước ròng</span><strong id="domesticNet">-</strong></article>
           </div>
-          <p class="note">Khu vá»±c nÃ y hiá»ƒn thá»‹ dá»¯ liá»‡u mua/bÃ¡n nÆ°á»›c ngoÃ i tá»« Vietcap/VCI khi nguá»“n tráº£ vá»; pháº§n trong nÆ°á»›c Ä‘Æ°á»£c Æ°á»›c tÃ­nh tá»« tá»•ng giÃ¡ trá»‹ giao dá»‹ch.</p>
+          <p class="note">Khu vực này hiển thị dữ liệu mua/bán nước ngoài từ Vietcap/VCI khi nguồn trả về; phần trong nước được ước tính từ tổng giá trị giao dịch.</p>
         </section>
 
         <section class="history-section">
           <div class="section-head">
-            <h2>Lá»‹ch sá»­ giÃ¡</h2>
+            <h2>Lịch sử giá</h2>
             <span id="historyCount">-</span>
           </div>
-          <div class="history-controls" aria-label="Chá»n sá»‘ ngÃ y lá»‹ch sá»­ giÃ¡">
-            <span>Hiá»ƒn thá»‹</span>
-            <button type="button" data-history-limit="7">7 ngÃ y</button>
-            <button type="button" data-history-limit="15">15 ngÃ y</button>
-            <button type="button" data-history-limit="30" class="active">30 ngÃ y</button>
-            <button type="button" data-history-limit="60">60 ngÃ y</button>
+          <div class="history-controls" aria-label="Chọn số ngày lịch sử giá">
+            <span>Hiển thị</span>
+            <button type="button" data-history-limit="7">7 ngày</button>
+            <button type="button" data-history-limit="15">15 ngày</button>
+            <button type="button" data-history-limit="30" class="active">30 ngày</button>
+            <button type="button" data-history-limit="60">60 ngày</button>
           </div>
           <div class="table-wrap">
             <table>
               <thead>
                 <tr>
-                  <th>NgÃ y</th>
-                  <th>Má»Ÿ cá»­a</th>
+                  <th>Ngày</th>
+                  <th>Mở cửa</th>
                   <th>Cao</th>
-                  <th>Tháº¥p</th>
-                  <th>ÄÃ³ng cá»­a</th>
-                  <th>% thay Ä‘á»•i</th>
-                  <th>Khá»‘i lÆ°á»£ng</th>
+                  <th>Thấp</th>
+                  <th>Đóng cửa</th>
+                  <th>% thay đổi</th>
+                  <th>Khối lượng</th>
                 </tr>
               </thead>
               <tbody id="historyBody">
-                <tr><td colspan="7">ChÆ°a cÃ³ dá»¯ liá»‡u.</td></tr>
+                <tr><td colspan="7">Chưa có dữ liệu.</td></tr>
               </tbody>
             </table>
           </div>
@@ -328,18 +328,18 @@
 
         <section class="details-grid">
           <article class="detail-card">
-            <h2>ThÃ´ng tin cá»• phiáº¿u</h2>
+            <h2>Thông tin cổ phiếu</h2>
             <dl>
-              <div><dt>MÃ£</dt><dd id="ticker">-</dd></div>
-              <div><dt>SÃ n</dt><dd id="listedExchange">-</dd></div>
-              <div><dt>NgÃ nh</dt><dd id="industry">-</dd></div>
-              <div><dt>NhÃ³m ngÃ nh</dt><dd id="sector">-</dd></div>
-              <div><dt>Vá»‘n hÃ³a</dt><dd>-</dd></div>
+              <div><dt>Mã</dt><dd id="ticker">-</dd></div>
+              <div><dt>Sàn</dt><dd id="listedExchange">-</dd></div>
+              <div><dt>Ngành</dt><dd id="industry">-</dd></div>
+              <div><dt>Nhóm ngành</dt><dd id="sector">-</dd></div>
+              <div><dt>Vốn hóa</dt><dd>-</dd></div>
             </dl>
           </article>
 
           <article class="detail-card">
-            <h2>Chá»‰ sá»‘ cÆ¡ báº£n</h2>
+            <h2>Chỉ số cơ bản</h2>
             <dl>
               <div><dt>P/E</dt><dd id="peRatio">-</dd></div>
               <div><dt>P/B</dt><dd id="pbRatio">-</dd></div>
@@ -352,35 +352,35 @@
 
         <section class="fundamental-analysis-section">
           <div class="section-head">
-            <h2>ÄÃ¡nh giÃ¡ Ä‘á»‹nh giÃ¡ cÆ¡ báº£n</h2>
-            <span id="fundamentalBadge">ChÆ°a cÃ³ dá»¯ liá»‡u</span>
+            <h2>Đánh giá định giá cơ bản</h2>
+            <span id="fundamentalBadge">Chưa có dữ liệu</span>
           </div>
           <div id="fundamentalAnalysis" class="fundamental-analysis">
             <article>
-              <span>Äá»‹nh giÃ¡</span>
+              <span>Định giá</span>
               <strong>-</strong>
-              <p>HÃ£y tra cá»©u má»™t mÃ£ cá»• phiáº¿u Ä‘á»ƒ xem phÃ¢n tÃ­ch P/E, P/B, ROE, EPS, Beta vÃ  vá»‘n hÃ³a.</p>
+              <p>Hãy tra cứu một mã cổ phiếu để xem phân tích P/E, P/B, ROE, EPS, Beta và vốn hóa.</p>
             </article>
           </div>
         </section>
 
         <section class="raw-section" hidden>
           <div class="section-head">
-            <h2>Dá»¯ liá»‡u gáº§n Ä‘Ã¢y</h2>
+            <h2>Dữ liệu gần đây</h2>
             <button id="copyButton" type="button" class="secondary">Copy JSON</button>
           </div>
-          <pre id="rawData">ChÆ°a cÃ³ dá»¯ liá»‡u.</pre>
+          <pre id="rawData">Chưa có dữ liệu.</pre>
         </section>
         </section>
 
         <section id="scorePanel" class="tab-panel" hidden>
           <section class="score-section">
             <div class="section-head">
-              <h2>Báº£ng Ä‘Ã¡nh giÃ¡</h2>
+              <h2>Bảng đánh giá</h2>
               <span>Dashboard score</span>
             </div>
             <div id="scoreAnalysis" class="score-analysis">
-              HÃ£y tra cá»©u má»™t mÃ£ cá»• phiáº¿u trÆ°á»›c, sau Ä‘Ã³ quay láº¡i tab nÃ y Ä‘á»ƒ xem phÃ¢n tÃ­ch theo thang Ä‘iá»ƒm 100.
+              Hãy tra cứu một mã cổ phiếu trước, sau đó quay lại tab này để xem phân tích theo thang điểm 100.
             </div>
           </section>
         </section>
@@ -389,16 +389,16 @@
           <section class="news-section">
             <div class="section-head">
               <div>
-                <h2>Tin tá»©c thá»‹ trÆ°á»ng</h2>
-                <p>Tin tá»©c Ä‘Æ°á»£c cáº­p nháº­t tá»« RSS CafeF vÃ  VnExpress khi báº¥m má»Ÿ tab hoáº·c cáº­p nháº­t láº¡i.</p>
+                <h2>Tin tức thị trường</h2>
+                <p>Tin tức được cập nhật từ RSS CafeF và VnExpress khi bấm mở tab hoặc cập nhật lại.</p>
               </div>
-              <button id="refreshNewsButton" type="button" class="secondary">Cáº­p nháº­t tin</button>
+              <button id="refreshNewsButton" type="button" class="secondary">Cập nhật tin</button>
             </div>
             <div id="newsBody" class="news-list">
               <article>
-                <span>ChÆ°a cÃ³ dá»¯ liá»‡u</span>
-                <h3>HÃ£y tra cá»©u mÃ£ cá»• phiáº¿u hoáº·c báº¥m Cáº­p nháº­t tin.</h3>
-                <p>App sáº½ hiá»ƒn thá»‹ tin liÃªn quan Ä‘áº¿n mÃ£ Ä‘ang xem vÃ  cÃ¡c tin quan trá»ng cá»§a thá»‹ trÆ°á»ng chá»©ng khoÃ¡n Viá»‡t Nam.</p>
+                <span>Chưa có dữ liệu</span>
+                <h3>Hãy tra cứu mã cổ phiếu hoặc bấm Cập nhật tin.</h3>
+                <p>App sẽ hiển thị tin liên quan đến mã đang xem và các tin quan trọng của thị trường chứng khoán Việt Nam.</p>
               </article>
             </div>
           </section>
@@ -408,19 +408,19 @@
           <section class="ai-section">
             <div class="section-head">
               <div>
-                <h2>PhÃ¢n tÃ­ch cÃ¹ng AI</h2>
-                <p>Nháº­n Ä‘á»‹nh tá»± Ä‘á»™ng dá»±a trÃªn dá»¯ liá»‡u thá»±c táº¿: MA, RSI, MACD, volume vÃ  biáº¿n Ä‘á»™ng giÃ¡ theo tá»«ng khung thá»i gian.</p>
+                <h2>Phân tích cùng AI</h2>
+                <p>Nhận định tự động dựa trên dữ liệu thực tế: MA, RSI, MACD, volume và biến động giá theo từng khung thời gian.</p>
               </div>
               <div class="chart-actions">
-                <span id="aiBadge">ChÆ°a cÃ³ dá»¯ liá»‡u</span>
-                <button id="refreshAiButton" type="button" class="secondary">PhÃ¢n tÃ­ch láº¡i</button>
+                <span id="aiBadge">Chưa có dữ liệu</span>
+                <button id="refreshAiButton" type="button" class="secondary">Phân tích lại</button>
               </div>
             </div>
             <div id="aiAnalysisBody" class="ai-analysis">
               <article>
-                <span>ChÆ°a cÃ³ dá»¯ liá»‡u</span>
-                <h3>HÃ£y tra cá»©u má»™t mÃ£ cá»• phiáº¿u trÆ°á»›c.</h3>
-                <p>Sau Ä‘Ã³ má»Ÿ tab nÃ y Ä‘á»ƒ xem nháº­n Ä‘á»‹nh khung 1h, 4h, 1 ngÃ y, 1 tuáº§n vÃ  1 thÃ¡ng.</p>
+                <span>Chưa có dữ liệu</span>
+                <h3>Hãy tra cứu một mã cổ phiếu trước.</h3>
+                <p>Sau đó mở tab này để xem nhận định khung 1h, 4h, 1 ngày, 1 tuần và 1 tháng.</p>
               </article>
             </div>
           </section>
@@ -430,19 +430,19 @@
           <section class="trade-section">
             <div class="section-head">
               <div>
-                <h2>TÃ¬m Ä‘iá»ƒm mua vÃ  bÃ¡n</h2>
-                <p>Há»‡ thá»‘ng lá»c lá»‡nh theo 1H, 30 phÃºt vÃ  5 phÃºt vá»›i EMA9, EMA21, RSI14 vÃ  volume. Náº¿u tÃ­n hiá»‡u láº«n lá»™n thÃ¬ Æ°u tiÃªn khÃ´ng giao dá»‹ch.</p>
+                <h2>Tìm điểm mua và bán</h2>
+                <p>Hệ thống lọc lệnh theo 1H, 30 phút và 5 phút với EMA9, EMA21, RSI14 và volume. Nếu tín hiệu lẫn lộn thì ưu tiên không giao dịch.</p>
               </div>
               <div class="chart-actions">
-                <span id="tradeBadge">ChÆ°a cÃ³ dá»¯ liá»‡u</span>
-                <button id="refreshTradeButton" type="button" class="secondary">QuÃ©t láº¡i</button>
+                <span id="tradeBadge">Chưa có dữ liệu</span>
+                <button id="refreshTradeButton" type="button" class="secondary">Quét lại</button>
               </div>
             </div>
             <div id="tradeAnalysisBody" class="trade-analysis">
               <article>
-                <span>ChÆ°a cÃ³ dá»¯ liá»‡u</span>
-                <h3>HÃ£y tra cá»©u má»™t mÃ£ cá»• phiáº¿u trÆ°á»›c.</h3>
-                <p>Sau Ä‘Ã³ má»Ÿ tab nÃ y Ä‘á»ƒ há»‡ thá»‘ng kiá»ƒm tra xu hÆ°á»›ng 1H, setup 30 phÃºt, tÃ­n hiá»‡u vÃ o lá»‡nh 5 phÃºt, stop loss, take profit vÃ  checklist trÆ°á»›c khi mua.</p>
+                <span>Chưa có dữ liệu</span>
+                <h3>Hãy tra cứu một mã cổ phiếu trước.</h3>
+                <p>Sau đó mở tab này để hệ thống kiểm tra xu hướng 1H, setup 30 phút, tín hiệu vào lệnh 5 phút, stop loss, take profit và checklist trước khi mua.</p>
               </article>
             </div>
           </section>
@@ -453,37 +453,37 @@
             <div class="section-head">
               <div>
                 <h2>Market Scanner</h2>
-                <p>Lá»c nhanh coin vÃ  cá»• phiáº¿u Ä‘Ã¡ng xem theo thanh khoáº£n, biáº¿n Ä‘á»™ng, xu hÆ°á»›ng, relative strength vÃ  volume báº¥t thÆ°á»ng. ÄÃ¢y lÃ  bÆ°á»›c chá»n watchlist, chÆ°a pháº£i khuyáº¿n nghá»‹ mua bÃ¡n.</p>
+                <p>Lọc nhanh coin và cổ phiếu đáng xem theo thanh khoản, biến động, xu hướng, relative strength và volume bất thường. Đây là bước chọn watchlist, chưa phải khuyến nghị mua bán.</p>
               </div>
               <div class="chart-actions">
-                <span id="scannerBadge">ChÆ°a quÃ©t</span>
-                <button id="refreshScannerButton" type="button" class="secondary">QuÃ©t thá»‹ trÆ°á»ng</button>
+                <span id="scannerBadge">Chưa quét</span>
+                <button id="refreshScannerButton" type="button" class="secondary">Quét thị trường</button>
               </div>
             </div>
-            <div class="scanner-controls" aria-label="Chá»n nhÃ³m tÃ i sáº£n Ä‘á»ƒ quÃ©t">
-              <button type="button" data-scanner-type="all" class="active">Táº¥t cáº£</button>
+            <div class="scanner-controls" aria-label="Chọn nhóm tài sản để quét">
+              <button type="button" data-scanner-type="all" class="active">Tất cả</button>
               <button type="button" data-scanner-type="crypto">Coin OKX/Binance</button>
-              <button type="button" data-scanner-type="stock">Cá»• phiáº¿u Viá»‡t Nam</button>
+              <button type="button" data-scanner-type="stock">Cổ phiếu Việt Nam</button>
             </div>
             <div id="scannerSummary" class="scanner-summary">
               <article>
-                <span>Má»¥c tiÃªu</span>
-                <strong>10-20 mÃ£ Ä‘Ã¡ng phÃ¢n tÃ­ch</strong>
-                <p>Scanner loáº¡i bá» mÃ£ thanh khoáº£n yáº¿u, biáº¿n Ä‘á»™ng quÃ¡ tháº¥p, xu hÆ°á»›ng xáº¥u hoáº·c yáº¿u hÆ¡n thá»‹ trÆ°á»ng chung.</p>
+                <span>Mục tiêu</span>
+                <strong>10-20 mã đáng phân tích</strong>
+                <p>Scanner loại bỏ mã thanh khoản yếu, biến động quá thấp, xu hướng xấu hoặc yếu hơn thị trường chung.</p>
               </article>
             </div>
             <div id="scannerTradeBox" class="scanner-trade-box">
               <article>
                 <span>Trade Analysis</span>
-                <h3>ChÆ°a cÃ³ coin Ä‘Æ°á»£c chá»n Ä‘á»ƒ giao dá»‹ch.</h3>
-                <p>Sau khi quÃ©t, há»‡ thá»‘ng sáº½ chá»n 1-3 coin tá»‘t nháº¥t theo 4H, 1H, 30m: momentum, RSI, MACD, ADX, BOS/CHOCH, liquidity, OB, FVG, volume vÃ  RR.</p>
+                <h3>Chưa có coin được chọn để giao dịch.</h3>
+                <p>Sau khi quét, hệ thống sẽ chọn 1-3 coin tốt nhất theo 4H, 1H, 30m: momentum, RSI, MACD, ADX, BOS/CHOCH, liquidity, OB, FVG, volume và RR.</p>
               </article>
             </div>
             <div id="scannerBody" class="scanner-results">
               <article>
-                <span>ChÆ°a cÃ³ dá»¯ liá»‡u</span>
-                <h3>Báº¥m QuÃ©t thá»‹ trÆ°á»ng Ä‘á»ƒ báº¯t Ä‘áº§u.</h3>
-                <p>Coin sáº½ láº¥y dá»¯ liá»‡u qua nguá»“n crypto hiá»‡n cÃ³; cá»• phiáº¿u Viá»‡t Nam láº¥y qua Vietcap/VCI.</p>
+                <span>Chưa có dữ liệu</span>
+                <h3>Bấm Quét thị trường để bắt đầu.</h3>
+                <p>Coin sẽ lấy dữ liệu qua nguồn crypto hiện có; cổ phiếu Việt Nam lấy qua Vietcap/VCI.</p>
               </article>
             </div>
           </section>
@@ -494,18 +494,18 @@
             <div class="section-head">
               <div>
                 <h2>Crypto Trading</h2>
-                <p>Há»‡ thá»‘ng cháº¥m Ä‘iá»ƒm Swing 1-10 ngÃ y cho coin Spot/Futures trÃªn OKX. App chá»‰ chá»n 1-2 setup xÃ¡c suáº¥t cao nháº¥t vÃ  luÃ´n kiá»ƒm tra RR, Stop Loss, rá»§i ro trÆ°á»›c khi Ä‘Æ°a ra hÃ nh Ä‘á»™ng.</p>
+                <p>Hệ thống chấm điểm Swing 1-10 ngày cho coin Spot/Futures trên OKX. App chỉ chọn 1-2 setup xác suất cao nhất và luôn kiểm tra RR, Stop Loss, rủi ro trước khi đưa ra hành động.</p>
               </div>
               <div class="chart-actions">
-                <span id="cryptoTradingBadge">ChÆ°a quÃ©t</span>
-                <button id="refreshCryptoTradingButton" type="button" class="secondary">QuÃ©t Crypto</button>
+                <span id="cryptoTradingBadge">Chưa quét</span>
+                <button id="refreshCryptoTradingButton" type="button" class="secondary">Quét Crypto</button>
               </div>
             </div>
             <div id="cryptoTradingBody" class="crypto-trading-body">
               <article>
-                <span>ChÆ°a cÃ³ dá»¯ liá»‡u</span>
-                <h3>Báº¥m QuÃ©t Crypto Ä‘á»ƒ báº¯t Ä‘áº§u.</h3>
-                <p>Há»‡ thá»‘ng sáº½ lá»c coin thanh khoáº£n cao trÃªn OKX, phÃ¢n tÃ­ch Market Scanner, Strategic Analysis, Trade Analysis vÃ  Entry Confirmation theo thang Ä‘iá»ƒm 100.</p>
+                <span>Chưa có dữ liệu</span>
+                <h3>Bấm Quét Crypto để bắt đầu.</h3>
+                <p>Hệ thống sẽ lọc coin thanh khoản cao trên OKX, phân tích Market Scanner, Strategic Analysis, Trade Analysis và Entry Confirmation theo thang điểm 100.</p>
               </article>
             </div>
           </section>
@@ -619,4 +619,3 @@
     <script src="portfolio.js"></script>
   </body>
 </html>
-

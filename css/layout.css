@@ -1,0 +1,25 @@
+/* Main structure */
+.terminal-sidebar {
+  background: var(--ui-sidebar) !important;
+  color: var(--ui-text) !important;
+  border-right: 1px solid var(--ui-border) !important;
+  scrollbar-color: var(--ui-border-strong) var(--ui-sidebar);
+}
+
+.terminal-brand > span {
+  background: linear-gradient(135deg, var(--ui-primary-strong), var(--ui-primary)) !important;
+  color: #ffffff !important;
+}
+
+.terminal-brand strong { color: #ffffff !important; }
+.terminal-brand em,
+.watchlist-block > span,
+.sidebar-footer-links span { color: var(--ui-muted) !important; opacity: 1 !important; }
+
+.terminal-layout > .search-panel {
+  background: #0a1525 !important;
+  border-bottom: 1px solid var(--ui-border) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22) !important;
+}
+
+.terminal-layout > .tab-panel { background: var(--ui-bg) !important; }
