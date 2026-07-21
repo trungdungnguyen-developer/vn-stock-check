@@ -4,18 +4,49 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#880085">
-    <title>Theo dõi chứng khoán Việt Nam</title>
+    <title>AI Trading Terminal</title>
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="icon" href="icon.svg" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
   </head>
   <body>
     <main class="app">
-      <section class="shell">
+      <section class="shell terminal-layout">
+        <aside class="terminal-sidebar" aria-label="Terminal navigation">
+          <div class="terminal-brand">
+            <span>AI</span>
+            <div>
+              <strong>AI Trading Terminal</strong>
+              <em>Market workspace</em>
+            </div>
+          </div>
+
+          <div class="watchlist-block">
+            <span>Watchlist</span>
+            <div class="quick-symbols" aria-label="Watchlist">
+              <button type="button" data-symbol="BTC">BTC</button>
+              <button type="button" data-symbol="ETH">ETH</button>
+              <button type="button" data-symbol="SOL">SOL</button>
+              <button type="button" data-symbol="PI">PI</button>
+              <button type="button" data-symbol="FPT">FPT</button>
+              <button type="button" data-symbol="HPG">HPG</button>
+              <button type="button" data-symbol="SSI">SSI</button>
+              <button type="button" data-symbol="VCB">VCB</button>
+            </div>
+          </div>
+
+          <div class="sidebar-footer-links">
+            <span>Portfolio</span>
+            <span>Setting</span>
+          </div>
+        </aside>
         <header class="hero">
           <div>
             <span class="eyebrow">HOSE / HNX / UPCOM</span>
-            <h1>Theo dõi chứng khoán Việt Nam và Coin</h1>
+            <h1>AI Trading Terminal</h1>
             <p>Nhập mã cổ phiếu Việt Nam hoặc coin để xem giá, khối lượng, biến động và biểu đồ lịch sử.</p>
           </div>
           <span id="lastUpdated" class="pill">Chưa tải dữ liệu</span>
@@ -26,6 +57,11 @@
           <div class="input-row">
             <input id="symbol" type="text" autocomplete="off" placeholder="Ví dụ: FPT, HPG, BTC, ETH, SOL, PI">
             <button type="submit">Tải dữ liệu</button>
+          </div>
+          <div class="header-actions" aria-label="Header actions">
+            <button type="button" class="header-chip">Watchlist</button>
+            <button type="button" class="header-icon" aria-label="Notification">•</button>
+            <button type="button" class="user-chip">User</button>
           </div>
           <div class="quick-symbols" aria-label="Mã phổ biến">
             <button type="button" data-symbol="FPT">FPT</button>
@@ -69,12 +105,13 @@
         </form>
 
         <nav class="tabs" aria-label="Chọn nội dung">
-          <button id="overviewTab" class="tab active" type="button" data-tab="overview" aria-selected="true">Theo dõi</button>
-          <button id="scoreTab" class="tab" type="button" data-tab="score" aria-selected="false">Bảng đánh giá</button>
-          <button id="newsTab" class="tab" type="button" data-tab="news" aria-selected="false">Tin tức</button>
-          <button id="aiTab" class="tab" type="button" data-tab="ai" aria-selected="false">Phân tích cùng AI</button>
-          <button id="tradeTab" class="tab" type="button" data-tab="trade" aria-selected="false">Tìm điểm mua và bán</button>
+          <button id="overviewTab" class="tab active" type="button" data-tab="overview" aria-selected="true">Dashboard</button>
+          <button id="scoreTab" class="tab" type="button" data-tab="score" aria-selected="false">Score</button>
+          <button id="newsTab" class="tab" type="button" data-tab="news" aria-selected="false">News</button>
+          <button id="aiTab" class="tab" type="button" data-tab="ai" aria-selected="false">AI</button>
+          <button id="tradeTab" class="tab" type="button" data-tab="trade" aria-selected="false">Entry</button>
           <button id="scannerTab" class="tab" type="button" data-tab="scanner" aria-selected="false">Market Scanner</button>
+          <button id="cryptoTradingTab" class="tab" type="button" data-tab="cryptoTrading" aria-selected="false">Crypto Trading</button>
         </nav>
 
         <section id="overviewPanel" class="tab-panel active">
@@ -389,6 +426,28 @@
                 <span>Chưa có dữ liệu</span>
                 <h3>Bấm Quét thị trường để bắt đầu.</h3>
                 <p>Coin sẽ lấy dữ liệu qua nguồn crypto hiện có; cổ phiếu Việt Nam lấy qua Vietcap/VCI.</p>
+              </article>
+            </div>
+          </section>
+        </section>
+
+        <section id="cryptoTradingPanel" class="tab-panel" hidden>
+          <section class="crypto-trading-section">
+            <div class="section-head">
+              <div>
+                <h2>Crypto Trading</h2>
+                <p>Hệ thống chấm điểm Swing 1-10 ngày cho coin Spot/Futures trên OKX. App chỉ chọn 1-2 setup xác suất cao nhất và luôn kiểm tra RR, Stop Loss, rủi ro trước khi đưa ra hành động.</p>
+              </div>
+              <div class="chart-actions">
+                <span id="cryptoTradingBadge">Chưa quét</span>
+                <button id="refreshCryptoTradingButton" type="button" class="secondary">Quét Crypto</button>
+              </div>
+            </div>
+            <div id="cryptoTradingBody" class="crypto-trading-body">
+              <article>
+                <span>Chưa có dữ liệu</span>
+                <h3>Bấm Quét Crypto để bắt đầu.</h3>
+                <p>Hệ thống sẽ lọc coin thanh khoản cao trên OKX, phân tích Market Scanner, Strategic Analysis, Trade Analysis và Entry Confirmation theo thang điểm 100.</p>
               </article>
             </div>
           </section>

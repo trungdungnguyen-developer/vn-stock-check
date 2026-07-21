@@ -20,8 +20,427 @@
   --font-small: 14px;
 }
 
+/* Sprint 1: terminal layout refactor. HTML/CSS only; JS hooks stay unchanged. */
+.app {
+  min-height: 100vh;
+  padding: 0;
+  background:
+    radial-gradient(circle at top right, rgba(136, 0, 133, 0.18), transparent 32vw),
+    #0f111a;
+}
+
+.terminal-layout {
+  width: 100%;
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 248px minmax(0, 1fr);
+  grid-template-rows: auto auto 1fr auto;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  overflow: visible;
+  background: #f7eff8;
+  box-shadow: none;
+}
+
+.terminal-sidebar {
+  position: sticky;
+  top: 0;
+  grid-column: 1;
+  grid-row: 1 / -1;
+  min-height: 100vh;
+  padding: 18px 14px;
+  background:
+    linear-gradient(180deg, #230026, #120017 58%, #0e1018),
+    #120017;
+  color: #fff7ff;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 1;
+}
+
+.terminal-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+}
+
+.terminal-brand > span {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 8px;
+  background: var(--primary);
+  color: #ffffff;
+  font-weight: 900;
+}
+
+.terminal-brand strong,
+.terminal-brand em {
+  display: block;
+}
+
+.terminal-brand strong {
+  font-size: 15px;
+  line-height: 1.2;
+}
+
+.terminal-brand em {
+  margin-top: 3px;
+  color: rgba(255, 247, 255, 0.62);
+  font-size: 12px;
+  font-style: normal;
+}
+
+.watchlist-block {
+  margin-top: 26px;
+}
+
+.watchlist-block > span,
+.sidebar-footer-links span {
+  display: block;
+  color: rgba(255, 247, 255, 0.62);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.watchlist-block .quick-symbols {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.watchlist-block .quick-symbols button {
+  min-height: 38px;
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff7ff;
+  box-shadow: none;
+}
+
+.watchlist-block .quick-symbols button:hover {
+  background: rgba(136, 0, 133, 0.82);
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.sidebar-footer-links {
+  display: grid;
+  gap: 12px;
+  margin-top: 36px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.terminal-layout > .hero {
+  display: none;
+}
+
+.terminal-layout > .tabs {
+  position: sticky;
+  top: 216px;
+  grid-column: 1;
+  grid-row: 1 / -1;
+  align-self: start;
+  z-index: 3;
+  display: grid;
+  gap: 8px;
+  margin: 236px 14px 0;
+  border: 0;
+}
+
+.terminal-layout .tab {
+  width: 100%;
+  justify-content: flex-start;
+  min-height: 42px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 0 14px;
+  background: transparent;
+  color: rgba(255, 247, 255, 0.72);
+  text-align: left;
+  box-shadow: none;
+}
+
+.terminal-layout .tab.active {
+  border-color: rgba(255, 255, 255, 0.18);
+  background: var(--primary);
+  color: #ffffff;
+}
+
+.terminal-layout > .search-panel {
+  grid-column: 2;
+  grid-row: 1;
+  display: grid;
+  grid-template-columns: auto minmax(360px, 1fr) auto auto;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  padding: 14px 22px;
+  border: 0;
+  border-bottom: 1px solid rgba(136, 0, 133, 0.14);
+  border-radius: 0;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 8px 26px rgba(35, 0, 38, 0.06);
+}
+
+.terminal-layout > .search-panel label {
+  color: var(--primary);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.terminal-layout > .search-panel .input-row {
+  grid-template-columns: minmax(260px, 1fr) auto;
+}
+
+.terminal-layout > .search-panel input {
+  min-height: 42px;
+  background: #fbf8fb;
+  font-size: 15px;
+}
+
+.terminal-layout > .search-panel button {
+  min-height: 42px;
+}
+
+.terminal-layout > .search-panel > .quick-symbols {
+  display: none;
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.header-actions button {
+  min-height: 38px;
+  border-color: rgba(136, 0, 133, 0.16);
+  background: #ffffff;
+  color: var(--text);
+  font-size: 13px;
+  box-shadow: none;
+}
+
+.header-actions .header-icon {
+  width: 38px;
+  padding: 0;
+  border-radius: 50%;
+  color: var(--orange);
+  font-size: 26px;
+  line-height: 1;
+}
+
+.header-actions .user-chip {
+  background: #151823;
+  color: #ffffff;
+}
+
+.terminal-layout .message {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.terminal-layout .market-strip {
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  padding: 14px;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.terminal-layout > .tab-panel,
+.terminal-layout > .app-footer {
+  grid-column: 2;
+}
+
+.terminal-layout > .tab-panel {
+  min-width: 0;
+  padding: 0 22px 24px;
+}
+
+.terminal-layout .search-panel,
+.terminal-layout .tabs,
+.terminal-layout .quote-card,
+.terminal-layout .metrics-grid,
+.terminal-layout .chart-section,
+.terminal-layout .indicator-grid,
+.terminal-layout .change-section,
+.terminal-layout .recommendation-section,
+.terminal-layout .flow-section,
+.terminal-layout .history-section,
+.terminal-layout .news-section,
+.terminal-layout .ai-section,
+.terminal-layout .trade-section,
+.terminal-layout .scanner-section,
+.terminal-layout .crypto-trading-section,
+.terminal-layout .details-grid,
+.terminal-layout .fundamental-analysis-section,
+.terminal-layout .raw-section {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.terminal-layout .quote-card {
+  grid-template-columns: minmax(0, 1fr) 280px;
+  margin-top: 18px;
+  padding: 18px;
+  border-color: rgba(136, 0, 133, 0.12);
+  background: #ffffff;
+}
+
+.terminal-layout .quote-card h2 {
+  font-size: 26px;
+}
+
+.terminal-layout .price-box {
+  min-width: 0;
+  background:
+    linear-gradient(135deg, rgba(136, 0, 133, 0.14), rgba(55, 141, 222, 0.08)),
+    #fff8ff;
+}
+
+.terminal-layout .metrics-grid {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.terminal-layout .metrics-grid article:nth-child(2),
+.terminal-layout .metrics-grid article:nth-child(3),
+.terminal-layout .metrics-grid article:nth-child(4),
+.terminal-layout .metrics-grid article:nth-child(5) {
+  display: none;
+}
+
+.terminal-layout .metrics-grid::before,
+.terminal-layout .metrics-grid::after,
+.terminal-layout .metrics-grid article:first-child::after {
+  display: block;
+  border: 1px solid rgba(136, 0, 133, 0.12);
+  border-radius: 8px;
+  padding: 14px;
+  background: #ffffff;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.terminal-layout .metrics-grid::before {
+  content: "Score\a-";
+  white-space: pre;
+}
+
+.terminal-layout .metrics-grid::after {
+  content: "Trend\a-";
+  white-space: pre;
+}
+
+.terminal-layout .metrics-grid article:first-child::after {
+  content: "24H\aXem ở ô giá hiện tại";
+  white-space: pre;
+  margin-top: 12px;
+}
+
+.terminal-layout .chart-workspace {
+  display: grid;
+  gap: 14px;
+}
+
+.terminal-layout .chart-section {
+  min-height: 70vh;
+  padding: 18px;
+  background: #ffffff;
+}
+
+.terminal-layout #priceChart {
+  width: 100%;
+  height: 52vh;
+  min-height: 430px;
+}
+
+.terminal-layout .indicator-grid {
+  grid-template-columns: 1fr;
+  margin-top: 0;
+}
+
+.terminal-layout .indicator-card canvas {
+  width: 100%;
+  height: 220px;
+}
+
+.terminal-layout .change-section,
+.terminal-layout .recommendation-section,
+.terminal-layout .flow-section,
+.terminal-layout .history-section,
+.terminal-layout .details-grid,
+.terminal-layout .fundamental-analysis-section {
+  background: transparent;
+}
+
+@media (max-width: 980px) {
+  .terminal-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .terminal-sidebar {
+    position: static;
+    grid-column: 1;
+    grid-row: auto;
+    min-height: auto;
+  }
+
+  .terminal-layout > .tabs {
+    position: static;
+    grid-column: 1;
+    grid-row: auto;
+    display: flex;
+    overflow-x: auto;
+    margin: 0;
+    padding: 10px 14px;
+    background: #120017;
+  }
+
+  .terminal-layout .tab {
+    min-width: max-content;
+  }
+
+  .terminal-layout > .search-panel,
+  .terminal-layout > .tab-panel,
+  .terminal-layout > .app-footer {
+    grid-column: 1;
+  }
+
+  .terminal-layout > .search-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .terminal-layout .market-strip,
+  .terminal-layout .metrics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .terminal-layout .quote-card {
+    grid-template-columns: 1fr;
+  }
+
+  .terminal-layout #priceChart {
+    min-height: 320px;
+    height: 48vh;
+  }
+}
+
 * {
   box-sizing: border-box;
+}
+
+html {
+  font-family: "Be Vietnam Pro", "Segoe UI", Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 body {
@@ -112,6 +531,7 @@ h1 {
 .ai-section,
 .trade-section,
 .scanner-section,
+.crypto-trading-section,
 .details-grid,
 .fundamental-analysis-section,
 .raw-section {
@@ -133,12 +553,14 @@ h1 {
   background: #ffffff;
   color: var(--muted);
   font-size: var(--font-small);
+  font-weight: 600;
 }
 
 .tab.active {
   background: var(--primary);
   border-color: var(--primary);
   color: var(--white);
+  font-weight: 700;
 }
 
 .tab-panel[hidden] {
@@ -169,7 +591,9 @@ input {
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 0 14px;
+  font-family: inherit;
   font-size: 18px;
+  font-weight: 500;
   color: var(--text);
   text-transform: uppercase;
   outline: none;
@@ -187,8 +611,11 @@ button {
   padding: 0 18px;
   background: var(--green);
   color: #ffffff;
+  font-family: inherit;
   font-size: 16px;
   font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0;
   cursor: pointer;
 }
 
@@ -1064,7 +1491,8 @@ strong.neutral {
   font-weight: 800;
 }
 
-.scanner-section {
+.scanner-section,
+.crypto-trading-section {
   display: grid;
   gap: 18px;
   padding: 20px;
@@ -1075,7 +1503,8 @@ strong.neutral {
     #ffffff;
 }
 
-.scanner-section > .section-head {
+.scanner-section > .section-head,
+.crypto-trading-section > .section-head {
   align-items: flex-start;
   gap: 18px;
   margin: -4px -4px 2px;
@@ -1086,20 +1515,23 @@ strong.neutral {
   box-shadow: 0 10px 26px rgba(136, 0, 133, 0.08);
 }
 
-.scanner-section > .section-head h2 {
+.scanner-section > .section-head h2,
+.crypto-trading-section > .section-head h2 {
   margin-bottom: 6px;
   color: var(--primary);
   font-size: 26px;
 }
 
-.scanner-section > .section-head p {
+.scanner-section > .section-head p,
+.crypto-trading-section > .section-head p {
   max-width: 760px;
   margin-bottom: 0;
   color: var(--muted);
   line-height: 1.55;
 }
 
-#scannerBadge {
+#scannerBadge,
+#cryptoTradingBadge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1129,7 +1561,8 @@ strong.neutral {
   padding: 11px 16px;
   background: #ffffff;
   color: var(--primary);
-  font-weight: 800;
+  font-size: 14px;
+  font-weight: 700;
   cursor: pointer;
   box-shadow: 0 5px 14px rgba(136, 0, 133, 0.06);
   transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
@@ -1144,6 +1577,7 @@ strong.neutral {
   background: var(--primary);
   border-color: var(--primary);
   color: #ffffff;
+  font-weight: 700;
 }
 
 .scanner-summary {
@@ -1443,6 +1877,163 @@ strong.neutral {
   font-weight: 800;
 }
 
+.crypto-trading-body {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.crypto-trading-body > article,
+.crypto-setup-card,
+.crypto-stage-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 18px;
+  background: #ffffff;
+}
+
+.crypto-trading-hero {
+  display: grid;
+  grid-template-columns: minmax(260px, 1.25fr) repeat(2, minmax(220px, 0.75fr));
+  gap: 14px;
+  align-items: stretch;
+}
+
+.crypto-trading-hero article:first-child {
+  border: 1px solid rgba(136, 0, 133, 0.16);
+  border-radius: 8px;
+  padding: 20px;
+  background:
+    linear-gradient(135deg, rgba(136, 0, 133, 0.12), rgba(55, 141, 222, 0.08)),
+    #ffffff;
+}
+
+.crypto-trading-body span,
+.crypto-decision-card span,
+.crypto-setup-head span,
+.crypto-score-grid span {
+  display: block;
+  color: var(--muted);
+  font-size: var(--font-small);
+  font-weight: 800;
+}
+
+.crypto-trading-body h3 {
+  margin: 8px 0 6px;
+  font-size: 24px;
+  line-height: 1.2;
+}
+
+.crypto-trading-body p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.crypto-decision-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 18px;
+  background: #ffffff;
+  box-shadow: 0 10px 26px rgba(136, 0, 133, 0.07);
+}
+
+.crypto-decision-card strong {
+  display: block;
+  margin-top: 8px;
+  font-size: 30px;
+  line-height: 1.05;
+}
+
+.crypto-decision-card em {
+  display: block;
+  margin-top: 10px;
+  color: var(--text);
+  font-style: normal;
+  font-weight: 800;
+}
+
+.crypto-setup-card {
+  display: grid;
+  gap: 14px;
+  box-shadow: 0 8px 22px rgba(136, 0, 133, 0.05);
+}
+
+.crypto-setup-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(136, 0, 133, 0.12);
+}
+
+.crypto-setup-head strong {
+  min-width: 112px;
+  text-align: right;
+  font-size: 28px;
+  line-height: 1.1;
+}
+
+.crypto-score-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.crypto-score-grid div {
+  border: 1px solid rgba(136, 0, 133, 0.14);
+  border-radius: 8px;
+  padding: 13px;
+  background: #fff8ef;
+}
+
+.crypto-score-grid strong {
+  display: block;
+  margin-top: 6px;
+  color: var(--primary);
+  font-size: 22px;
+}
+
+.crypto-score-grid em {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  font-style: normal;
+}
+
+.crypto-stage-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.crypto-stage-card h4 {
+  margin: 0 0 10px;
+  color: var(--primary);
+  font-size: 16px;
+}
+
+.crypto-checks li {
+  grid-template-columns: 46px 170px 1fr;
+}
+
+.crypto-trading-body .positive {
+  color: var(--green);
+  font-weight: 800;
+}
+
+.crypto-trading-body .negative {
+  color: var(--red);
+  font-weight: 800;
+}
+
+.crypto-trading-body .neutral {
+  color: var(--orange);
+  font-weight: 800;
+}
+
 .score-analysis {
   display: grid;
   gap: 14px;
@@ -1614,7 +2205,10 @@ pre {
   .trade-plan,
   .scanner-summary,
   .trade-pick-grid,
-  .scanner-card-grid {
+  .scanner-card-grid,
+  .crypto-trading-hero,
+  .crypto-score-grid,
+  .crypto-stage-grid {
     grid-template-columns: 1fr;
   }
 
@@ -1622,7 +2216,8 @@ pre {
     grid-template-columns: 1fr;
   }
 
-  .scanner-section > .section-head {
+  .scanner-section > .section-head,
+  .crypto-trading-section > .section-head {
     display: grid;
   }
 }
@@ -1645,6 +2240,7 @@ pre {
   .ai-section,
   .trade-section,
   .scanner-section,
+  .crypto-trading-section,
   .fundamental-analysis-section,
   .details-grid,
   .raw-section {
@@ -1652,16 +2248,19 @@ pre {
     margin-right: 14px;
   }
 
-  .scanner-section {
+  .scanner-section,
+  .crypto-trading-section {
     padding: 14px;
   }
 
-  .scanner-section > .section-head {
+  .scanner-section > .section-head,
+  .crypto-trading-section > .section-head {
     margin: 0;
     padding: 14px;
   }
 
-  .scanner-section > .section-head h2 {
+  .scanner-section > .section-head h2,
+  .crypto-trading-section > .section-head h2 {
     font-size: 22px;
   }
 
@@ -1675,6 +2274,10 @@ pre {
 
   .trade-pick-checks li {
     grid-template-columns: 18px 1fr;
+  }
+
+  .crypto-checks li {
+    grid-template-columns: 46px 1fr;
   }
 
   .trade-pick-checks em {
@@ -1723,5 +2326,313 @@ pre {
   dl div {
     grid-template-columns: 1fr;
     gap: 4px;
+  }
+}
+
+/* Final Sprint 1 overrides: terminal layout must win over legacy rules above. */
+.app {
+  padding: 0;
+  background:
+    radial-gradient(circle at top right, rgba(136, 0, 133, 0.18), transparent 32vw),
+    #0f111a;
+}
+
+.terminal-layout {
+  width: 100%;
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 248px minmax(0, 1fr);
+  grid-template-rows: auto auto 1fr auto;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  overflow: visible;
+  background: #f7eff8;
+  box-shadow: none;
+}
+
+.terminal-layout > .hero {
+  display: none;
+}
+
+.terminal-layout > .search-panel {
+  grid-column: 2;
+  grid-row: 1;
+  display: grid;
+  grid-template-columns: auto minmax(360px, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  padding: 14px 22px;
+  border: 0;
+  border-bottom: 1px solid rgba(136, 0, 133, 0.14);
+  border-radius: 0;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 8px 26px rgba(35, 0, 38, 0.06);
+}
+
+.terminal-layout > .search-panel label {
+  color: var(--primary);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.terminal-layout > .search-panel .input-row {
+  grid-template-columns: minmax(260px, 1fr) auto;
+}
+
+.terminal-layout > .search-panel input,
+.terminal-layout > .search-panel button {
+  min-height: 42px;
+}
+
+.terminal-layout > .search-panel input {
+  background: #fbf8fb;
+  font-size: 15px;
+}
+
+.terminal-layout > .search-panel > .quick-symbols {
+  display: none;
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.header-actions button {
+  min-height: 38px;
+  border-color: rgba(136, 0, 133, 0.16);
+  background: #ffffff;
+  color: var(--text);
+  font-size: 13px;
+  box-shadow: none;
+}
+
+.header-actions .header-icon {
+  width: 38px;
+  padding: 0;
+  border-radius: 50%;
+  color: var(--orange);
+  font-size: 26px;
+  line-height: 1;
+}
+
+.header-actions .user-chip {
+  background: #151823;
+  color: #ffffff;
+}
+
+.terminal-layout .message {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.terminal-layout .market-strip {
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  padding: 14px;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.terminal-layout > .tabs {
+  position: sticky;
+  top: 216px;
+  grid-column: 1;
+  grid-row: 1 / -1;
+  align-self: start;
+  z-index: 3;
+  display: grid;
+  gap: 8px;
+  margin: 236px 14px 0;
+  border: 0;
+}
+
+.terminal-layout .tab {
+  width: 100%;
+  justify-content: flex-start;
+  min-height: 42px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 0 14px;
+  background: transparent;
+  color: rgba(255, 247, 255, 0.72);
+  text-align: left;
+  box-shadow: none;
+}
+
+.terminal-layout .tab.active {
+  border-color: rgba(255, 255, 255, 0.18);
+  background: var(--primary);
+  color: #ffffff;
+}
+
+.terminal-layout > .tab-panel,
+.terminal-layout > .app-footer {
+  grid-column: 2;
+}
+
+.terminal-layout > .tab-panel {
+  min-width: 0;
+  padding: 0 22px 24px;
+}
+
+.terminal-layout .search-panel,
+.terminal-layout .tabs,
+.terminal-layout .quote-card,
+.terminal-layout .metrics-grid,
+.terminal-layout .chart-section,
+.terminal-layout .indicator-grid,
+.terminal-layout .change-section,
+.terminal-layout .recommendation-section,
+.terminal-layout .flow-section,
+.terminal-layout .history-section,
+.terminal-layout .news-section,
+.terminal-layout .ai-section,
+.terminal-layout .trade-section,
+.terminal-layout .scanner-section,
+.terminal-layout .crypto-trading-section,
+.terminal-layout .details-grid,
+.terminal-layout .fundamental-analysis-section,
+.terminal-layout .raw-section {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.terminal-layout .quote-card {
+  grid-template-columns: minmax(0, 1fr) 280px;
+  margin-top: 18px;
+  padding: 18px;
+  border-color: rgba(136, 0, 133, 0.12);
+  background: #ffffff;
+}
+
+.terminal-layout .quote-card h2 {
+  font-size: 26px;
+}
+
+.terminal-layout .price-box {
+  min-width: 0;
+  background:
+    linear-gradient(135deg, rgba(136, 0, 133, 0.14), rgba(55, 141, 222, 0.08)),
+    #fff8ff;
+}
+
+.terminal-layout .metrics-grid {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.terminal-layout .metrics-grid article:nth-child(2),
+.terminal-layout .metrics-grid article:nth-child(3),
+.terminal-layout .metrics-grid article:nth-child(4),
+.terminal-layout .metrics-grid article:nth-child(5) {
+  display: none;
+}
+
+.terminal-layout .metrics-grid::before,
+.terminal-layout .metrics-grid::after,
+.terminal-layout .metrics-grid article:first-child::after {
+  display: block;
+  border: 1px solid rgba(136, 0, 133, 0.12);
+  border-radius: 8px;
+  padding: 14px;
+  background: #ffffff;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.terminal-layout .metrics-grid::before {
+  content: "Score\a-";
+  white-space: pre;
+}
+
+.terminal-layout .metrics-grid::after {
+  content: "Trend\a-";
+  white-space: pre;
+}
+
+.terminal-layout .metrics-grid article:first-child::after {
+  content: "24H\aXem ở ô giá hiện tại";
+  white-space: pre;
+  margin-top: 12px;
+}
+
+.terminal-layout .chart-workspace {
+  display: grid;
+  gap: 14px;
+}
+
+.terminal-layout .chart-section {
+  min-height: 70vh;
+  padding: 18px;
+  background: #ffffff;
+}
+
+.terminal-layout #priceChart {
+  width: 100%;
+  height: 52vh;
+  min-height: 430px;
+}
+
+.terminal-layout .indicator-grid {
+  grid-template-columns: 1fr;
+  margin-top: 0;
+}
+
+.terminal-layout .indicator-card canvas {
+  width: 100%;
+  height: 220px;
+}
+
+@media (max-width: 980px) {
+  .terminal-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .terminal-sidebar {
+    position: static;
+    grid-column: 1;
+    grid-row: auto;
+    min-height: auto;
+  }
+
+  .terminal-layout > .tabs {
+    position: static;
+    grid-column: 1;
+    grid-row: auto;
+    display: flex;
+    overflow-x: auto;
+    margin: 0;
+    padding: 10px 14px;
+    background: #120017;
+  }
+
+  .terminal-layout .tab {
+    min-width: max-content;
+  }
+
+  .terminal-layout > .search-panel,
+  .terminal-layout > .tab-panel,
+  .terminal-layout > .app-footer {
+    grid-column: 1;
+  }
+
+  .terminal-layout > .search-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .terminal-layout .market-strip,
+  .terminal-layout .metrics-grid,
+  .terminal-layout .quote-card {
+    grid-template-columns: 1fr;
+  }
+
+  .terminal-layout #priceChart {
+    min-height: 320px;
+    height: 48vh;
   }
 }

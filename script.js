@@ -30,6 +30,7 @@ const refreshNewsButton = document.getElementById("refreshNewsButton");
 const refreshAiButton = document.getElementById("refreshAiButton");
 const refreshTradeButton = document.getElementById("refreshTradeButton");
 const refreshScannerButton = document.getElementById("refreshScannerButton");
+const refreshCryptoTradingButton = document.getElementById("refreshCryptoTradingButton");
 const scannerControls = document.querySelector(".scanner-controls");
 const tabs = document.querySelectorAll(".tab");
 const tabPanels = {
@@ -38,7 +39,8 @@ const tabPanels = {
   news: document.getElementById("newsPanel"),
   ai: document.getElementById("aiPanel"),
   trade: document.getElementById("tradePanel"),
-  scanner: document.getElementById("scannerPanel")
+  scanner: document.getElementById("scannerPanel"),
+  cryptoTrading: document.getElementById("cryptoTradingPanel")
 };
 
 const fields = {
@@ -105,6 +107,8 @@ const fields = {
   scannerSummary: document.getElementById("scannerSummary"),
   scannerTradeBox: document.getElementById("scannerTradeBox"),
   scannerBody: document.getElementById("scannerBody"),
+  cryptoTradingBadge: document.getElementById("cryptoTradingBadge"),
+  cryptoTradingBody: document.getElementById("cryptoTradingBody"),
   fundamentalBadge: document.getElementById("fundamentalBadge"),
   fundamentalAnalysis: document.getElementById("fundamentalAnalysis"),
   recommendationBody: document.getElementById("recommendationBody"),
@@ -173,6 +177,7 @@ const SCANNER_STOCK_SYMBOLS = [
 
 let activeScannerType = "all";
 let latestScannerResults = [];
+let latestCryptoTradingResults = [];
 
 let latestPayload = null;
 let currentSymbol = "";
@@ -232,6 +237,29 @@ function formatPrice(value) {
   const number = toNumber(value);
   if (number === null) return "-";
   return number.toLocaleString("vi-VN", { maximumFractionDigits: 2 });
+}
+
+function cryptoPriceDigits(value) {
+  const number = Math.abs(toNumber(value) ?? 0);
+  if (number >= 1000) return 2;
+  if (number >= 1) return 4;
+  if (number >= 0.1) return 5;
+  if (number >= 0.01) return 6;
+  if (number >= 0.001) return 7;
+  return 8;
+}
+
+function formatCryptoPrice(value) {
+  const number = toNumber(value);
+  if (number === null) return "-";
+  return number.toLocaleString("vi-VN", {
+    maximumFractionDigits: cryptoPriceDigits(number),
+    minimumFractionDigits: Math.min(2, cryptoPriceDigits(number))
+  });
+}
+
+function formatAssetPrice(value, assetType = currentAssetType) {
+  return assetType === "crypto" ? formatCryptoPrice(value) : formatPrice(value);
 }
 
 function detectVietnamExchange(exchangeText) {
@@ -392,6 +420,21 @@ async function requestCryptoData(symbol, range = "2y") {
   return response.json();
 }
 
+async function requestOkxUniverseData(instType = "SPOT") {
+  if (location.protocol === "file:") {
+    throw new Error("Đang mở bằng file:// nên không có proxy dữ liệu. Hãy chạy local-server.js rồi mở http://localhost:8787.");
+  }
+
+  const response = await fetch(`${PROXY_BASE}?source=okx-universe&instType=${encodeURIComponent(instType)}`, {
+    headers: { accept: "application/json" }
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(payload.details || payload.error || `Không tải được danh sách OKX. HTTP ${response.status}`);
+  }
+  return payload;
+}
+
 async function requestNewsData() {
   if (location.protocol === "file:") {
     throw new Error("Đang mở bằng file:// nên không có proxy dữ liệu. Hãy chạy local-server.js rồi mở http://localhost:8787.");
@@ -428,9 +471,15 @@ async function requestYahooQuote(symbol) {
 }
 
 async function requestCryptoQuote(symbol) {
-  const raw = await requestCryptoData(symbol, "1d");
-  if (!raw?.quote) throw new Error(`Không có dữ liệu ${symbol}`);
-  return raw.quote;
+  try {
+    const raw = await requestCryptoData(symbol, "1d");
+    if (!raw?.quote) throw new Error(`Không có dữ liệu ${symbol}`);
+    return raw.quote;
+  } catch (error) {
+    const yahooSymbol = toYahooCryptoSymbol(symbol);
+    if (!yahooSymbol) throw error;
+    return requestYahooQuote(yahooSymbol);
+  }
 }
 
 function formatMarketValue(value, digits = 2) {
@@ -469,7 +518,7 @@ async function loadMarketStrip() {
     {
       valueTarget: fields.marketBitcoin,
       changeTarget: fields.marketBitcoinChange,
-      options: { digits: 0 },
+      options: { digits: 2 },
       load: () => requestCryptoQuote("BTC-USDT")
     },
     {
@@ -508,6 +557,7 @@ function toYahooCryptoSymbol(symbol) {
   const raw = normalizeSymbolInput(symbol);
   if (CRYPTO_ALIASES[raw]) return CRYPTO_ALIASES[raw];
   const normalized = normalizeSymbolInput(symbol)
+    .replace("-USDT", "-USD")
     .replace("/USDT", "-USD")
     .replace("USDT", "-USD")
     .replace("/USD", "-USD");
@@ -524,13 +574,14 @@ function isCryptoSymbol(symbol) {
 function toCryptoPairSymbol(symbol) {
   const raw = normalizeSymbolInput(symbol);
   if (CRYPTO_EXCHANGE_ALIASES[raw]) return CRYPTO_EXCHANGE_ALIASES[raw];
+  if (/^[A-Z0-9]+-USDT(-SWAP)?$/.test(raw)) return raw;
   const normalized = raw
     .replace("/USDT", "-USDT")
     .replace("USDT", "-USDT")
     .replace("/USD", "-USDT")
     .replace("-USD", "-USDT");
   if (CRYPTO_EXCHANGE_ALIASES[normalized]) return CRYPTO_EXCHANGE_ALIASES[normalized];
-  if (/^[A-Z0-9]+-USDT$/.test(normalized)) return normalized;
+  if (/^[A-Z0-9]+-USDT(-SWAP)?$/.test(normalized)) return normalized;
   if (CRYPTO_SYMBOLS.has(normalized)) return `${normalized}-USDT`;
   return "";
 }
@@ -835,8 +886,8 @@ function drawChart(points, movingAverages = null) {
 
   context.fillStyle = CHART_COLORS.text;
   context.font = "13px 'Be Vietnam Pro', Arial";
-  context.fillText(formatPrice(max), 8, padding + 4);
-  context.fillText(formatPrice(min), 8, plotBottom + 4);
+  context.fillText(formatAssetPrice(max), 8, padding + 4);
+  context.fillText(formatAssetPrice(min), 8, plotBottom + 4);
   context.fillText("Vol", 8, volumeTop + 14);
   context.fillText(safeText(points[0].time), padding, height - 12);
   context.fillText(safeText(points[points.length - 1].time), width - padding - 110, height - 12);
@@ -1132,10 +1183,10 @@ function renderHistory(bars, limit = activeHistoryLimit) {
   fields.historyBody.innerHTML = rows.map((row) => `
     <tr>
       <td>${safeText(row.time)}</td>
-      <td>${formatPrice(row.open)}</td>
-      <td>${formatPrice(row.high)}</td>
-      <td>${formatPrice(row.low)}</td>
-      <td class="${valueClass(row.changePercent)}">${formatPrice(row.close)}</td>
+      <td>${formatAssetPrice(row.open)}</td>
+      <td>${formatAssetPrice(row.high)}</td>
+      <td>${formatAssetPrice(row.low)}</td>
+      <td class="${valueClass(row.changePercent)}">${formatAssetPrice(row.close)}</td>
       <td class="${valueClass(row.changePercent)}">${formatPercent(row.changePercent)}</td>
       <td>${formatInteger(row.volume)}</td>
     </tr>
@@ -1651,14 +1702,14 @@ function renderTradeDecision(symbol, oneHour, thirtyMinute, fiveMinute, filters)
       <span>Kết luận cho ${escapeHtml(symbol)}</span>
       <h3 class="${decision.className}">${decision.text}</h3>
       <p>${decision.detail}</p>
-      <p>Entry tham chiếu: ${formatOptional(plan.entry, 2)}. Stop loss: ${formatOptional(plan.stopLoss, 2)} (${formatPercent(-plan.riskPercent)}). RR tới TP2: ${plan.rr ? formatNumber(plan.rr, 2) + " : 1" : "-"}.</p>
+      <p>Entry tham chiếu: ${formatAssetPrice(plan.entry)}. Stop loss: ${formatAssetPrice(plan.stopLoss)} (${formatPercent(-plan.riskPercent)}). RR tới TP2: ${plan.rr ? formatNumber(plan.rr, 2) + " : 1" : "-"}.</p>
     </article>
 
     <div class="trade-grid">
       <article>
         <span>Bước 1 - Xu hướng 1H</span>
         <h3 class="${oneHour.direction === "BUY" ? "positive" : oneHour.direction === "SELL" ? "negative" : "neutral"}">${oneHour.direction === "BUY" ? "Chỉ tìm BUY" : oneHour.direction === "SELL" ? "Chỉ tìm SELL" : "Không giao dịch"}</h3>
-        <p>Giá ${formatOptional(oneHour.latest.close, 2)}, EMA9 ${formatOptional(oneHour.latestEma9, 2)}, EMA21 ${formatOptional(oneHour.latestEma21, 2)}, RSI ${formatOptional(oneHour.latestRsi, 2)}.</p>
+        <p>Giá ${formatAssetPrice(oneHour.latest.close)}, EMA9 ${formatAssetPrice(oneHour.latestEma9)}, EMA21 ${formatAssetPrice(oneHour.latestEma21)}, RSI ${formatOptional(oneHour.latestRsi, 2)}.</p>
         <ul class="trade-checklist">
           ${oneHour.buyChecks.map((item) => `<li class="${item.pass ? "positive" : "negative"}"><b>${passIcon(item.pass)}</b>${escapeHtml(item.label)}</li>`).join("")}
         </ul>
@@ -1685,7 +1736,7 @@ function renderTradeDecision(symbol, oneHour, thirtyMinute, fiveMinute, filters)
       <article>
         <span>Take Profit</span>
         <h3>Kế hoạch chốt lời</h3>
-        <p>TP1 ${formatOptional(plan.tp1, 2)}: bán 50%. TP2 ${formatOptional(plan.tp2, 2)}: bán 30%. TP3 ${formatOptional(plan.tp3, 2)}: giữ 20% nếu giá chạy khỏe.</p>
+        <p>TP1 ${formatAssetPrice(plan.tp1)}: bán 50%. TP2 ${formatAssetPrice(plan.tp2)}: bán 30%. TP3 ${formatAssetPrice(plan.tp3)}: giữ 20% nếu giá chạy khỏe.</p>
       </article>
       <article>
         <span>Điều kiện hủy</span>
@@ -2412,6 +2463,369 @@ function renderScannerTradeBox(results) {
   `;
 }
 
+function mergeOkxUniverse(spotData, swapData) {
+  const bySymbol = new Map();
+  [...(spotData?.items || []), ...(swapData?.items || [])].forEach((item) => {
+    if (!item?.symbol || /^(USDT|USDC|USD)$/.test(item.symbol)) return;
+    const current = bySymbol.get(item.symbol);
+    if (!current || (item.quoteVolume || 0) > (current.quoteVolume || 0)) {
+      bySymbol.set(item.symbol, item);
+    }
+  });
+  SCANNER_CRYPTO_SYMBOLS.forEach((symbol) => {
+    if (!bySymbol.has(symbol)) bySymbol.set(symbol, { symbol, quoteVolume: 0, spreadPercent: null });
+  });
+  return [...bySymbol.values()]
+    .filter((item) => item.symbol && item.symbol.length <= 12)
+    .sort((a, b) => (b.quoteVolume || 0) - (a.quoteVolume || 0));
+}
+
+function latestValue(series) {
+  const value = latestNonNull(series);
+  return toNumber(value);
+}
+
+function isHigherHighHigherLow(bars) {
+  if (!bars?.length || bars.length < 60) return false;
+  const recentHigh = swingHigh(bars, 28, 2);
+  const previousHigh = swingHigh(bars.slice(0, -28), 28, 2);
+  const recentLow = swingLow(bars, 28, 2);
+  const previousLow = swingLow(bars.slice(0, -28), 28, 2);
+  return recentHigh !== null && previousHigh !== null && recentLow !== null && previousLow !== null && recentHigh > previousHigh && recentLow > previousLow;
+}
+
+function calculateRangePosition(bars) {
+  const latest = bars[bars.length - 1]?.close;
+  const recent = bars.slice(-120);
+  const low = Math.min(...recent.map((bar) => bar.low).filter(Number.isFinite));
+  const high = Math.max(...recent.map((bar) => bar.high).filter(Number.isFinite));
+  if (!latest || !Number.isFinite(low) || !Number.isFinite(high) || high <= low) return { score: 2, text: "Không đủ dữ liệu vị trí giá" };
+  const position = ((latest - low) / (high - low)) * 100;
+  if (position <= 38) return { score: 5, text: `Đang gần vùng hỗ trợ của range (${formatNumber(position, 0)}%).` };
+  if (position >= 78) return { score: 0, text: `Giá sát vùng kháng cự mạnh (${formatNumber(position, 0)}%).` };
+  return { score: 2, text: `Giá ở giữa range (${formatNumber(position, 0)}%), cần chờ điểm đẹp hơn.` };
+}
+
+function calculateVolumeProfileProxy(bars) {
+  const recent = bars.slice(-120);
+  const weighted = recent.reduce((sum, bar) => sum + (bar.close || 0) * (bar.volume || 0), 0);
+  const volume = recent.reduce((sum, bar) => sum + (bar.volume || 0), 0);
+  const poc = volume ? weighted / volume : null;
+  const latest = bars[bars.length - 1]?.close;
+  const volumeRatio = hasConfirmedVolume(bars, 1.2).ratio;
+  if (!latest || !poc) return { score: 2, text: "Chưa tính được vùng POC/HVN." };
+  const distance = Math.abs((latest - poc) / latest) * 100;
+  if (distance <= 4 || (bars[bars.length - 2]?.close < poc && latest > poc)) return { score: 5, text: `Giá đang quanh/vừa vượt POC ước tính ${formatCryptoPrice(poc)}.` };
+  if (volumeRatio !== null && volumeRatio < 0.75) return { score: 0, text: "Volume suy yếu, chưa có dòng tiền xác nhận." };
+  return { score: 2, text: `POC ước tính ${formatCryptoPrice(poc)}, vị trí chưa thật rõ.` };
+}
+
+function calculateFibonacciPosition(bars) {
+  const recent = bars.slice(-120);
+  const low = Math.min(...recent.map((bar) => bar.low).filter(Number.isFinite));
+  const high = Math.max(...recent.map((bar) => bar.high).filter(Number.isFinite));
+  const latest = bars[bars.length - 1]?.close;
+  if (!latest || !Number.isFinite(low) || !Number.isFinite(high) || high <= low) return { score: 0, text: "Không đủ dữ liệu Fibonacci." };
+  const retracement = (high - latest) / (high - low);
+  if (retracement >= 0.5 && retracement <= 0.618) return { score: 5, text: `Pullback đúng vùng 0.5-0.618 (${formatNumber(retracement, 2)}).` };
+  if (Math.abs(retracement - 0.382) <= 0.06) return { score: 3, text: `Pullback gần vùng 0.382 (${formatNumber(retracement, 2)}).` };
+  return { score: 0, text: `Giá ngoài vùng Fibonacci đẹp (${formatNumber(retracement, 2)}).` };
+}
+
+function hasDistributionSignal(bars) {
+  const latest = bars[bars.length - 1] || {};
+  const avgVolume20 = average(bars.slice(-21, -1).map((bar) => bar.volume));
+  return Boolean(latest.close < latest.open && avgVolume20 && latest.volume > avgVolume20 * 1.6);
+}
+
+function scoreCryptoTradingCandidate(symbol, ticker, dailyRaw, fourHourRaw, oneHourRaw, thirtyRaw, fifteenRaw, fiveRaw, btcBars, ethBars) {
+  const dailyBars = normalizeTechnicalBars(dailyRaw?.bars || []);
+  const fourHourBars = normalizeTechnicalBars(fourHourRaw?.bars || []);
+  const oneHourBars = normalizeTechnicalBars(oneHourRaw?.bars || []);
+  const thirtyBars = normalizeTechnicalBars(thirtyRaw?.bars || []);
+  const fifteenBars = normalizeTechnicalBars(fifteenRaw?.bars || []);
+  const fiveBars = normalizeTechnicalBars(fiveRaw?.bars || []);
+  if (dailyBars.length < 220 || oneHourBars.length < 80 || thirtyBars.length < 50) {
+    throw new Error(`${symbol} thiếu dữ liệu đa khung`);
+  }
+
+  const quote = dailyRaw?.quote || {};
+  const latestDaily = dailyBars[dailyBars.length - 1] || {};
+  const ema20 = latestValue(calculateEmaForBars(dailyBars, 20));
+  const ema50 = latestValue(calculateEmaForBars(dailyBars, 50));
+  const ema100 = latestValue(calculateEmaForBars(dailyBars, 100));
+  const ema200 = latestValue(calculateEmaForBars(dailyBars, 200));
+  const ema20_4h = latestValue(calculateEmaForBars(fourHourBars, 20));
+  const ema50_4h = latestValue(calculateEmaForBars(fourHourBars, 50));
+  const ema200_4h = latestValue(calculateEmaForBars(fourHourBars, 200));
+  const rsi1h = latestValue(calculateRsi(oneHourBars));
+  const macd1h = calculateMacd(oneHourBars);
+  const macd = latestValue(macd1h.macd);
+  const signal = latestValue(macd1h.signal);
+  const adxData = calculateAdx(oneHourBars);
+  const adx = latestValue(adxData.adx);
+  const atr = latestValue(calculateAtr(dailyBars));
+  const atrPercent = atr && latestDaily.close ? (atr / latestDaily.close) * 100 : null;
+  const volumeRatio = hasConfirmedVolume(dailyBars, 1.5).ratio;
+  const liquidity = scannerLiquidityScore("crypto", { ...quote, quoteVolume: ticker?.quoteVolume ?? quote.quoteVolume, spreadPercent: ticker?.spreadPercent ?? quote.spreadPercent }, latestDaily);
+  const rs20 = scannerPercentChange(dailyBars, 20);
+  const btcRs20 = scannerPercentChange(btcBars, 20);
+  const ethRs20 = scannerPercentChange(ethBars, 20);
+  const rs60 = scannerPercentChange(dailyBars, 60);
+  const btcRs60 = scannerPercentChange(btcBars, 60);
+  const ethRs60 = scannerPercentChange(ethBars, 60);
+  const newsHit = latestNewsItems.some((item) => normalizeSearchText(`${item.title} ${item.description}`).includes(normalizeSearchText(symbol)));
+  const trendUp = latestDaily.close > ema20 && ema20 > ema50 && ema50 > ema200 && fourHourBars.at(-1)?.close > ema20_4h;
+  const trendForming = latestDaily.close > ema20 && ema20 > ema50 && rsi1h >= 48;
+
+  const marketItems = [
+    { name: "Thanh khoản", max: 5, score: liquidity.value >= 10_000_000 && (liquidity.spread === null || liquidity.spread <= 0.25) ? 5 : liquidity.value >= 3_000_000 ? 3 : 0, detail: `Volume 24h ${formatLargeNumber(liquidity.value)} USD · Spread ${formatPercent(liquidity.spread)}` },
+    { name: "Biến động", max: 5, score: atrPercent >= 4 && atrPercent <= 12 ? 5 : atrPercent >= 2 && atrPercent <= 20 ? 3 : 0, detail: `ATR ${formatPercent(atrPercent)} · 24h ${formatPercent(ticker?.changePercent ?? quote.changePercent)}` },
+    { name: "Xu hướng 1D & 4H", max: 5, score: trendUp ? 5 : trendForming ? 3 : 0, detail: trendUp ? "EMA 1D/4H đồng thuận tăng." : trendForming ? "Đang hình thành xu hướng tăng." : "Xu hướng chưa đạt yêu cầu." },
+    { name: "Relative Strength", max: 5, score: rs20 !== null && btcRs20 !== null && ethRs20 !== null && rs20 > btcRs20 && rs20 > ethRs20 ? 5 : rs20 !== null && (rs20 > btcRs20 || rs20 > ethRs20) ? 3 : 0, detail: `20 phiên ${formatPercent(rs20)} · BTC ${formatPercent(btcRs20)} · ETH ${formatPercent(ethRs20)}` },
+    { name: "Catalyst", max: 5, score: newsHit || volumeRatio >= 2 ? 5 : volumeRatio >= 1.2 ? 3 : 2, detail: newsHit ? "Có tin liên quan trong nguồn tin hiện tại." : `Volume daily x${volumeRatio ? formatNumber(volumeRatio, 2) : "-"}; chưa có API unlock/tokenomics.` }
+  ];
+
+  const rangePosition = calculateRangePosition(dailyBars);
+  const volumeProfile = calculateVolumeProfileProxy(dailyBars);
+  const fib = calculateFibonacciPosition(dailyBars);
+  const hhhl = isHigherHighHigherLow(dailyBars);
+  const strategicItems = [
+    { name: "EMA50 > EMA100 > EMA200", max: 5, score: ema50 > ema100 && ema100 > ema200 ? 5 : 0, detail: `EMA50 ${formatCryptoPrice(ema50)} · EMA100 ${formatCryptoPrice(ema100)} · EMA200 ${formatCryptoPrice(ema200)}` },
+    { name: "Higher High + Higher Low", max: 5, score: hhhl ? 5 : 0, detail: hhhl ? "Cấu trúc đỉnh/đáy cao dần." : "Chưa xác nhận HH/HL rõ." },
+    { name: "Vị trí giá", max: 5, score: rangePosition.score, detail: rangePosition.text },
+    { name: "Volume Profile", max: 5, score: volumeProfile.score, detail: volumeProfile.text },
+    { name: "Fibonacci", max: 5, score: fib.score, detail: fib.text },
+    { name: "Tokenomics & Tin tức", max: 5, score: newsHit ? 5 : 3, detail: newsHit ? "Có catalyst/tin liên quan." : "Trung lập; chưa có API unlock token theo thời gian thực." },
+    { name: "Relative Strength dài hạn", max: 5, score: rs60 !== null && btcRs60 !== null && ethRs60 !== null && rs60 > btcRs60 && rs60 > ethRs60 ? 5 : rs60 !== null && (rs60 > btcRs60 || rs60 > ethRs60) ? 3 : 0, detail: `60 phiên ${formatPercent(rs60)} · BTC ${formatPercent(btcRs60)} · ETH ${formatPercent(ethRs60)}` }
+  ];
+
+  const bos = detectBos(oneHourBars);
+  const choch = detectChoch(oneHourBars);
+  const volume = hasConfirmedVolume(thirtyBars, 1.5);
+  const orderBlock = detectBullishOrderBlock(oneHourBars);
+  const fvg = detectUnfilledFvg(oneHourBars);
+  const liquiditySweep = fiveBars.length > 30 && fiveBars.at(-1).low < swingLow(fiveBars, 30, 2) && fiveBars.at(-1).close > fiveBars.at(-1).open;
+  const smcCount = [orderBlock.pass, fvg.pass, liquiditySweep].filter(Boolean).length;
+  const rr = calculateRiskReward(oneHourBars);
+  const momentumHits = [rsi1h >= 50 && rsi1h <= 70, macd > signal, adx > 25].filter(Boolean).length;
+  const tradeItems = [
+    { name: "Momentum", max: 5, score: momentumHits === 3 ? 5 : momentumHits === 2 ? 3 : 0, detail: `RSI ${formatOptional(rsi1h, 1)} · MACD ${formatOptional(macd, 4)} / Signal ${formatOptional(signal, 4)} · ADX ${formatOptional(adx, 1)}` },
+    { name: "Market Structure", max: 5, score: bos && choch ? 5 : bos || choch ? 3 : 0, detail: `BOS ${bos ? "có" : "chưa"} · CHOCH ${choch ? "có" : "chưa"}` },
+    { name: "Volume", max: 5, score: volume.pass ? 5 : volume.ratio >= 1.1 ? 3 : 0, detail: `Break/đẩy giá với volume x${volume.ratio ? formatNumber(volume.ratio, 2) : "-"}` },
+    { name: "Smart Money Concepts", max: 5, score: smcCount >= 2 ? 5 : smcCount === 1 ? 2 : 0, detail: `OB ${orderBlock.pass ? "có" : "chưa"} · FVG ${fvg.pass ? "có" : "chưa"} · Sweep ${liquiditySweep ? "có" : "chưa"}` },
+    { name: "Risk/Reward", max: 5, score: rr.rr >= 3 ? 5 : rr.rr >= 2 ? 3 : 0, detail: `RR ${rr.rr ? formatNumber(rr.rr, 2) + " : 1" : "-"} · Entry ${formatCryptoPrice(rr.entry)} · SL ${formatCryptoPrice(rr.stopLoss)}` }
+  ];
+
+  const entryBase = buildEntryConfirmationForCoin(fifteenBars, fiveBars);
+  const breakRetest = entryBase.checks[0]?.pass && entryBase.checks[1]?.pass;
+  const candle = entryBase.checks[2]?.pass || entryBase.checks[3]?.pass;
+  const entryVolume = entryBase.checks[4]?.pass;
+  const noDistribution = !hasDistributionSignal(fiveBars);
+  const clearSl = Boolean(rr.stopLoss && rr.stopLoss < rr.entry);
+  const entryItems = [
+    { name: "Break & Retest thành công", max: 5, score: breakRetest ? 5 : 0, detail: breakRetest ? "15m break, 5m retest vùng vừa vượt." : "Chưa có break/retest đủ rõ." },
+    { name: "Nến xác nhận", max: 3, score: candle ? 3 : 0, detail: candle ? "Có nến Bullish Engulfing/Hammer." : "Chưa có nến xác nhận." },
+    { name: "Volume xác nhận", max: 3, score: entryVolume ? 3 : 0, detail: entryBase.checks[4]?.detail || "-" },
+    { name: "Không phân phối mạnh", max: 2, score: noDistribution ? 2 : 0, detail: noDistribution ? "Chưa thấy nến đỏ volume lớn ở 5m." : "Có dấu hiệu phân phối ngắn hạn." },
+    { name: "Stop Loss rõ ràng", max: 2, score: clearSl ? 2 : 0, detail: clearSl ? `SL ${formatCryptoPrice(rr.stopLoss)}` : "Chưa xác định SL hợp lý." }
+  ];
+
+  const marketScore = marketItems.reduce((sum, item) => sum + item.score, 0);
+  const strategicScore = strategicItems.reduce((sum, item) => sum + item.score, 0);
+  const tradeScore = tradeItems.reduce((sum, item) => sum + item.score, 0);
+  const entryScore = entryItems.reduce((sum, item) => sum + item.score, 0);
+  const total = marketScore + strategicScore + tradeScore + entryScore;
+  const hardFilters = [
+    { label: "Thanh khoản quá thấp hoặc spread rộng", pass: liquidity.value >= 3_000_000 && (liquidity.spread === null || liquidity.spread <= 0.45), detail: `Volume ${formatLargeNumber(liquidity.value)} USD · Spread ${formatPercent(liquidity.spread)}` },
+    { label: "Unlock token lớn rất gần", pass: true, detail: "Chưa có API unlock token; cần kiểm tra thủ công trước khi vào lệnh." },
+    { label: "RR tối thiểu 1:2", pass: rr.rr >= 2, detail: rr.rr ? `${formatNumber(rr.rr, 2)} : 1` : "Chưa tính được RR." },
+    { label: "Stop Loss rõ ràng", pass: clearSl, detail: clearSl ? formatCryptoPrice(rr.stopLoss) : "Thiếu SL." },
+    { label: "Risk <= 1% tài khoản/lệnh", pass: clearSl, detail: clearSl ? "Đạt nếu tính vị thế theo khoảng cách Entry-SL." : "Chưa tính được kích thước vị thế." },
+    { label: "1D không đi ngược hoàn toàn", pass: !(latestDaily.close < ema200 && ema50 < ema100), detail: latestDaily.close < ema200 && ema50 < ema100 ? "1D đang chống lại hướng BUY." : "Không bị hard filter xu hướng 1D." }
+  ];
+  const blocked = hardFilters.some((item) => !item.pass);
+  const decision = blocked
+    ? { rank: "Không giao dịch", action: "Bị hard filter, không vào lệnh dù điểm số cao.", className: "negative" }
+    : total >= 90
+      ? { rank: "A+ Setup", action: "Có thể giao dịch ngay nếu RR và kế hoạch vị thế đã khóa.", className: "positive" }
+      : total >= 85
+        ? { rank: "A Setup", action: "Ưu tiên cao, chỉ chờ entry đúng checklist.", className: "positive" }
+        : total >= 80
+          ? { rank: "B Setup", action: "Đưa vào watchlist, chờ xác nhận thêm.", className: "neutral" }
+          : total >= 70
+            ? { rank: "C Setup", action: "Không vào, chỉ theo dõi.", className: "neutral" }
+            : { rank: "Loại", action: "Không đáng giao dịch lúc này.", className: "negative" };
+
+  return {
+    symbol,
+    source: dailyRaw?.source || "OKX/Binance",
+    price: quote.price ?? ticker?.last ?? latestDaily.close,
+    scores: { market: marketScore, strategic: strategicScore, trade: tradeScore, entry: entryScore, total },
+    stages: { marketItems, strategicItems, tradeItems, entryItems },
+    thresholds: {
+      market: marketScore >= 20 ? "Sang Strategic Analysis" : "Loại",
+      strategic: strategicScore >= 28 ? "Sang Trade Analysis" : strategicScore >= 24 ? "Watchlist" : "Loại",
+      trade: tradeScore >= 20 ? "Sang Entry Confirmation" : "Chờ",
+      entry: entryScore >= 12 ? "Vào lệnh" : entryScore >= 9 ? "Chờ thêm" : "Không giao dịch"
+    },
+    hardFilters,
+    blocked,
+    decision,
+    rr,
+    ticker
+  };
+}
+
+async function loadCryptoTradingCandidate(item, btcBars, ethBars) {
+  const symbol = item.symbol;
+  const dataSymbol = item.instId || symbol;
+  const [daily, fourHour, oneHour, thirty, fifteen, five] = await Promise.all([
+    requestCryptoData(dataSymbol, "2y"),
+    requestCryptoData(dataSymbol, "4h"),
+    requestCryptoData(dataSymbol, "1h"),
+    requestCryptoData(dataSymbol, "30m"),
+    requestCryptoData(dataSymbol, "15m"),
+    requestCryptoData(dataSymbol, "5m")
+  ]);
+  return scoreCryptoTradingCandidate(symbol, item, daily, fourHour, oneHour, thirty, fifteen, five, btcBars, ethBars);
+}
+
+function renderCryptoTradingResults(results, errors = []) {
+  latestCryptoTradingResults = results;
+  const sorted = [...results].sort((a, b) => b.scores.total - a.scores.total);
+  const tradable = sorted.filter((item) => !item.blocked && item.scores.total >= 80);
+  const display = (tradable.length ? tradable : sorted).slice(0, 5);
+  const topSetups = display.slice(0, 2);
+
+  fields.cryptoTradingBadge.textContent = `${topSetups.length || display.length} setup nổi bật`;
+  fields.cryptoTradingBadge.className = topSetups.some((item) => !item.blocked && item.scores.total >= 85) ? "positive" : display.length ? "neutral" : "negative";
+
+  if (!display.length) {
+    fields.cryptoTradingBody.innerHTML = `
+      <article>
+        <span>Không có setup</span>
+        <h3>Chưa tìm được coin đủ dữ liệu để chấm điểm.</h3>
+        <p>Bỏ qua ${errors.length} coin thiếu dữ liệu hoặc nguồn API tạm thời không phản hồi.</p>
+      </article>
+    `;
+    return;
+  }
+
+  fields.cryptoTradingBody.innerHTML = `
+    <div class="crypto-trading-hero">
+      <article>
+        <span>Kết quả chọn lệnh</span>
+        <h3>${topSetups.map((item) => item.symbol).join(" / ")}</h3>
+        <p>Đang hiển thị ${display.length}/${results.length} coin điểm cao nhất. Bỏ qua ${errors.length} coin lỗi dữ liệu. Quy tắc: thiếu RR >= 1:2, Stop Loss hoặc kiểm soát rủi ro thì không giao dịch.</p>
+      </article>
+      ${topSetups.map((item) => `
+        <article class="crypto-decision-card">
+          <span>${escapeHtml(item.symbol)} · ${escapeHtml(item.source)}</span>
+          <strong class="${item.decision.className}">${item.scores.total}/100</strong>
+          <h3>${escapeHtml(item.decision.rank)}</h3>
+          <p>${escapeHtml(item.decision.action)}</p>
+          <em>Giá ${formatCryptoPrice(item.price)} · RR ${item.rr.rr ? formatNumber(item.rr.rr, 2) + " : 1" : "-"}</em>
+        </article>
+      `).join("")}
+    </div>
+    ${display.map((item) => `
+      <article class="crypto-setup-card">
+        <div class="crypto-setup-head">
+          <div>
+            <span>${escapeHtml(item.symbol)} · Swing 1-10 ngày</span>
+            <h3>${escapeHtml(item.decision.rank)}</h3>
+            <p>${escapeHtml(item.decision.action)}</p>
+          </div>
+          <strong class="${item.decision.className}">${item.scores.total}/100</strong>
+        </div>
+        <div class="crypto-score-grid">
+          <div><span>Market Scanner</span><strong>${item.scores.market}/25</strong><em>${escapeHtml(item.thresholds.market)}</em></div>
+          <div><span>Strategic Analysis</span><strong>${item.scores.strategic}/35</strong><em>${escapeHtml(item.thresholds.strategic)}</em></div>
+          <div><span>Trade Analysis</span><strong>${item.scores.trade}/25</strong><em>${escapeHtml(item.thresholds.trade)}</em></div>
+          <div><span>Entry Confirmation</span><strong>${item.scores.entry}/15</strong><em>${escapeHtml(item.thresholds.entry)}</em></div>
+        </div>
+        <div class="crypto-stage-grid">
+          ${[
+            ["Phần I - Market Scanner", item.stages.marketItems],
+            ["Phần II - Strategic Analysis", item.stages.strategicItems],
+            ["Phần III - Trade Analysis", item.stages.tradeItems],
+            ["Phần IV - Entry Confirmation", item.stages.entryItems]
+          ].map(([title, rows]) => `
+            <section class="crypto-stage-card">
+              <h4>${escapeHtml(title)}</h4>
+              <ul class="trade-pick-checks crypto-checks">
+                ${rows.map((row) => `
+                  <li class="${row.score >= row.max ? "positive" : row.score > 0 ? "neutral" : "negative"}">
+                    <b>${row.score}/${row.max}</b>
+                    <span>${escapeHtml(row.name)}</span>
+                    <em>${escapeHtml(row.detail)}</em>
+                  </li>
+                `).join("")}
+              </ul>
+            </section>
+          `).join("")}
+        </div>
+        <section class="crypto-stage-card hard-filter-card">
+          <h4>Hard Filters</h4>
+          <ul class="trade-pick-checks crypto-checks">
+            ${item.hardFilters.map((filter) => `
+              <li class="${filter.pass ? "positive" : "negative"}">
+                <b>${filter.pass ? "OK" : "NO"}</b>
+                <span>${escapeHtml(filter.label)}</span>
+                <em>${escapeHtml(filter.detail)}</em>
+              </li>
+            `).join("")}
+          </ul>
+        </section>
+      </article>
+    `).join("")}
+  `;
+}
+
+async function loadCryptoTrading() {
+  if (!fields.cryptoTradingBadge || !fields.cryptoTradingBody) return;
+  fields.cryptoTradingBadge.textContent = "Đang quét...";
+  fields.cryptoTradingBadge.className = "neutral";
+  fields.cryptoTradingBody.innerHTML = `
+    <article>
+      <span>Đang quét OKX</span>
+      <h3>Đang lọc thanh khoản, xu hướng, relative strength và xác nhận entry...</h3>
+      <p>Quá trình này tải nhiều khung thời gian nên có thể mất một chút thời gian.</p>
+    </article>
+  `;
+
+  try {
+    const [spot, swap, btcBase, ethBase] = await Promise.allSettled([
+      requestOkxUniverseData("SPOT"),
+      requestOkxUniverseData("SWAP"),
+      requestCryptoData("BTC", "2y"),
+      requestCryptoData("ETH", "2y")
+    ]);
+    const universe = mergeOkxUniverse(
+      spot.status === "fulfilled" ? spot.value : null,
+      swap.status === "fulfilled" ? swap.value : null
+    );
+    const btcBars = btcBase.status === "fulfilled" ? normalizeTechnicalBars(btcBase.value?.bars || []) : [];
+    const ethBars = ethBase.status === "fulfilled" ? normalizeTechnicalBars(ethBase.value?.bars || []) : [];
+    const candidates = universe
+      .filter((item) => (item.quoteVolume || 0) >= 3_000_000 || SCANNER_CRYPTO_SYMBOLS.includes(item.symbol))
+      .slice(0, 32);
+    const rawResults = await runWithConcurrency(candidates, 3, (item) => loadCryptoTradingCandidate(item, btcBars, ethBars));
+    renderCryptoTradingResults(rawResults.filter((item) => item && !item.error), rawResults.filter((item) => item?.error));
+  } catch (error) {
+    fields.cryptoTradingBadge.textContent = "Lỗi dữ liệu";
+    fields.cryptoTradingBadge.className = "negative";
+    fields.cryptoTradingBody.innerHTML = `
+      <article>
+        <span>Lỗi Crypto Trading</span>
+        <h3>${escapeHtml(error.message || "Không quét được coin.")}</h3>
+        <p>Hãy kiểm tra local server hoặc Netlify Function rồi thử lại.</p>
+      </article>
+    `;
+  }
+}
+
 async function loadMarketScanner() {
   if (!fields.scannerBadge || !fields.scannerBody) return;
   fields.scannerBadge.textContent = "Đang quét...";
@@ -2493,7 +2907,7 @@ function renderMovingAverages(bars, movingAverages = null) {
   const latestValue = (series) => [...series].reverse().find((value) => value !== null);
   const currentPrice = bars[bars.length - 1]?.close;
   const renderMa = (target, value) => {
-    target.textContent = formatOptional(value, 2);
+    target.textContent = formatAssetPrice(value);
     target.classList.remove("positive", "negative", "neutral");
     if (toNumber(value) === null || toNumber(currentPrice) === null) return;
     if (currentPrice > value) target.classList.add("positive");
@@ -2930,9 +3344,9 @@ function scoreStock(symbol, quote, overview, bars, movingAverages, indicators) {
   fundamentalScore = Math.min(fundamentalScore, 10);
 
   let industryScore = overview.exchange ? 5 : 4;
-  if (latestMarketStrength?.relative20 !== null && latestMarketStrength.relative20 > 0) industryScore += 2;
-  if (latestMarketStrength?.relative60 !== null && latestMarketStrength.relative60 > 0) industryScore += 2;
-  if (latestMarketStrength?.stock20 !== null && latestMarketStrength.stock20 > 0) industryScore += 1;
+  if (latestMarketStrength && latestMarketStrength.relative20 !== null && latestMarketStrength.relative20 > 0) industryScore += 2;
+  if (latestMarketStrength && latestMarketStrength.relative60 !== null && latestMarketStrength.relative60 > 0) industryScore += 2;
+  if (latestMarketStrength && latestMarketStrength.stock20 !== null && latestMarketStrength.stock20 > 0) industryScore += 1;
   industryScore = Math.min(industryScore, 10);
   let rrScore = 2;
   if (riskReward >= 3) rrScore = 5;
@@ -3012,7 +3426,7 @@ function renderScoreAnalysis(symbol, quote, overview, bars, movingAverages, indi
     `
     : `<p>Chưa tìm thấy tin liên quan trực tiếp tới ${escapeHtml(symbol)} trong RSS mới nhất. Điểm cơ bản được giữ thận trọng và nên đọc thêm báo cáo tài chính, công bố thông tin hoặc tin doanh nghiệp riêng.</p>`;
   const strength = score.marketStrength || {};
-  const marketStrengthHtml = strength.relative20 !== null || strength.relative60 !== null
+  const marketStrengthHtml = strength.relative20 !== undefined && strength.relative20 !== null || strength.relative60 !== undefined && strength.relative60 !== null
     ? `
       <p>App đang dùng sức mạnh tương đối so với VNINDEX làm thước đo thay thế khi chưa có API phân ngành realtime đầy đủ.</p>
       <ul class="score-points">
@@ -3259,11 +3673,11 @@ function fillData(symbol, quote, overview, bars) {
     : isCrypto
       ? "Dữ liệu coin được ưu tiên lấy từ Binance, sau đó OKX; Yahoo Finance chỉ dùng làm dự phòng. Một số chỉ số cơ bản kiểu cổ phiếu sẽ không áp dụng cho coin."
       : "Dữ liệu được lấy từ nguồn công khai. Một số trường có thể trống tùy theo mã cổ phiếu.";
-  fields.currentPrice.textContent = formatPrice(currentPrice);
-  fields.priceChange.textContent = `${toNumber(change) > 0 ? "+" : ""}${formatPrice(change)} (${formatPercent(changePercent)})`;
+  fields.currentPrice.textContent = formatAssetPrice(currentPrice, isCrypto ? "crypto" : "stock");
+  fields.priceChange.textContent = `${toNumber(change) > 0 ? "+" : ""}${formatAssetPrice(change, isCrypto ? "crypto" : "stock")} (${formatPercent(changePercent)})`;
   updatePriceColor(currentPrice, reference, fields.priceChange);
 
-  fields.referencePrice.textContent = formatPrice(reference);
+  fields.referencePrice.textContent = formatAssetPrice(reference, isCrypto ? "crypto" : "stock");
   fields.ceilingPrice.classList.remove("ceiling");
   fields.floorPrice.classList.remove("floor");
   fields.ceilingPrice.textContent = isCrypto ? "-" : formatPrice(quote.ceilingPrice ?? priceLimits.ceiling);
@@ -3272,8 +3686,8 @@ function fillData(symbol, quote, overview, bars) {
     fields.ceilingPrice.classList.add("ceiling");
     fields.floorPrice.classList.add("floor");
   }
-  fields.highPrice.textContent = formatPrice(quote.highPrice ?? latestBar.high);
-  fields.lowPrice.textContent = formatPrice(quote.lowPrice ?? latestBar.low);
+  fields.highPrice.textContent = formatAssetPrice(quote.highPrice ?? latestBar.high, isCrypto ? "crypto" : "stock");
+  fields.lowPrice.textContent = formatAssetPrice(quote.lowPrice ?? latestBar.low, isCrypto ? "crypto" : "stock");
   fields.volume.textContent = formatInteger(quote.volume ?? latestBar.volume);
 
   fields.ticker.textContent = symbol;
@@ -3568,6 +3982,9 @@ tabs.forEach((tab) => {
     if (tab.dataset.tab === "scanner" && !latestScannerResults.length) {
       loadMarketScanner();
     }
+    if (tab.dataset.tab === "cryptoTrading" && !latestCryptoTradingResults.length) {
+      loadCryptoTrading();
+    }
   });
 });
 
@@ -3585,6 +4002,10 @@ refreshTradeButton?.addEventListener("click", () => {
 
 refreshScannerButton?.addEventListener("click", () => {
   loadMarketScanner();
+});
+
+refreshCryptoTradingButton?.addEventListener("click", () => {
+  loadCryptoTrading();
 });
 
 scannerControls?.addEventListener("click", (event) => {

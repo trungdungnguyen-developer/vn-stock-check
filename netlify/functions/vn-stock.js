@@ -233,6 +233,7 @@ function normalizeCryptoInput(symbol) {
 function toCryptoPair(symbol) {
   const raw = normalizeCryptoInput(symbol);
   if (CRYPTO_EXCHANGE_ALIASES[raw]) return CRYPTO_EXCHANGE_ALIASES[raw];
+  if (/^[A-Z0-9]+-USDT(-SWAP)?$/.test(raw)) return raw;
 
   const normalized = raw
     .replace("/USDT", "-USDT")
@@ -241,7 +242,7 @@ function toCryptoPair(symbol) {
     .replace("-USD", "-USDT");
 
   if (CRYPTO_EXCHANGE_ALIASES[normalized]) return CRYPTO_EXCHANGE_ALIASES[normalized];
-  if (/^[A-Z0-9]+-USDT$/.test(normalized)) return normalized;
+  if (/^[A-Z0-9]+-USDT(-SWAP)?$/.test(normalized)) return normalized;
   if (/^[A-Z0-9]{2,20}$/.test(normalized)) return `${normalized}-USDT`;
   throw new Error("Missing or invalid crypto symbol");
 }
@@ -385,6 +386,11 @@ async function fetchOkxCrypto(symbol, range) {
 }
 
 async function fetchCrypto(symbol, range = "2y") {
+  const pair = toCryptoPair(symbol);
+  if (pair.endsWith("-SWAP")) {
+    return await fetchOkxCrypto(pair, range);
+  }
+
   let binanceError = null;
   try {
     return await fetchBinanceCrypto(symbol, range);
@@ -399,9 +405,54 @@ async function fetchCrypto(symbol, range = "2y") {
   }
 }
 
+async function fetchOkxUniverse(instType = "SPOT") {
+  const safeType = String(instType || "SPOT").toUpperCase() === "SWAP" ? "SWAP" : "SPOT";
+  const upstream = await fetch(`${OKX_BASE}/market/tickers?instType=${encodeURIComponent(safeType)}`, {
+    headers: { accept: "application/json", "user-agent": "stock-tracker-vietnam-crypto/1.0" }
+  });
+  if (!upstream.ok) throw new Error(`OKX tickers HTTP ${upstream.status}`);
+
+  const payload = await upstream.json();
+  if (payload.code !== "0") throw new Error(`OKX ${payload.msg || "khong co du lieu"}`);
+
+  const items = (payload.data || [])
+    .filter((item) => /-USDT(-SWAP)?$/.test(String(item.instId || "")))
+    .map((item) => {
+      const last = Number(item.last);
+      const open24h = Number(item.open24h);
+      const volume = Number(item.vol24h);
+      const quoteVolumeRaw = Number(item.volCcy24h);
+      const quoteVolume = Number.isFinite(quoteVolumeRaw) ? quoteVolumeRaw : volume * last;
+      const bid = Number(item.bidPx);
+      const ask = Number(item.askPx);
+      const spreadPercent = Number.isFinite(bid) && Number.isFinite(ask) && last ? ((ask - bid) / last) * 100 : null;
+      return {
+        instId: item.instId,
+        symbol: String(item.instId).replace("-USDT-SWAP", "").replace("-USDT", ""),
+        last,
+        open24h,
+        changePercent: Number.isFinite(last) && Number.isFinite(open24h) && open24h ? ((last - open24h) / open24h) * 100 : null,
+        volume,
+        quoteVolume,
+        spreadPercent
+      };
+    })
+    .filter((item) => item.symbol && Number.isFinite(item.last));
+
+  return { source: "OKX", instType: safeType, updatedAt: new Date().toISOString(), items };
+}
+
 exports.handler = async function handler(event) {
   if (event.httpMethod === "OPTIONS") {
     return response(200, { ok: true });
+  }
+
+  if (event.queryStringParameters && event.queryStringParameters.source === "okx-universe") {
+    try {
+      return response(200, await fetchOkxUniverse(event.queryStringParameters.instType || "SPOT"));
+    } catch (error) {
+      return response(502, { error: "OKX universe request failed", details: error.message });
+    }
   }
 
   if (event.queryStringParameters && event.queryStringParameters.source === "crypto") {
