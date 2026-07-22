@@ -61,6 +61,15 @@
   }
 
   const analysis = fillData(symbol, quote, overview, bars);
+  renderDashboardAnalytics({
+    symbol,
+    assetType: currentAssetType,
+    quote,
+    overview,
+    bars,
+    score: analysis.score,
+    marketStrength: latestMarketStrength
+  });
   latestPayload = {
     source: parsed.source,
     assetType: currentAssetType,
@@ -148,6 +157,15 @@ async function loadCryptoAsset(inputSymbol, cryptoSymbol) {
   };
   const bars = parsed.bars;
   const analysis = fillData(inputSymbol, quote, overview, bars);
+  renderDashboardAnalytics({
+    symbol: inputSymbol,
+    assetType: "crypto",
+    quote,
+    overview,
+    bars,
+    score: analysis.score,
+    marketStrength: latestMarketStrength
+  });
 
   latestPayload = {
     source: parsed.source,
@@ -304,9 +322,11 @@ copyButton.addEventListener("click", async () => {
   }
 });
 
+setupIndicatorManager();
+setupOverlayManager();
 drawChart([]);
-drawLineCanvas(rsiCanvas, []);
-drawMacdCanvas(macdCanvas, { macd: [], signal: [], histogram: [] });
+renderIndicators([]);
+renderDashboardAnalytics();
 loadMarketStrip();
 setInterval(loadMarketStrip, 60000);
 symbolInput.focus();

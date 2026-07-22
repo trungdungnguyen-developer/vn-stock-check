@@ -13,14 +13,14 @@
   --ui-border: #334b68;
   --ui-border-strong: #4e6b8f;
   --ui-text: #f8fafc;
-  --ui-text-secondary: #d6e2f0;
-  --ui-muted: #a9bbcf;
-  --ui-primary: #38bdf8;
+  --ui-text-secondary: #cbd5e1;
+  --ui-muted: #94a3b8;
+  --ui-primary: #60a5fa;
   --ui-primary-strong: #0284c7;
   --ui-focus: #7dd3fc;
   --ui-positive: #4ade80;
-  --ui-negative: #fb7185;
-  --ui-warning: #fbbf24;
+  --ui-negative: #f87171;
+  --ui-warning: #facc15;
   --ui-shadow: 0 14px 34px rgba(0, 0, 0, 0.28);
   --ui-radius: 12px;
 }

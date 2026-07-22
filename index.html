@@ -9,7 +9,7 @@
     <link rel="icon" href="icon.svg" type="image/svg+xml">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
   </head>
   <body>
@@ -172,8 +172,8 @@
         <section class="quote-card">
           <div>
             <span id="exchange" class="eyebrow">-</span>
-            <h2 id="companyName">Nhập mã chứng khoán hoặc coin để bắt đầu</h2>
-            <p id="companyDescription">App theo dõi cổ phiếu Việt Nam và các coin phổ biến như BTC, ETH, SOL, PI Network. Không cần Alpha Vantage API key.</p>
+            <h2 id="companyName">Nhập mã để bắt đầu</h2>
+            <p id="companyDescription">-</p>
           </div>
           <div class="price-box">
             <span>Giá hiện tại</span>
@@ -216,7 +216,7 @@
             <button type="button" data-chart-range="1m">1 tháng</button>
             <button type="button" data-chart-range="3m">3 tháng</button>
           </div>
-          <canvas id="priceChart" width="960" height="420" aria-label="Biểu đồ giá kỹ thuật"></canvas>
+          <div id="priceChart" class="lightweight-price-chart" role="img" aria-label="Biểu đồ giá kỹ thuật"></div>
           <div class="chart-legend">
             <span><i class="legend-price"></i>Giá</span>
             <span><i class="legend-ma10"></i>MA20</span>
@@ -230,6 +230,24 @@
             <article><span>MA 100</span><strong id="ma100">-</strong></article>
             <article><span>MA 200</span><strong id="ma200">-</strong></article>
           </div>
+          <div class="indicator-manager" aria-label="Quản lý chỉ báo">
+            <label><input id="toggleRsiIndicator" type="checkbox" checked> RSI</label>
+            <label>RSI kỳ <input id="rsiPeriodInput" type="number" min="2" max="50" step="1" value="14"></label>
+            <label>Màu RSI <input id="rsiColorInput" type="color" value="#a855f7"></label>
+            <label><input id="toggleMacdIndicator" type="checkbox" checked> MACD</label>
+            <label>Fast <input id="macdFastInput" type="number" min="2" max="50" step="1" value="12"></label>
+            <label>Slow <input id="macdSlowInput" type="number" min="3" max="100" step="1" value="26"></label>
+            <label>Signal <input id="macdSignalInput" type="number" min="2" max="50" step="1" value="9"></label>
+            <label>Màu MACD <input id="macdColorInput" type="color" value="#38bdf8"></label>
+            <label>Màu Signal <input id="macdSignalColorInput" type="color" value="#f59e0b"></label>
+            <label><input id="toggleBollingerOverlay" type="checkbox"> Bollinger</label>
+            <label><input id="toggleVwapOverlay" type="checkbox"> VWAP</label>
+            <label><input id="toggleSupertrendOverlay" type="checkbox"> Supertrend</label>
+            <label><input id="toggleIchimokuOverlay" type="checkbox"> Ichimoku</label>
+            <label><input id="toggleSignalMarkers" type="checkbox"> Marker mua/bán</label>
+            <label><input id="toggleOrderBlockOverlay" type="checkbox"> Order Block</label>
+            <label><input id="toggleFvgOverlay" type="checkbox"> FVG</label>
+          </div>
         </section>
 
         <section class="indicator-grid">
@@ -238,7 +256,7 @@
               <h2>RSI 14</h2>
               <span id="rsiValue">-</span>
             </div>
-            <canvas id="rsiChart" width="460" height="220" aria-label="Biểu đồ RSI 14"></canvas>
+            <div id="rsiChart" class="lightweight-indicator-chart" role="img" aria-label="Biểu đồ RSI"></div>
           </article>
 
           <article class="indicator-card">
@@ -246,7 +264,7 @@
               <h2>MACD 12, 26, 9</h2>
               <span id="macdValue">-</span>
             </div>
-            <canvas id="macdChart" width="460" height="220" aria-label="Biểu đồ MACD"></canvas>
+            <div id="macdChart" class="lightweight-indicator-chart" role="img" aria-label="Biểu đồ MACD"></div>
           </article>
         </section>
         </div>
@@ -257,6 +275,7 @@
             <span>% thay đổi theo số phiên gần nhất</span>
           </div>
           <div class="change-grid">
+            <article><span>1 ngày</span><strong id="change1">-</strong></article>
             <article><span>3 ngày</span><strong id="change3">-</strong></article>
             <article><span>7 ngày</span><strong id="change7">-</strong></article>
             <article><span>10 ngày</span><strong id="change10">-</strong></article>
@@ -294,6 +313,53 @@
           <p class="note">Khu vực này hiển thị dữ liệu mua/bán nước ngoài từ Vietcap/VCI khi nguồn trả về; phần trong nước được ước tính từ tổng giá trị giao dịch.</p>
         </section>
 
+        <section class="analytics-section" aria-label="Market analytics">
+          <div class="section-head">
+            <div>
+              <h2>Market Analytics</h2>
+              <p>ECharts cho heatmap, dòng tiền, danh mục, tương quan và market breadth.</p>
+            </div>
+            <span id="analyticsStatus">Chưa có dữ liệu</span>
+          </div>
+          <div class="analytics-grid">
+            <article class="analytics-card analytics-card-wide">
+              <div class="section-head">
+                <h3>Heatmap ngành</h3>
+                <span id="industryHeatmapNote">Theo dữ liệu đang có</span>
+              </div>
+              <div id="industryHeatmapChart" class="echart-panel" role="img" aria-label="Heatmap ngành"></div>
+            </article>
+            <article class="analytics-card">
+              <div class="section-head">
+                <h3>Dòng tiền</h3>
+                <span id="moneyFlowNote">Mua/ban va volume</span>
+              </div>
+              <div id="moneyFlowChart" class="echart-panel" role="img" aria-label="Biểu đồ dòng tiền"></div>
+            </article>
+            <article class="analytics-card">
+              <div class="section-head">
+                <h3>Phân bổ danh mục</h3>
+                <span id="portfolioAllocationNote">LocalStorage</span>
+              </div>
+              <div id="portfolioAllocationChart" class="echart-panel" role="img" aria-label="Biểu đồ phân bổ danh mục"></div>
+            </article>
+            <article class="analytics-card">
+              <div class="section-head">
+                <h3>Tương quan</h3>
+                <span id="correlationNote">Giá, volume, MA, RSI</span>
+              </div>
+              <div id="correlationChart" class="echart-panel" role="img" aria-label="Ma trận tương quan"></div>
+            </article>
+            <article class="analytics-card analytics-card-wide">
+              <div class="section-head">
+                <h3>Market breadth</h3>
+                <span id="marketBreadthNote">Sức rộng thị trường</span>
+              </div>
+              <div id="marketBreadthChart" class="echart-panel" role="img" aria-label="Biểu đồ market breadth"></div>
+            </article>
+          </div>
+        </section>
+
         <section class="history-section">
           <div class="section-head">
             <h2>Lịch sử giá</h2>
@@ -328,12 +394,12 @@
 
         <section class="details-grid">
           <article class="detail-card">
-            <h2>Thông tin cổ phiếu</h2>
+            <h2>Thông tin tài sản</h2>
             <dl>
               <div><dt>Mã</dt><dd id="ticker">-</dd></div>
-              <div><dt>Sàn</dt><dd id="listedExchange">-</dd></div>
-              <div><dt>Ngành</dt><dd id="industry">-</dd></div>
-              <div><dt>Nhóm ngành</dt><dd id="sector">-</dd></div>
+              <div><dt>Sàn / Nguồn</dt><dd id="listedExchange">-</dd></div>
+              <div><dt>Ngành / Loại tài sản</dt><dd id="industry">-</dd></div>
+              <div><dt>Nhóm ngành / Cặp giao dịch</dt><dd id="sector">-</dd></div>
               <div><dt>Vốn hóa</dt><dd>-</dd></div>
             </dl>
           </article>
@@ -359,7 +425,7 @@
             <article>
               <span>Định giá</span>
               <strong>-</strong>
-              <p>Hãy tra cứu một mã cổ phiếu để xem phân tích P/E, P/B, ROE, EPS, Beta và vốn hóa.</p>
+              <p>Hãy tra cứu một mã cổ phiếu hoặc coin để xem các dữ liệu định giá/cơ bản mà nguồn hiện tại cung cấp.</p>
             </article>
           </div>
         </section>
@@ -613,6 +679,8 @@
       <footer class="app-footer">made by Trung Dung Nguyen | June 2026</footer>
     </main>
 
+    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
     <script src="script.js"></script>
     <script src="src/ui/watchlist.js"></script>
     <script src="risk.js"></script>

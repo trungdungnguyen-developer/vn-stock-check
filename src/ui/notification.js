@@ -160,7 +160,7 @@ function toYahooCryptoSymbol(symbol) {
         background: #1e293b;
         color: #e2e8f0;
         cursor: pointer;
-        font-weight: 800;
+        font-weight: 700;
       }
       .notification-list {
         display: grid;
@@ -194,7 +194,7 @@ function toYahooCryptoSymbol(symbol) {
       .notification-item span {
         color: #64748b;
         font-size: 11px;
-        font-weight: 800;
+        font-weight: 700;
         text-transform: uppercase;
       }
       .notification-empty {

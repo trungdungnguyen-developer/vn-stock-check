@@ -1,6 +1,10 @@
-﻿function renderIndicators(bars, indicators = null) {
-  const rsi = indicators?.rsi || calculateRsi(bars);
-  const macd = indicators?.macd || calculateMacd(bars);
+function renderIndicators(bars, indicators = null) {
+  indicatorSourceBars = bars;
+  const config = getIndicatorConfig();
+  const isDefaultRsi = config.rsi.period === 14;
+  const isDefaultMacd = config.macd.fast === 12 && config.macd.slow === 26 && config.macd.signal === 9;
+  const rsi = indicators?.rsi && isDefaultRsi ? indicators.rsi : calculateRsi(bars, config.rsi.period);
+  const macd = indicators?.macd && isDefaultMacd ? indicators.macd : calculateMacd(bars, config.macd.fast, config.macd.slow, config.macd.signal);
   const latestRsi = [...rsi].reverse().find((value) => value !== null);
   const latestMacd = [...macd.macd].reverse().find((value) => value !== null);
   const latestSignal = [...macd.signal].reverse().find((value) => value !== null);
@@ -11,10 +15,14 @@
     ? "-"
     : `${formatNumber(latestMacd, 2)} / Signal ${formatOptional(latestSignal, 2)} / Hist ${formatOptional(latestHistogram, 2)}`;
 
+  document.querySelector("#rsiChart")?.closest(".indicator-card")?.querySelector("h2")?.replaceChildren(`RSI ${config.rsi.period}`);
+  document.querySelector("#macdChart")?.closest(".indicator-card")?.querySelector("h2")?.replaceChildren(`MACD ${config.macd.fast}, ${config.macd.slow}, ${config.macd.signal}`);
+  setIndicatorVisibility(config);
+
   drawLineCanvas(rsiCanvas, rsi, {
     min: 0,
     max: 100,
-    color: CHART_COLORS.price,
+    color: config.rsi.color,
     guides: [
       { value: 70, color: CHART_COLORS.negative, label: "70" },
       { value: 30, color: CHART_COLORS.positive, label: "30" }
@@ -76,7 +84,7 @@ function renderHistory(bars, limit = activeHistoryLimit) {
 
 function renderPriceChanges(bars) {
   const latest = bars[bars.length - 1]?.close;
-  const periods = [3, 7, 10, 14, 21, 30];
+  const periods = [1, 3, 7, 10, 14, 21, 30];
 
   periods.forEach((period) => {
     const target = fields[`change${period}`];

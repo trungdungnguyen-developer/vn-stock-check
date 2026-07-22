@@ -81,6 +81,7 @@ const fields = {
   beta: document.getElementById("beta"),
   rsiValue: document.getElementById("rsiValue"),
   macdValue: document.getElementById("macdValue"),
+  change1: document.getElementById("change1"),
   change3: document.getElementById("change3"),
   change7: document.getElementById("change7"),
   change10: document.getElementById("change10"),

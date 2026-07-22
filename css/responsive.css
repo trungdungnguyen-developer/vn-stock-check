@@ -14,3 +14,621 @@
     --ui-muted: #c3d0df;
   }
 }
+
+/* Dashboard composition requested for the overview tab. */
+#overviewPanel.active {
+  display: grid !important;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  gap: 24px !important;
+  align-items: start !important;
+}
+
+#overviewPanel > .quote-card {
+  grid-column: 1 / span 1 !important;
+  grid-row: 1 !important;
+  min-height: 100% !important;
+}
+
+#overviewPanel > .change-section {
+  grid-column: 2 / -1 !important;
+  grid-row: 1 !important;
+  min-height: 100% !important;
+}
+
+#overviewPanel > .dashboard-strip {
+  grid-column: 1 / -1 !important;
+  grid-row: 2 !important;
+}
+
+#overviewPanel > .chart-workspace {
+  grid-column: 1 / -1 !important;
+  grid-row: 3 !important;
+  width: 100% !important;
+}
+
+#overviewPanel > .history-section {
+  grid-column: 1 / -1 !important;
+  grid-row: 4 !important;
+}
+
+#overviewPanel > .details-grid {
+  grid-column: 1 / span 3 !important;
+  grid-row: 5 !important;
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 16px !important;
+}
+
+#overviewPanel > .fundamental-analysis-section {
+  grid-column: 4 / -1 !important;
+  grid-row: 5 !important;
+  min-height: 100% !important;
+}
+
+#overviewPanel > .recommendation-section {
+  grid-column: 1 / -1 !important;
+  grid-row: 6 !important;
+}
+
+#overviewPanel > .flow-section {
+  grid-column: 1 / -1 !important;
+  grid-row: 7 !important;
+}
+
+#overviewPanel > .analytics-section {
+  grid-column: 1 / -1 !important;
+  grid-row: 8 !important;
+}
+
+#overviewPanel > .metrics-grid,
+#overviewPanel .indicator-grid {
+  display: none !important;
+}
+
+#overviewPanel > .quote-card,
+#overviewPanel > .change-section,
+#overviewPanel > .history-section,
+#overviewPanel > .analytics-section,
+#overviewPanel > .fundamental-analysis-section,
+#overviewPanel > .details-grid .detail-card {
+  border-radius: 16px !important;
+}
+
+#overviewPanel > .quote-card {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  gap: 18px !important;
+  padding: 22px !important;
+}
+
+#overviewPanel > .quote-card h2 {
+  margin: 8px 0 0 !important;
+  font-size: clamp(24px, 1.7vw, 30px) !important;
+  line-height: 1.18 !important;
+  letter-spacing: -0.01em !important;
+  overflow-wrap: anywhere !important;
+}
+
+#overviewPanel > .quote-card .eyebrow {
+  display: inline-flex !important;
+  width: fit-content !important;
+  border: 1px solid var(--ui-border) !important;
+  border-radius: 999px !important;
+  padding: 6px 10px !important;
+  background: rgba(56, 189, 248, 0.1) !important;
+  color: var(--ui-primary) !important;
+}
+
+#overviewPanel > .quote-card p {
+  display: none !important;
+}
+
+#overviewPanel > .quote-card .price-box {
+  display: none !important;
+}
+
+#overviewPanel > .change-section .section-head {
+  align-items: center !important;
+  gap: 12px !important;
+}
+
+#overviewPanel > .change-section .change-grid {
+  display: grid !important;
+  grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+}
+
+#overviewPanel > .change-section .change-grid article {
+  min-height: 116px !important;
+  border-radius: 14px !important;
+  padding: 18px !important;
+}
+
+#overviewPanel .chart-section {
+  min-height: 72vh !important;
+  padding: 20px !important;
+}
+
+#overviewPanel #priceChart {
+  width: 100% !important;
+  min-height: 560px !important;
+  height: clamp(560px, 66vh, 820px) !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+#overviewPanel .lightweight-price-chart {
+  position: relative !important;
+  display: block !important;
+  border: 1px solid var(--ui-border) !important;
+  border-radius: 12px !important;
+  background: #0f172a !important;
+}
+
+#overviewPanel .lightweight-price-chart table,
+#overviewPanel .lightweight-price-chart canvas {
+  font-family: "Inter", "Be Vietnam Pro", "Segoe UI", Arial, Helvetica, sans-serif !important;
+}
+
+.lightweight-chart-empty {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  min-height: inherit;
+  place-items: center;
+  padding: 24px;
+  background: #0f172a;
+  color: var(--type-muted);
+  font-size: 14px;
+  font-weight: 400;
+  text-align: center;
+}
+
+#overviewPanel .chart-section {
+  grid-template-rows: auto auto minmax(560px, 1fr) auto auto !important;
+}
+
+#overviewPanel .ma-summary {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+}
+
+#overviewPanel > .history-section {
+  margin-top: 0 !important;
+}
+
+#overviewPanel > .fundamental-analysis-section .fundamental-analysis {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+}
+
+#overviewPanel > .fundamental-analysis-section .fundamental-analysis article {
+  height: 100% !important;
+}
+
+@media (max-width: 1400px) {
+  #overviewPanel > .quote-card,
+  #overviewPanel > .change-section {
+    grid-column: 1 / -1 !important;
+  }
+
+  #overviewPanel > .quote-card {
+    grid-row: 1 !important;
+  }
+
+  #overviewPanel > .change-section {
+    grid-row: 2 !important;
+  }
+
+  #overviewPanel > .dashboard-strip {
+    grid-row: 3 !important;
+  }
+
+  #overviewPanel > .chart-workspace {
+    grid-row: 4 !important;
+  }
+
+  #overviewPanel > .history-section {
+    grid-row: 5 !important;
+  }
+
+  #overviewPanel > .details-grid,
+  #overviewPanel > .fundamental-analysis-section {
+    grid-column: 1 / -1 !important;
+  }
+
+  #overviewPanel > .details-grid {
+    grid-row: 6 !important;
+  }
+
+  #overviewPanel > .fundamental-analysis-section {
+    grid-row: 7 !important;
+  }
+
+  #overviewPanel > .recommendation-section {
+    grid-row: 8 !important;
+  }
+
+  #overviewPanel > .flow-section {
+    grid-row: 9 !important;
+  }
+
+  #overviewPanel > .analytics-section {
+    grid-row: 10 !important;
+  }
+}
+
+/* Dark fintech typography system. */
+:root {
+  --type-primary: #f8fafc;
+  --type-secondary: #cbd5e1;
+  --type-muted: #94a3b8;
+  --type-positive: #4ade80;
+  --type-negative: #f87171;
+  --type-warning: #facc15;
+  --type-link: #60a5fa;
+}
+
+html,
+body,
+.terminal-layout {
+  font-family: "Inter", "Be Vietnam Pro", "Segoe UI", Arial, Helvetica, sans-serif !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  line-height: 1.6 !important;
+  color: var(--type-primary) !important;
+  font-variant-numeric: tabular-nums;
+}
+
+.terminal-layout * {
+  opacity: 1 !important;
+}
+
+.terminal-layout h1 {
+  color: var(--type-primary) !important;
+  font-size: clamp(22px, 1.7vw, 24px) !important;
+  font-weight: 700 !important;
+  line-height: 1.18 !important;
+  letter-spacing: -0.025em !important;
+}
+
+.terminal-layout h2,
+.terminal-layout .section-head h2 {
+  color: var(--type-primary) !important;
+  font-size: clamp(16px, 1.15vw, 18px) !important;
+  font-weight: 600 !important;
+  line-height: 1.25 !important;
+  letter-spacing: -0.015em !important;
+}
+
+.terminal-layout h3,
+.terminal-layout h4 {
+  color: var(--type-primary) !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  line-height: 1.35 !important;
+  letter-spacing: -0.01em !important;
+}
+
+.terminal-layout p,
+.terminal-layout li,
+.terminal-layout td,
+.terminal-layout dd,
+.terminal-layout input,
+.terminal-layout select,
+.terminal-layout textarea {
+  color: var(--type-secondary) !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  line-height: 1.6 !important;
+}
+
+.terminal-layout label,
+.terminal-layout dt,
+.terminal-layout small,
+.terminal-layout em,
+.terminal-layout .eyebrow,
+.terminal-layout .pill,
+.terminal-layout .section-head > span,
+.terminal-layout th,
+.terminal-layout .timeframe-label,
+.terminal-layout .chart-legend span,
+.terminal-layout .dashboard-strip article span:not(.dashboard-icon),
+.terminal-layout .change-grid span,
+.terminal-layout .ma-summary span,
+.terminal-layout .metrics-grid span {
+  color: var(--type-muted) !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  line-height: 1.45 !important;
+  letter-spacing: 0 !important;
+}
+
+.terminal-layout button,
+.terminal-layout .tab,
+.terminal-layout .header-chip,
+.terminal-layout .user-chip {
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  line-height: 1.2 !important;
+}
+
+.terminal-layout strong,
+.terminal-layout b {
+  color: var(--type-primary) !important;
+  font-weight: 700 !important;
+  font-variant-numeric: tabular-nums;
+}
+
+#overviewPanel .dashboard-strip article strong,
+#overviewPanel .price-box strong,
+#overviewPanel .change-grid strong,
+#overviewPanel .ma-summary strong,
+.terminal-layout .market-card strong,
+.terminal-layout .score-summary strong {
+  font-size: clamp(26px, 2vw, 30px) !important;
+  font-weight: 700 !important;
+  line-height: 1.1 !important;
+  letter-spacing: -0.02em !important;
+  font-variant-numeric: tabular-nums;
+}
+
+#overviewPanel > .quote-card h2 {
+  font-size: clamp(22px, 1.8vw, 24px) !important;
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+  letter-spacing: -0.025em !important;
+}
+
+.terminal-layout a,
+.terminal-layout .link,
+.terminal-layout [role="link"] {
+  color: var(--type-link) !important;
+  font-weight: 500 !important;
+}
+
+.terminal-layout .positive,
+.terminal-layout .up,
+.terminal-layout .gain {
+  color: var(--type-positive) !important;
+}
+
+.terminal-layout .negative,
+.terminal-layout .down,
+.terminal-layout .loss {
+  color: var(--type-negative) !important;
+}
+
+.terminal-layout .neutral,
+.terminal-layout .warning {
+  color: var(--type-warning) !important;
+}
+
+.terminal-layout .note,
+.terminal-layout .muted,
+.terminal-layout .empty-state p {
+  color: var(--type-muted) !important;
+  font-size: 12px !important;
+  line-height: 1.6 !important;
+}
+
+/* Lightweight Charts indicator panes and manager. */
+#overviewPanel .indicator-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 16px !important;
+  margin-top: 16px !important;
+}
+
+#overviewPanel .indicator-card {
+  border: 1px solid var(--ui-border) !important;
+  border-radius: 14px !important;
+  padding: 16px !important;
+  background: #111f33 !important;
+}
+
+#overviewPanel .indicator-card.is-hidden {
+  display: none !important;
+}
+
+#overviewPanel .lightweight-indicator-chart {
+  position: relative !important;
+  min-height: 220px !important;
+  height: 220px !important;
+  overflow: hidden !important;
+  border: 1px solid var(--ui-border) !important;
+  border-radius: 12px !important;
+  background: #0f172a !important;
+}
+
+#overviewPanel .indicator-manager {
+  display: grid !important;
+  grid-template-columns: repeat(9, minmax(90px, 1fr)) !important;
+  gap: 10px !important;
+  align-items: center !important;
+  border: 1px solid var(--ui-border) !important;
+  border-radius: 12px !important;
+  padding: 12px !important;
+  background: rgba(15, 23, 42, 0.72) !important;
+}
+
+#overviewPanel .indicator-manager label {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  min-width: 0 !important;
+  color: var(--type-secondary) !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  white-space: nowrap !important;
+}
+
+#overviewPanel .indicator-manager input[type="number"] {
+  width: 58px !important;
+  min-height: 34px !important;
+  border: 1px solid var(--ui-border) !important;
+  border-radius: 9px !important;
+  padding: 0 8px !important;
+  background: #0f172a !important;
+  color: var(--type-primary) !important;
+}
+
+#overviewPanel .indicator-manager input[type="color"] {
+  width: 34px !important;
+  height: 34px !important;
+  border: 1px solid var(--ui-border) !important;
+  border-radius: 9px !important;
+  padding: 2px !important;
+  background: #0f172a !important;
+}
+
+@media (max-width: 1300px) {
+  #overviewPanel .indicator-manager {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 900px) {
+  #overviewPanel .indicator-grid,
+  #overviewPanel .indicator-manager {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 900px) {
+  #overviewPanel.active,
+  #overviewPanel > .details-grid,
+  #overviewPanel > .change-section .change-grid,
+  #overviewPanel .ma-summary {
+    grid-template-columns: 1fr !important;
+  }
+
+  #overviewPanel .chart-section {
+    min-height: auto !important;
+  }
+
+  #overviewPanel #priceChart {
+    min-height: 360px !important;
+    height: 52vh !important;
+  }
+}
+
+/* ECharts dashboard analytics. */
+#overviewPanel > .analytics-section {
+  border: 1px solid var(--ui-border) !important;
+  border-radius: 16px !important;
+  padding: 20px !important;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.94), rgba(30, 41, 59, 0.82)) !important;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.18) !important;
+}
+
+#overviewPanel > .analytics-section > .section-head {
+  margin-bottom: 16px !important;
+  align-items: end !important;
+}
+
+#overviewPanel > .analytics-section > .section-head p {
+  margin: 4px 0 0 !important;
+  color: var(--type-muted) !important;
+  font-size: 13px !important;
+  line-height: 1.55 !important;
+}
+
+#overviewPanel #analyticsStatus,
+#overviewPanel .analytics-card .section-head span {
+  color: var(--type-muted) !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+}
+
+#overviewPanel .analytics-grid {
+  display: grid !important;
+  grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+  gap: 16px !important;
+}
+
+#overviewPanel .analytics-card {
+  min-width: 0 !important;
+  border: 1px solid rgba(96, 165, 250, 0.22) !important;
+  border-radius: 14px !important;
+  padding: 16px !important;
+  background: rgba(15, 23, 42, 0.72) !important;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12) !important;
+}
+
+#overviewPanel .analytics-card:hover {
+  transform: translateY(-1px) !important;
+  border-color: rgba(96, 165, 250, 0.36) !important;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.16) !important;
+}
+
+#overviewPanel .analytics-card h3 {
+  margin: 0 !important;
+  color: var(--type-primary) !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.015em !important;
+}
+
+#overviewPanel .analytics-card .section-head {
+  margin-bottom: 12px !important;
+  gap: 12px !important;
+}
+
+#overviewPanel .analytics-card-wide {
+  grid-column: span 3 !important;
+}
+
+#overviewPanel .analytics-card:not(.analytics-card-wide) {
+  grid-column: span 2 !important;
+}
+
+#overviewPanel .echart-panel {
+  position: relative !important;
+  width: 100% !important;
+  height: 280px !important;
+  min-height: 240px !important;
+  overflow: hidden !important;
+  border-radius: 12px !important;
+  background: rgba(2, 6, 23, 0.38) !important;
+}
+
+#overviewPanel .analytics-empty {
+  display: grid !important;
+  min-height: 220px !important;
+  place-items: center !important;
+  padding: 24px !important;
+  color: var(--type-muted) !important;
+  text-align: center !important;
+  font-size: 13px !important;
+  border: 1px dashed rgba(148, 163, 184, 0.28) !important;
+  border-radius: 12px !important;
+  background: rgba(15, 23, 42, 0.5) !important;
+}
+
+@media (max-width: 1200px) {
+  #overviewPanel .analytics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  #overviewPanel .analytics-card,
+  #overviewPanel .analytics-card-wide,
+  #overviewPanel .analytics-card:not(.analytics-card-wide) {
+    grid-column: span 1 !important;
+  }
+}
+
+@media (max-width: 760px) {
+  #overviewPanel > .analytics-section {
+    padding: 16px !important;
+  }
+
+  #overviewPanel .analytics-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  #overviewPanel .echart-panel {
+    height: 260px !important;
+  }
+}

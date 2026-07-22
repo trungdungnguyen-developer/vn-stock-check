@@ -18,6 +18,7 @@
     "src/ui/table.js",
     "src/api/newsApi.js",
     "src/strategy/scoreAnalysis.js",
+    "src/ui/analytics.js",
     "src/app/main.js"
   ];
 

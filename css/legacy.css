@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap");
 
 :root {
   color-scheme: light;
@@ -105,7 +105,7 @@
 .terminal-layout > .search-panel label {
   color: #94a3b8;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -325,7 +325,7 @@ button,
 input,
 textarea,
 select {
-  font-family: "Be Vietnam Pro", "Inter", "Segoe UI", Arial, Helvetica, sans-serif;
+  font-family: "Inter", "Be Vietnam Pro", "Segoe UI", Arial, Helvetica, sans-serif;
 }
 
 body,
@@ -592,7 +592,7 @@ button {
   border-radius: 8px;
   background: var(--primary);
   color: #ffffff;
-  font-weight: 900;
+  font-weight: 700;
 }
 
 .terminal-brand strong,
@@ -621,7 +621,7 @@ button {
   display: block;
   color: rgba(255, 247, 255, 0.62);
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
@@ -1029,7 +1029,7 @@ button {
 .terminal-layout > .search-panel label {
   color: #94a3b8;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -1237,7 +1237,7 @@ button {
 }
 
 html {
-  font-family: "Be Vietnam Pro", "Inter", "Segoe UI", Arial, Helvetica, sans-serif;
+  font-family: "Inter", "Be Vietnam Pro", "Segoe UI", Arial, Helvetica, sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
@@ -1245,7 +1245,7 @@ html {
 body {
   margin: 0;
   min-height: 100vh;
-  font-family: "Be Vietnam Pro", "Inter", "Segoe UI", Arial, Helvetica, sans-serif;
+  font-family: "Inter", "Be Vietnam Pro", "Segoe UI", Arial, Helvetica, sans-serif;
   background: var(--bg);
   color: var(--text);
   font-size: 16px;
@@ -1464,7 +1464,7 @@ button:hover {
 .market-strip-head span {
   color: var(--primary);
   font-size: var(--font-small);
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .market-strip-head small {
@@ -1498,7 +1498,7 @@ button:hover {
   grid-area: label;
   color: var(--muted);
   font-size: var(--font-small);
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .market-card strong {
@@ -1524,7 +1524,7 @@ button:hover {
   text-align: center;
   font-style: normal;
   font-size: var(--font-small);
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .market-card em.positive {
@@ -2024,19 +2024,19 @@ tr:last-child td {
 td.positive,
 strong.positive {
   color: var(--green);
-  font-weight: 800;
+  font-weight: 700;
 }
 
 td.negative,
 strong.negative {
   color: var(--red);
-  font-weight: 800;
+  font-weight: 700;
 }
 
 td.neutral,
 strong.neutral {
   color: var(--orange);
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .score-section {
@@ -2229,7 +2229,7 @@ strong.neutral {
   display: block;
   color: var(--muted);
   font-size: var(--font-small);
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .trade-analysis h3 {
@@ -2277,17 +2277,17 @@ strong.neutral {
 
 .trade-analysis .positive {
   color: var(--green);
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .trade-analysis .negative {
   color: var(--red);
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .trade-analysis .neutral {
   color: var(--orange);
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .scanner-section,
@@ -2340,7 +2340,7 @@ strong.neutral {
   background: var(--soft);
   color: var(--primary);
   font-size: var(--font-small);
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .scanner-controls {
@@ -2415,7 +2415,7 @@ strong.neutral {
   display: block;
   color: var(--muted);
   font-size: var(--font-small);
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .scanner-summary strong {
@@ -2481,7 +2481,7 @@ strong.neutral {
   display: block;
   color: var(--muted);
   font-size: var(--font-small);
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .trade-pick-hero div,
@@ -2516,7 +2516,7 @@ strong.neutral {
 .trade-pick-title span {
   color: var(--text);
   font-size: 22px;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .trade-pick-card p,
@@ -2558,12 +2558,12 @@ strong.neutral {
 }
 
 .trade-pick-checks b {
-  font-weight: 900;
+  font-weight: 700;
 }
 
 .trade-pick-checks span {
   color: var(--text);
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .trade-pick-checks em {
@@ -2628,7 +2628,7 @@ strong.neutral {
   color: var(--primary);
   font-size: 12px;
   font-style: normal;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .scanner-table-wrap {
@@ -2648,32 +2648,32 @@ strong.neutral {
 
 .scanner-results .positive {
   color: var(--green);
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .scanner-trade-box .positive {
   color: var(--green);
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .scanner-results .negative {
   color: var(--red);
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .scanner-trade-box .negative {
   color: var(--red);
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .scanner-results .neutral {
   color: var(--orange);
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .scanner-trade-box .neutral {
   color: var(--orange);
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .crypto-trading-body {
@@ -2714,7 +2714,7 @@ strong.neutral {
   display: block;
   color: var(--muted);
   font-size: var(--font-small);
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .crypto-trading-body h3 {
@@ -2749,7 +2749,7 @@ strong.neutral {
   margin-top: 10px;
   color: var(--text);
   font-style: normal;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .crypto-setup-card {
@@ -2820,17 +2820,17 @@ strong.neutral {
 
 .crypto-trading-body .positive {
   color: var(--green);
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .crypto-trading-body .negative {
   color: var(--red);
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .crypto-trading-body .neutral {
   color: var(--orange);
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .score-analysis {
@@ -2878,7 +2878,7 @@ strong.neutral {
   border-radius: 999px;
   background: #162033;
   color: var(--primary);
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .score-table {
@@ -2893,7 +2893,7 @@ strong.neutral {
 
 .total-row td {
   background: var(--soft);
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .details-grid {
@@ -3514,7 +3514,7 @@ pre {
 .terminal-layout > .search-panel label {
   color: #94a3b8;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -3750,7 +3750,7 @@ pre {
   background: #0f172a;
   color: #7dd3fc;
   font-size: 14px;
-  font-weight: 900;
+  font-weight: 700;
   box-shadow: inset 0 0 0 1px #334155;
 }
 
@@ -3763,7 +3763,7 @@ pre {
   margin-bottom: 6px;
   color: #94a3b8;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.02em;
 }
 
@@ -3876,7 +3876,7 @@ pre {
   background: #0f172a;
   color: #cbd5e1;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 #overviewPanel .chart-fullscreen,
@@ -3888,7 +3888,7 @@ pre {
   background: #1e293b;
   color: #e2e8f0;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
   box-shadow: none;
 }
 
@@ -3916,7 +3916,7 @@ pre {
   margin-right: 4px;
   color: #94a3b8;
   font-size: 12px;
-  font-weight: 900;
+  font-weight: 700;
   letter-spacing: 0.03em;
   text-transform: uppercase;
 }
@@ -3929,7 +3929,7 @@ pre {
   background: #1e293b;
   color: #cbd5e1;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 #overviewPanel .chart-controls button:hover {
@@ -4090,7 +4090,7 @@ pre {
 .playbook-score-card span {
   color: #94a3b8;
   font-size: 12px;
-  font-weight: 900;
+  font-weight: 700;
   letter-spacing: 0.03em;
   text-transform: uppercase;
 }
@@ -4160,7 +4160,7 @@ pre {
   margin-bottom: 6px;
   color: #94a3b8;
   font-size: 11px;
-  font-weight: 900;
+  font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -4279,7 +4279,7 @@ pre {
   margin: 0;
   color: #94a3b8;
   font-size: 11px;
-  font-weight: 900;
+  font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -4315,7 +4315,7 @@ pre {
   overflow: hidden;
   color: #f8fafc;
   font-size: 13px;
-  font-weight: 900;
+  font-weight: 700;
   text-overflow: ellipsis;
 }
 
@@ -4323,7 +4323,7 @@ pre {
   flex: 0 0 auto;
   font-size: 11px;
   font-style: normal;
-  font-weight: 900;
+  font-weight: 700;
 }
 
 .watchlist-empty {
@@ -4378,7 +4378,7 @@ pre {
   margin-bottom: 6px;
   color: #94a3b8;
   font-size: 11px;
-  font-weight: 900;
+  font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -4447,7 +4447,7 @@ pre {
   color: inherit;
   cursor: pointer;
   font: inherit;
-  font-weight: 900;
+  font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -4493,7 +4493,7 @@ pre {
   display: inline-flex;
   min-width: 42px;
   color: #94a3b8;
-  font-weight: 900;
+  font-weight: 700;
 }
 
 .scanner-coin-button {
@@ -4531,7 +4531,7 @@ pre {
   background: rgba(245, 158, 11, 0.12);
   color: #fbbf24;
   font-size: 12px;
-  font-weight: 900;
+  font-weight: 700;
 }
 
 .scanner-pill.positive {
@@ -4625,7 +4625,7 @@ pre {
 .portfolio-summary span {
   color: #94a3b8;
   font-size: 12px;
-  font-weight: 900;
+  font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
@@ -4664,7 +4664,7 @@ pre {
   background: #111827;
   color: #94a3b8;
   font-size: 11px;
-  font-weight: 900;
+  font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -4685,7 +4685,7 @@ pre {
   background: rgba(56, 189, 248, 0.12);
   color: #7dd3fc;
   font-size: 12px;
-  font-weight: 900;
+  font-weight: 700;
 }
 
 .portfolio-status.closed {
@@ -4702,7 +4702,7 @@ pre {
   background: #1e293b;
   color: #e2e8f0;
   cursor: pointer;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .portfolio-action:hover {
@@ -4779,7 +4779,7 @@ pre {
 .ai-panel-card > span {
   color: #94a3b8;
   font-size: 11px;
-  font-weight: 900;
+  font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -4817,7 +4817,7 @@ pre {
   color: #fbbf24;
   font-size: 12px;
   font-style: normal;
-  font-weight: 900;
+  font-weight: 700;
 }
 
 .ai-frame-strip em.positive {
