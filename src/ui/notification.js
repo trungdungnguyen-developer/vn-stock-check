@@ -82,6 +82,8 @@ function toYahooCryptoSymbol(symbol) {
   const button = document.querySelector(".header-icon[aria-label='Notification']");
   if (!button) return;
 
+  const notificationButtons = [button, document.getElementById("stickyNotificationToggle")].filter(Boolean);
+
   function readItems() {
     try {
       const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
@@ -206,12 +208,21 @@ function toYahooCryptoSymbol(symbol) {
       }
       .notification-badge-dot {
         position: absolute;
-        transform: translate(7px, -7px);
-        width: 9px;
-        height: 9px;
+        top: -5px;
+        right: -5px;
+        display: grid;
+        min-width: 18px;
+        height: 18px;
+        place-items: center;
         border-radius: 999px;
+        padding: 0 4px;
         background: #ef4444;
+        color: #ffffff;
         box-shadow: 0 0 0 3px #0f172a;
+        font-size: 10px;
+        font-weight: 700;
+        line-height: 1;
+        font-variant-numeric: tabular-nums;
       }
     `;
     document.head.appendChild(style);
@@ -261,14 +272,21 @@ function toYahooCryptoSymbol(symbol) {
   }
 
   function updateButtonState() {
-    if (!button.querySelector(".notification-badge-dot") && readItems().length) {
-      const dot = document.createElement("span");
-      dot.className = "notification-badge-dot";
-      button.appendChild(dot);
-    }
-    if (!readItems().length) {
-      button.querySelector(".notification-badge-dot")?.remove();
-    }
+    const count = readItems().length;
+    notificationButtons.forEach((targetButton) => {
+      let badge = targetButton.querySelector(".notification-badge-dot");
+      if (!count) {
+        badge?.remove();
+        return;
+      }
+      if (!badge) {
+        badge = document.createElement("span");
+        badge.className = "notification-badge-dot";
+        targetButton.appendChild(badge);
+      }
+      badge.textContent = count > 99 ? "99+" : String(count);
+      targetButton.setAttribute("aria-label", `Thông báo (${count})`);
+    });
   }
 
   function pushNotification(type, title, message) {
@@ -539,9 +557,10 @@ function parseVciData(rawData) {
 }
 
 function yahooParamsForRange(rangeKey) {
+  if (["1min", "3min"].includes(rangeKey)) return { range: "7d", interval: "1m" };
   if (rangeKey === "5m") return { range: "30d", interval: "5m" };
-  if (rangeKey === "30m") return { range: "60d", interval: "30m" };
-  if (["1h", "2h", "4h"].includes(rangeKey)) return { range: "730d", interval: "60m" };
+  if (["15m", "30m", "45min"].includes(rangeKey)) return { range: "60d", interval: "15m" };
+  if (["1h", "2h", "3h", "4h", "6h", "8h", "12h"].includes(rangeKey)) return { range: "730d", interval: "60m" };
   return { range: "2y", interval: "1d" };
 }
 
@@ -577,4 +596,3 @@ function syncCanvasSize(canvas) {
   }
   return { width, height };
 }
-

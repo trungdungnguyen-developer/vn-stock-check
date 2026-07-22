@@ -33,6 +33,12 @@ function setActiveChartButton(rangeKey) {
   chartControls?.querySelectorAll("button[data-chart-range]").forEach((button) => {
     button.classList.toggle("active", button.dataset.chartRange === rangeKey);
   });
+  const menu = chartControls?.querySelector(".timeframe-menu");
+  const menuButton = menu?.querySelector(`button[data-chart-range="${rangeKey}"]`);
+  const menuLabel = menu?.querySelector(".timeframe-menu-label");
+  menu?.classList.toggle("has-active", Boolean(menuButton));
+  if (menuLabel) menuLabel.textContent = menuButton ? (CHART_PRESETS[rangeKey]?.label || menuButton.textContent) : "Thêm khung";
+  if (menu) menu.open = false;
 }
 
 function setActiveHistoryButton(limit) {
@@ -62,29 +68,26 @@ function getCalendarBucket(timestamp, preset) {
     return Math.floor(timestamp / preset.intervalMs) * preset.intervalMs;
   }
 
-  if (preset.bucket === "1d") {
-    return startOfLocalDay(date);
-  }
-
-  if (preset.bucket === "3d" || preset.bucket === "5d") {
-    const size = preset.bucket === "3d" ? 3 : 5;
+  if (/^\d+d$/.test(preset.bucket || "")) {
+    const size = Number.parseInt(preset.bucket, 10) || 1;
     const dayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
     const yearStart = new Date(date.getFullYear(), 0, 1);
     const dayIndex = Math.floor((dayStart - yearStart) / 86400000);
     return new Date(date.getFullYear(), 0, 1 + Math.floor(dayIndex / size) * size).getTime();
   }
 
-  if (preset.bucket === "1w") {
+  if (/^\d+w$/.test(preset.bucket || "")) {
+    const size = Number.parseInt(preset.bucket, 10) || 1;
     const day = date.getDay() || 7;
-    return new Date(date.getFullYear(), date.getMonth(), date.getDate() - day + 1).getTime();
+    const monday = new Date(date.getFullYear(), date.getMonth(), date.getDate() - day + 1);
+    const anchor = new Date(1970, 0, 5);
+    const weekIndex = Math.floor((monday - anchor) / (7 * 86400000));
+    return new Date(anchor.getTime() + Math.floor(weekIndex / size) * size * 7 * 86400000).getTime();
   }
 
-  if (preset.bucket === "1m") {
-    return new Date(date.getFullYear(), date.getMonth(), 1).getTime();
-  }
-
-  if (preset.bucket === "3m") {
-    return new Date(date.getFullYear(), Math.floor(date.getMonth() / 3) * 3, 1).getTime();
+  if (/^\d+m$/.test(preset.bucket || "")) {
+    const size = Number.parseInt(preset.bucket, 10) || 1;
+    return new Date(date.getFullYear(), Math.floor(date.getMonth() / size) * size, 1).getTime();
   }
 
   return startOfLocalDay(date);
@@ -120,7 +123,7 @@ function aggregateBarsForPreset(bars, preset) {
     current.volume += toNumber(bar.volume) ?? 0;
   });
 
-  return [...buckets.values()].sort((a, b) => a.timestamp - b.timestamp).slice(-260);
+  return [...buckets.values()].sort((a, b) => a.timestamp - b.timestamp);
 }
 
 function renderSelectedChart(bars, rangeKey = activeChartRange) {
@@ -140,7 +143,7 @@ function renderSelectedChart(bars, rangeKey = activeChartRange) {
   drawChart(displayBars, fullMovingAverages);
   renderMovingAverages(timeframeBars, fullMovingAverages);
   renderIndicators(timeframeBars, fullIndicators);
-  fields.chartRange.textContent = `${preset.label} - ${displayBars.length} nến`;
+  fields.chartRange.textContent = `${preset.label} · ${displayBars.length.toLocaleString("vi-VN")} nến · toàn bộ lịch sử`;
 
   if (latestPayload) {
     latestPayload.activeTimeframe = preset.label;

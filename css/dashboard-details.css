@@ -1,0 +1,97 @@
+/* Compact dashboard information and valuation layout. */
+#overviewPanel > .dashboard-information-stack {
+  grid-column: 1 / -1 !important;
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+#overviewPanel > .dashboard-information-stack > .details-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  grid-auto-rows: auto !important;
+  align-items: stretch !important;
+  align-self: start !important;
+  gap: 16px !important;
+  height: max-content !important;
+  block-size: max-content !important;
+  margin: 0 !important;
+  min-height: 0 !important;
+}
+
+#overviewPanel > .dashboard-information-stack > .details-grid .detail-card {
+  align-self: stretch !important;
+  height: auto !important;
+  min-height: 0 !important;
+  padding: 16px !important;
+}
+
+#overviewPanel > .dashboard-information-stack > .details-grid .detail-card h2 {
+  margin: 0 0 12px !important;
+}
+
+#overviewPanel > .dashboard-information-stack > .details-grid .detail-card dl {
+  margin: 0 !important;
+}
+
+#overviewPanel > .dashboard-information-stack > .details-grid .detail-card dl > div {
+  min-height: 42px;
+  padding: 9px 0 !important;
+}
+
+#overviewPanel > .dashboard-information-stack > .details-grid .detail-card dl > div:last-child {
+  border-bottom: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+#overviewPanel > .dashboard-information-stack > .details-grid .detail-card dd {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#overviewPanel > .dashboard-information-stack > .details-grid .technical-levels-card dd {
+  color: var(--ui-text);
+  font-weight: 600;
+}
+
+#overviewPanel > .dashboard-information-stack > .fundamental-analysis-section {
+  align-self: start !important;
+  height: max-content !important;
+  block-size: max-content !important;
+  margin: 0 !important;
+  min-height: 0 !important;
+  padding: 16px !important;
+}
+
+#overviewPanel > .dashboard-information-stack > .fundamental-analysis-section .fundamental-analysis {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  align-items: stretch !important;
+  gap: 16px !important;
+}
+
+#overviewPanel > .dashboard-information-stack > .fundamental-analysis-section .fundamental-analysis article {
+  height: auto !important;
+  min-height: 0 !important;
+}
+
+@media (min-width: 1401px) {
+  #overviewPanel > .dashboard-information-stack { grid-row: 5 !important; }
+  #overviewPanel > .recommendation-section { grid-row: 6 !important; }
+  #overviewPanel > .flow-section { grid-row: 7 !important; }
+  #overviewPanel > .analytics-section { grid-row: 8 !important; }
+}
+
+@media (max-width: 1400px) {
+  #overviewPanel > .dashboard-information-stack { grid-row: 6 !important; }
+  #overviewPanel > .recommendation-section { grid-row: 7 !important; }
+  #overviewPanel > .flow-section { grid-row: 8 !important; }
+  #overviewPanel > .analytics-section { grid-row: 9 !important; }
+}
+
+@media (max-width: 900px) {
+  #overviewPanel > .dashboard-information-stack > .details-grid,
+  #overviewPanel > .dashboard-information-stack > .fundamental-analysis-section .fundamental-analysis {
+    grid-template-columns: 1fr !important;
+  }
+}

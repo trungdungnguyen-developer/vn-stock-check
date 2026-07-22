@@ -14,49 +14,13 @@
   </head>
   <body>
     <main class="app">
-      <section class="shell terminal-layout">
+      <section class="shell terminal-layout" data-active-tab="overview">
         <aside class="terminal-sidebar" aria-label="Terminal navigation">
           <div class="terminal-brand">
-            <span>AI</span>
+            <span class="terminal-brand-mark" aria-hidden="true"><img src="icon.svg" alt=""></span>
             <div>
               <strong>AI Trading Terminal</strong>
               <em>Market workspace</em>
-            </div>
-          </div>
-
-          <div class="watchlist-block">
-            <span>Watchlist</span>
-            <div class="quick-symbols" aria-label="Watchlist">
-              <button type="button" data-symbol="BTC">BTC</button>
-              <button type="button" data-symbol="ETH">ETH</button>
-              <button type="button" data-symbol="SOL">SOL</button>
-              <button type="button" data-symbol="PI">PI</button>
-              <button type="button" data-symbol="FPT">FPT</button>
-              <button type="button" data-symbol="HPG">HPG</button>
-              <button type="button" data-symbol="SSI">SSI</button>
-              <button type="button" data-symbol="VCB">VCB</button>
-            </div>
-            <div class="watchlist-groups" aria-label="Saved watchlist">
-              <section class="watchlist-group">
-                <h3>Favorite</h3>
-                <div id="favoriteWatchlist" class="watchlist-list"></div>
-              </section>
-              <section class="watchlist-group">
-                <h3>Recently Viewed</h3>
-                <div id="recentWatchlist" class="watchlist-list"></div>
-              </section>
-              <section class="watchlist-group">
-                <h3>Top Volume</h3>
-                <div id="topVolumeWatchlist" class="watchlist-list"></div>
-              </section>
-              <section class="watchlist-group">
-                <h3>Top Gainer</h3>
-                <div id="topGainerWatchlist" class="watchlist-list"></div>
-              </section>
-              <section class="watchlist-group">
-                <h3>Top Loser</h3>
-                <div id="topLoserWatchlist" class="watchlist-list"></div>
-              </section>
             </div>
           </div>
 
@@ -70,7 +34,46 @@
             <button id="cryptoTradingTab" class="tab" type="button" data-tab="cryptoTrading" aria-selected="false">Crypto Trading</button>
             <button id="riskTab" class="tab" type="button" data-tab="risk" aria-selected="false">Risk Calculator</button>
             <button id="portfolioTab" class="tab" type="button" data-tab="portfolio" aria-selected="false">Portfolio</button>
+            <button id="assetMonitorTab" class="tab" type="button" data-tab="assetMonitor" aria-selected="false">Asset Monitor</button>
           </nav>
+
+          <div class="watchlist-block">
+            <details class="sidebar-disclosure">
+              <summary>Watchlist</summary>
+              <div class="quick-symbols" aria-label="Watchlist">
+                <button type="button" data-symbol="BTC">BTC</button>
+                <button type="button" data-symbol="ETH">ETH</button>
+                <button type="button" data-symbol="SOL">SOL</button>
+                <button type="button" data-symbol="PI">PI</button>
+                <button type="button" data-symbol="FPT">FPT</button>
+                <button type="button" data-symbol="HPG">HPG</button>
+                <button type="button" data-symbol="SSI">SSI</button>
+                <button type="button" data-symbol="VCB">VCB</button>
+              </div>
+            </details>
+            <div class="watchlist-groups" aria-label="Saved watchlist">
+              <details class="watchlist-group sidebar-disclosure">
+                <summary>Favorite</summary>
+                <div id="favoriteWatchlist" class="watchlist-list"></div>
+              </details>
+              <details class="watchlist-group sidebar-disclosure">
+                <summary>Recently Viewed</summary>
+                <div id="recentWatchlist" class="watchlist-list"></div>
+              </details>
+              <details class="watchlist-group sidebar-disclosure">
+                <summary>Top Volume</summary>
+                <div id="topVolumeWatchlist" class="watchlist-list"></div>
+              </details>
+              <details class="watchlist-group sidebar-disclosure">
+                <summary>Top Gainer</summary>
+                <div id="topGainerWatchlist" class="watchlist-list"></div>
+              </details>
+              <details class="watchlist-group sidebar-disclosure">
+                <summary>Top Loser</summary>
+                <div id="topLoserWatchlist" class="watchlist-list"></div>
+              </details>
+            </div>
+          </div>
 
           <div class="sidebar-footer-links">
             <span>Portfolio</span>
@@ -93,9 +96,18 @@
             <button type="submit">Tải dữ liệu</button>
           </div>
           <div class="header-actions" aria-label="Header actions">
-            <button id="favoriteToggle" type="button" class="header-chip">Favorite</button>
-            <button type="button" class="header-icon" aria-label="Notification">●</button>
-            <button type="button" class="user-chip">User</button>
+            <button id="homeToggle" type="button" class="header-chip header-action-chip" aria-label="Về Dashboard" title="Dashboard">
+              <svg class="header-action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m3 11 9-8 9 8"></path><path d="M5 10v10h14V10"></path><path d="M9 20v-6h6v6"></path></svg>
+              <span>Home</span>
+            </button>
+            <button id="favoriteToggle" type="button" class="header-chip header-action-chip">
+              <svg class="header-action-icon header-star-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2-4.5-4.4 6.2-.9Z"></path></svg>
+              <span>Favorite</span>
+            </button>
+            <button id="notificationToggle" type="button" class="header-icon" aria-label="Notification" title="Thông báo">
+              <svg class="bell-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"></path></svg>
+            </button>
+            <button type="button" class="user-chip" aria-label="Tài khoản người dùng" title="Tài khoản">U</button>
           </div>
           <div class="quick-symbols" aria-label="Mã phổ biến">
             <button type="button" data-symbol="FPT">FPT</button>
@@ -109,33 +121,119 @@
             <button type="button" data-symbol="SOL">SOL</button>
             <button type="button" data-symbol="PI">PI</button>
           </div>
-          <div class="market-strip" aria-label="Chỉ số thị trường realtime">
+          <div class="market-strip market-overview" aria-label="Chỉ số thị trường realtime">
             <div class="market-strip-head">
               <span>Thị trường hôm nay</span>
               <small>Tự cập nhật mỗi 60 giây</small>
             </div>
-            <article class="market-card market-card-main">
-              <span>VNI</span>
-              <strong id="marketVni">-</strong>
-              <em id="marketVniChange">-</em>
-            </article>
-            <article class="market-card">
-              <span>Vàng</span>
-              <strong id="marketGold">-</strong>
-              <em id="marketGoldChange">-</em>
-            </article>
-            <article class="market-card">
-              <span>Bitcoin</span>
-              <strong id="marketBitcoin">-</strong>
-              <em id="marketBitcoinChange">-</em>
-            </article>
-            <article class="market-card">
-              <span>Dầu WTI</span>
-              <strong id="marketOil">-</strong>
-              <em id="marketOilChange">-</em>
-            </article>
+            <section class="market-group" data-market-group="macro" aria-label="Vĩ mô">
+              <div class="market-group-title"><i aria-hidden="true"></i><strong>Vĩ mô</strong></div>
+              <div class="market-row">
+                <article class="market-card"><span>DXY</span><strong id="marketDxy">-</strong><em id="marketDxyChange">-</em></article>
+                <article class="market-card"><span>US10Y Yield</span><strong id="marketUs10y">-</strong><em id="marketUs10yChange">-</em></article>
+                <article class="market-card"><span>VIX</span><strong id="marketVix">-</strong><em id="marketVixChange">-</em></article>
+                <article class="market-card"><span>Fed Rate</span><strong id="marketFedRate">-</strong><em id="marketFedRateChange">-</em></article>
+              </div>
+            </section>
+
+            <section class="market-group" data-market-group="commodity" aria-label="Hàng hóa">
+              <div class="market-group-title"><i aria-hidden="true"></i><strong>Hàng hóa</strong></div>
+              <div class="market-row">
+                <article class="market-card"><span>Gold</span><strong id="marketGold">-</strong><em id="marketGoldChange">-</em></article>
+                <article class="market-card"><span>Silver</span><strong id="marketSilver">-</strong><em id="marketSilverChange">-</em></article>
+                <article class="market-card"><span>Brent Oil</span><strong id="marketBrent">-</strong><em id="marketBrentChange">-</em></article>
+                <article class="market-card"><span>WTI Oil</span><strong id="marketWti">-</strong><em id="marketWtiChange">-</em></article>
+              </div>
+            </section>
+
+            <section class="market-group" data-market-group="crypto" aria-label="Crypto">
+              <div class="market-group-title"><i aria-hidden="true"></i><strong>Crypto</strong></div>
+              <div class="market-row">
+                <article class="market-card"><span>Bitcoin</span><strong id="marketBitcoin">-</strong><em id="marketBitcoinChange">-</em></article>
+                <article class="market-card"><span>Ethereum</span><strong id="marketEthereum">-</strong><em id="marketEthereumChange">-</em></article>
+                <article class="market-card"><span>BTC Dominance</span><strong id="marketBtcDominance">-</strong><em id="marketBtcDominanceChange">-</em></article>
+                <article class="market-card"><span>Crypto Total Market Cap</span><strong id="marketCryptoTotal">-</strong><em id="marketCryptoTotalChange">-</em></article>
+              </div>
+            </section>
+
+            <section class="market-group" data-market-group="stock" aria-label="Chứng khoán Mỹ">
+              <div class="market-group-title"><i aria-hidden="true"></i><strong>Chứng khoán</strong></div>
+              <div class="market-row">
+                <article class="market-card"><span>S&amp;P 500</span><strong id="marketSp500">-</strong><em id="marketSp500Change">-</em></article>
+                <article class="market-card"><span>Nasdaq</span><strong id="marketNasdaq">-</strong><em id="marketNasdaqChange">-</em></article>
+                <article class="market-card"><span>Dow Jones</span><strong id="marketDowJones">-</strong><em id="marketDowJonesChange">-</em></article>
+                <article class="market-card"><span>VN-Index</span><strong id="marketVni">-</strong><em id="marketVniChange">-</em></article>
+              </div>
+            </section>
+
+            <section class="market-group" data-market-group="currency" aria-label="Tiền tệ">
+              <div class="market-group-title"><i aria-hidden="true"></i><strong>Tiền tệ</strong></div>
+              <div class="market-row">
+                <article class="market-card"><span>EUR/USD</span><strong id="marketEurUsd">-</strong><em id="marketEurUsdChange">-</em></article>
+                <article class="market-card"><span>USD/JPY</span><strong id="marketUsdJpy">-</strong><em id="marketUsdJpyChange">-</em></article>
+                <article class="market-card"><span>USD/CNY</span><strong id="marketUsdCny">-</strong><em id="marketUsdCnyChange">-</em></article>
+                <article class="market-card"><span>USD/VND</span><strong id="marketUsdVnd">-</strong><em id="marketUsdVndChange">-</em></article>
+              </div>
+            </section>
           </div>
+          <section class="market-assessment" aria-label="Đánh giá bối cảnh thị trường">
+            <div class="market-assessment-head">
+              <div>
+                <span>Đánh giá bối cảnh thị trường</span>
+                <small>Tổng hợp tự động từ các chỉ số phía trên</small>
+              </div>
+              <em id="marketAssessmentUpdated">Đang chờ dữ liệu</em>
+            </div>
+            <div class="market-assessment-grid">
+              <article id="assessmentDxy" class="assessment-card neutral">
+                <div><span>01</span><h3>DXY</h3><em>Chưa có</em></div>
+                <strong>-</strong><p>Đang chờ dữ liệu DXY.</p>
+              </article>
+              <article id="assessmentUs10y" class="assessment-card neutral">
+                <div><span>02</span><h3>US10Y Yield</h3><em>Chưa có</em></div>
+                <strong>-</strong><p>Đang chờ dữ liệu lợi suất.</p>
+              </article>
+              <article id="assessmentVix" class="assessment-card neutral">
+                <div><span>03</span><h3>VIX</h3><em>Chưa có</em></div>
+                <strong>-</strong><p>Đang chờ dữ liệu biến động.</p>
+              </article>
+              <article id="assessmentRiskAssets" class="assessment-card neutral">
+                <div><span>04</span><h3>S&amp;P 500 &amp; Nasdaq</h3><em>Chưa có</em></div>
+                <strong>-</strong><p>Đang chờ dữ liệu tài sản rủi ro.</p>
+              </article>
+              <article id="assessmentLiquidity" class="assessment-card neutral">
+                <div><span>05</span><h3>Dollar Liquidity</h3><em>Ước tính</em></div>
+                <strong>-</strong><p>Tín hiệu đại diện từ Fed Rate và DXY.</p>
+              </article>
+              <article id="assessmentDominance" class="assessment-card neutral">
+                <div><span>06</span><h3>BTC Dominance</h3><em>Chưa có</em></div>
+                <strong>-</strong><p>Đang chờ dữ liệu dòng tiền crypto.</p>
+              </article>
+            </div>
+          </section>
           <p id="message" class="message" role="status"></p>
+        </form>
+
+        <form id="stickyStockForm" class="sticky-search-dock" aria-label="Tra cứu nhanh mã tài sản">
+          <label for="stickySymbol">Mã chứng khoán / Coin</label>
+          <div class="input-row sticky-input-row">
+            <input id="stickySymbol" type="text" autocomplete="off" placeholder="Ví dụ: FPT, HPG, BTC, ETH, SOL, PI">
+            <button type="submit">Tải dữ liệu</button>
+          </div>
+          <div class="header-actions sticky-header-actions" aria-label="Thao tác nhanh">
+            <button id="stickyHomeToggle" type="button" class="header-chip header-action-chip" aria-label="Về Dashboard" title="Dashboard">
+              <svg class="header-action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m3 11 9-8 9 8"></path><path d="M5 10v10h14V10"></path><path d="M9 20v-6h6v6"></path></svg>
+              <span>Home</span>
+            </button>
+            <button id="stickyFavoriteToggle" type="button" class="header-chip header-action-chip">
+              <svg class="header-action-icon header-star-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2-4.5-4.4 6.2-.9Z"></path></svg>
+              <span>Favorite</span>
+            </button>
+            <button id="stickyNotificationToggle" type="button" class="header-icon" aria-label="Mở thông báo" title="Thông báo">
+              <svg class="bell-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"></path></svg>
+            </button>
+            <button id="stickyUserButton" type="button" class="user-chip" aria-label="Tài khoản người dùng" title="Tài khoản">U</button>
+          </div>
         </form>
 
         <section id="overviewPanel" class="tab-panel active">
@@ -158,11 +256,11 @@
           </article>
           <article>
             <span class="dashboard-icon" aria-hidden="true">T</span>
-            <div><span>Trend</span><strong>-</strong></div>
+            <div><span>Trend</span><strong id="dashboardTrend">-</strong></div>
           </article>
           <article>
             <span class="dashboard-icon" aria-hidden="true">S</span>
-            <div><span>Signal</span><strong>-</strong></div>
+            <div><span>Signal</span><strong id="dashboardSignal">-</strong></div>
           </article>
           <article>
             <span class="dashboard-icon" aria-hidden="true">#</span>
@@ -194,59 +292,162 @@
         <div id="chartWorkspace" class="chart-workspace">
         <section class="chart-section">
           <div class="section-head chart-toolbar">
-            <h2>Biểu đồ giá kỹ thuật</h2>
+            <h2>Biểu đồ kỹ thuật</h2>
             <div class="chart-actions">
               <span id="chartRange">Giá + MA20/50/100/200</span>
-              <button id="fullscreenChart" type="button" class="secondary chart-fullscreen">Fullscreen</button>
-              <button type="button" class="secondary chart-tool-button" aria-label="Screenshot">Screenshot</button>
-              <button type="button" class="secondary chart-tool-button" aria-label="Indicator">Indicator</button>
-              <button type="button" class="secondary chart-tool-button" aria-label="Zoom">Zoom</button>
+              <button id="fullscreenChart" type="button" class="secondary chart-fullscreen">Toàn màn hình</button>
+              <button id="chartScreenshotButton" type="button" class="secondary chart-tool-button" aria-label="Chụp ảnh biểu đồ">Chụp ảnh</button>
+              <button id="indicatorSettingsToggle" type="button" class="secondary chart-tool-button" aria-expanded="false">Chỉ báo</button>
+              <button id="chartFitButton" type="button" class="secondary chart-tool-button">Vừa màn hình</button>
             </div>
           </div>
           <div class="chart-controls" aria-label="Chọn khung thời gian biểu đồ">
-            <span class="timeframe-label">Timeframe</span>
-            <button type="button" data-chart-range="30m">30p</button>
-            <button type="button" data-chart-range="1h">1h</button>
-            <button type="button" data-chart-range="2h">2h</button>
-            <button type="button" data-chart-range="4h">4h</button>
-            <button type="button" data-chart-range="1d" class="active">1 ngày</button>
-            <button type="button" data-chart-range="3d">3 ngày</button>
-            <button type="button" data-chart-range="5d">5 ngày</button>
-            <button type="button" data-chart-range="1w">1 tuần</button>
-            <button type="button" data-chart-range="1m">1 tháng</button>
-            <button type="button" data-chart-range="3m">3 tháng</button>
+            <div class="timeframe-context">
+              <span class="timeframe-label">Khung thời gian biểu đồ</span>
+              <small>Mỗi nến đại diện cho một chu kỳ</small>
+            </div>
+            <div class="timeframe-options" role="group" aria-label="Các khung thời gian phổ biến">
+              <div class="timeframe-popular-scroller">
+                <button type="button" data-chart-range="30m">30p</button>
+                <button type="button" data-chart-range="1h">1h</button>
+                <button type="button" data-chart-range="2h">2h</button>
+                <button type="button" data-chart-range="4h">4h</button>
+                <button type="button" data-chart-range="1d" class="active">1 ngày</button>
+                <button type="button" data-chart-range="3d">3 ngày</button>
+                <button type="button" data-chart-range="5d">5 ngày</button>
+                <button type="button" data-chart-range="1w">1 tuần</button>
+                <button type="button" data-chart-range="1m">1 tháng</button>
+                <button type="button" data-chart-range="3m">3 tháng</button>
+              </div>
+              <details class="timeframe-menu">
+              <summary aria-label="Mở danh sách khung thời gian">
+                <span class="timeframe-menu-plus" aria-hidden="true">+</span>
+                <span class="timeframe-menu-label">Thêm khung</span>
+                <span class="timeframe-menu-chevron" aria-hidden="true">⌄</span>
+              </summary>
+              <div class="timeframe-popover">
+                <div class="timeframe-popover-head">
+                  <strong>Chọn khung nến</strong>
+                  <small>MA, RSI và MACD sẽ được tính lại theo lựa chọn</small>
+                </div>
+                <section>
+                  <strong>Phút</strong>
+                  <div>
+                    <button type="button" data-chart-range="1min">1p</button>
+                    <button type="button" data-chart-range="3min">3p</button>
+                    <button type="button" data-chart-range="5m">5p</button>
+                    <button type="button" data-chart-range="15m">15p</button>
+                    <button type="button" data-chart-range="45min">45p</button>
+                  </div>
+                </section>
+                <section>
+                  <strong>Giờ</strong>
+                  <div>
+                    <button type="button" data-chart-range="3h">3h</button>
+                    <button type="button" data-chart-range="6h">6h</button>
+                    <button type="button" data-chart-range="8h">8h</button>
+                    <button type="button" data-chart-range="12h">12h</button>
+                  </div>
+                </section>
+                <section>
+                  <strong>Ngày</strong>
+                  <div><button type="button" data-chart-range="2d">2 ngày</button></div>
+                </section>
+                <section>
+                  <strong>Tuần</strong>
+                  <div><button type="button" data-chart-range="2w">2 tuần</button></div>
+                </section>
+                <section>
+                  <strong>Tháng</strong>
+                  <div>
+                    <button type="button" data-chart-range="6m">6 tháng</button>
+                    <button type="button" data-chart-range="12m">12 tháng</button>
+                  </div>
+                </section>
+              </div>
+              </details>
+            </div>
           </div>
-          <div id="priceChart" class="lightweight-price-chart" role="img" aria-label="Biểu đồ giá kỹ thuật"></div>
+          <div id="priceChart" class="lightweight-price-chart" role="img" aria-label="Biểu đồ giá kỹ thuật">
+            <div class="chart-market-hud" aria-hidden="true">
+              <div class="chart-market-title">
+                <span id="chartHudSymbol">-</span>
+                <em id="chartHudTimeframe">1 ngày</em>
+                <i id="chartHudStatus"></i>
+              </div>
+              <div class="chart-market-ohlc">
+                <span>O <b id="chartHudOpen">-</b></span>
+                <span>H <b id="chartHudHigh">-</b></span>
+                <span>L <b id="chartHudLow">-</b></span>
+                <span>C <b id="chartHudClose">-</b></span>
+                <strong id="chartHudChange">-</strong>
+              </div>
+              <div class="chart-inline-legend">
+                <span data-ma-key="ma20"><i class="legend-ma10"></i>MA20 <b id="chartHudMa20">-</b></span>
+                <span data-ma-key="ma50"><i class="legend-ma50"></i>MA50 <b id="chartHudMa50">-</b></span>
+                <span data-ma-key="ma100"><i class="legend-ma100"></i>MA100 <b id="chartHudMa100">-</b></span>
+                <span data-ma-key="ma200"><i class="legend-ma200"></i>MA200 <b id="chartHudMa200">-</b></span>
+              </div>
+            </div>
+          </div>
           <div class="chart-legend">
             <span><i class="legend-price"></i>Giá</span>
-            <span><i class="legend-ma10"></i>MA20</span>
-            <span><i class="legend-ma50"></i>MA50</span>
-            <span><i class="legend-ma100"></i>MA100</span>
-            <span><i class="legend-ma200"></i>MA200</span>
+            <span data-ma-key="ma20"><i class="legend-ma10"></i>MA20</span>
+            <span data-ma-key="ma50"><i class="legend-ma50"></i>MA50</span>
+            <span data-ma-key="ma100"><i class="legend-ma100"></i>MA100</span>
+            <span data-ma-key="ma200"><i class="legend-ma200"></i>MA200</span>
           </div>
           <div class="ma-summary" aria-label="Giá trị đường trung bình động">
-            <article><span>MA 20</span><strong id="ma10">-</strong></article>
-            <article><span>MA 50</span><strong id="ma50">-</strong></article>
-            <article><span>MA 100</span><strong id="ma100">-</strong></article>
-            <article><span>MA 200</span><strong id="ma200">-</strong></article>
+            <article data-ma-key="ma20"><span>MA 20</span><strong id="ma10">-</strong></article>
+            <article data-ma-key="ma50"><span>MA 50</span><strong id="ma50">-</strong></article>
+            <article data-ma-key="ma100"><span>MA 100</span><strong id="ma100">-</strong></article>
+            <article data-ma-key="ma200"><span>MA 200</span><strong id="ma200">-</strong></article>
           </div>
-          <div class="indicator-manager" aria-label="Quản lý chỉ báo">
-            <label><input id="toggleRsiIndicator" type="checkbox" checked> RSI</label>
-            <label>RSI kỳ <input id="rsiPeriodInput" type="number" min="2" max="50" step="1" value="14"></label>
-            <label>Màu RSI <input id="rsiColorInput" type="color" value="#a855f7"></label>
-            <label><input id="toggleMacdIndicator" type="checkbox" checked> MACD</label>
-            <label>Fast <input id="macdFastInput" type="number" min="2" max="50" step="1" value="12"></label>
-            <label>Slow <input id="macdSlowInput" type="number" min="3" max="100" step="1" value="26"></label>
-            <label>Signal <input id="macdSignalInput" type="number" min="2" max="50" step="1" value="9"></label>
-            <label>Màu MACD <input id="macdColorInput" type="color" value="#38bdf8"></label>
-            <label>Màu Signal <input id="macdSignalColorInput" type="color" value="#f59e0b"></label>
-            <label><input id="toggleBollingerOverlay" type="checkbox"> Bollinger</label>
-            <label><input id="toggleVwapOverlay" type="checkbox"> VWAP</label>
-            <label><input id="toggleSupertrendOverlay" type="checkbox"> Supertrend</label>
-            <label><input id="toggleIchimokuOverlay" type="checkbox"> Ichimoku</label>
-            <label><input id="toggleSignalMarkers" type="checkbox"> Marker mua/bán</label>
-            <label><input id="toggleOrderBlockOverlay" type="checkbox"> Order Block</label>
-            <label><input id="toggleFvgOverlay" type="checkbox"> FVG</label>
+          <div class="indicator-manager is-collapsed" aria-label="Quản lý chỉ báo">
+            <div class="indicator-manager-head">
+              <div>
+                <strong>Cấu hình chỉ báo</strong>
+                <span>Hiển thị, chu kỳ và màu sắc</span>
+              </div>
+              <button id="closeIndicatorSettings" type="button" class="secondary" aria-label="Đóng cấu hình chỉ báo">Đóng</button>
+            </div>
+            <div class="indicator-settings-row">
+              <fieldset class="indicator-control-group indicator-rsi-group">
+                <legend>RSI</legend>
+                <label class="indicator-toggle"><input id="toggleRsiIndicator" type="checkbox" checked> Hiển thị</label>
+                <label>Chu kỳ <input id="rsiPeriodInput" type="number" min="2" max="50" step="1" value="14"></label>
+                <label>Màu <input id="rsiColorInput" type="color" value="#a855f7"></label>
+              </fieldset>
+
+              <fieldset class="indicator-control-group indicator-macd-group">
+                <legend>MACD</legend>
+                <label class="indicator-toggle"><input id="toggleMacdIndicator" type="checkbox" checked> Hiển thị</label>
+                <label>Fast <input id="macdFastInput" type="number" min="2" max="50" step="1" value="12"></label>
+                <label>Slow <input id="macdSlowInput" type="number" min="3" max="100" step="1" value="26"></label>
+                <label>Signal <input id="macdSignalInput" type="number" min="2" max="50" step="1" value="9"></label>
+                <label>Màu MACD <input id="macdColorInput" type="color" value="#38bdf8"></label>
+                <label>Màu Signal <input id="macdSignalColorInput" type="color" value="#f59e0b"></label>
+              </fieldset>
+            </div>
+
+            <fieldset class="indicator-overlays-group indicator-ma-group">
+              <legend>Đường trung bình động</legend>
+              <label class="overlay-option"><input id="toggleMa20Overlay" type="checkbox" checked> MA20</label>
+              <label class="overlay-option"><input id="toggleMa50Overlay" type="checkbox" checked> MA50</label>
+              <label class="overlay-option"><input id="toggleMa100Overlay" type="checkbox" checked> MA100</label>
+              <label class="overlay-option"><input id="toggleMa200Overlay" type="checkbox" checked> MA200</label>
+            </fieldset>
+
+            <fieldset class="indicator-overlays-group">
+              <legend>Chỉ báo trên biểu đồ giá</legend>
+              <label class="overlay-option"><input id="toggleBollingerOverlay" type="checkbox"> Bollinger</label>
+              <label class="overlay-option"><input id="toggleVwapOverlay" type="checkbox"> VWAP</label>
+              <label class="overlay-option"><input id="toggleSupertrendOverlay" type="checkbox"> Supertrend</label>
+              <label class="overlay-option"><input id="toggleIchimokuOverlay" type="checkbox"> Ichimoku</label>
+              <label class="overlay-option"><input id="toggleSignalMarkers" type="checkbox"> Marker mua/bán</label>
+              <label class="overlay-option"><input id="toggleOrderBlockOverlay" type="checkbox"> Order Block</label>
+              <label class="overlay-option"><input id="toggleFvgOverlay" type="checkbox"> FVG</label>
+            </fieldset>
           </div>
         </section>
 
@@ -367,9 +568,9 @@
           </div>
           <div class="history-controls" aria-label="Chọn số ngày lịch sử giá">
             <span>Hiển thị</span>
-            <button type="button" data-history-limit="7">7 ngày</button>
+            <button type="button" data-history-limit="7" class="active">7 ngày</button>
             <button type="button" data-history-limit="15">15 ngày</button>
-            <button type="button" data-history-limit="30" class="active">30 ngày</button>
+            <button type="button" data-history-limit="30">30 ngày</button>
             <button type="button" data-history-limit="60">60 ngày</button>
           </div>
           <div class="table-wrap">
@@ -392,6 +593,7 @@
           </div>
         </section>
 
+        <div class="dashboard-information-stack">
         <section class="details-grid">
           <article class="detail-card">
             <h2>Thông tin tài sản</h2>
@@ -400,7 +602,7 @@
               <div><dt>Sàn / Nguồn</dt><dd id="listedExchange">-</dd></div>
               <div><dt>Ngành / Loại tài sản</dt><dd id="industry">-</dd></div>
               <div><dt>Nhóm ngành / Cặp giao dịch</dt><dd id="sector">-</dd></div>
-              <div><dt>Vốn hóa</dt><dd>-</dd></div>
+              <div><dt>Vốn hóa</dt><dd id="assetMarketCap">-</dd></div>
             </dl>
           </article>
 
@@ -412,6 +614,18 @@
               <div><dt>ROE</dt><dd id="roe">-</dd></div>
               <div><dt>EPS</dt><dd id="eps">-</dd></div>
               <div><dt>Beta</dt><dd id="beta">-</dd></div>
+            </dl>
+          </article>
+
+          <article class="detail-card technical-levels-card">
+            <h2>Hỗ trợ - Kháng cự</h2>
+            <dl>
+              <div><dt>Support 1</dt><dd id="support1">-</dd></div>
+              <div><dt>Support 2</dt><dd id="support2">-</dd></div>
+              <div><dt>Resistance 1</dt><dd id="resistance1">-</dd></div>
+              <div><dt>Resistance 2</dt><dd id="resistance2">-</dd></div>
+              <div><dt>Pivot</dt><dd id="pivotLevel">-</dd></div>
+              <div><dt>Fibonacci 61,8%</dt><dd id="fibonacciLevel">-</dd></div>
             </dl>
           </article>
         </section>
@@ -429,6 +643,7 @@
             </article>
           </div>
         </section>
+        </div>
 
         <section class="raw-section" hidden>
           <div class="section-head">
@@ -675,6 +890,97 @@
             </div>
           </section>
         </section>
+
+        <section id="assetMonitorPanel" class="tab-panel asset-monitor-panel" hidden>
+          <section class="asset-monitor-shell">
+            <header class="asset-monitor-toolbar">
+              <div class="asset-monitor-title">
+                <div>
+                  <h2>Theo dõi Coin / Chứng</h2>
+                  <p>Phân tích đa khung, chấm điểm và theo dõi tài sản trong một không gian.</p>
+                </div>
+              </div>
+              <form id="assetMonitorForm" class="asset-monitor-form">
+                <input id="assetMonitorSymbol" type="text" autocomplete="off" placeholder="Nhập mã coin hoặc chứng khoán..." aria-label="Mã tài sản">
+                <select id="assetMonitorType" aria-label="Loại tài sản">
+                  <option value="auto">Tự nhận diện</option>
+                  <option value="crypto">Coin</option>
+                  <option value="stock">Chứng khoán</option>
+                </select>
+                <button type="submit"><span aria-hidden="true">＋</span> Thêm vào theo dõi</button>
+              </form>
+              <div class="asset-monitor-status">
+                <span id="assetMonitorUpdated">Chưa có dữ liệu</span>
+                <em><i aria-hidden="true"></i> Tự động</em>
+              </div>
+            </header>
+
+            <div id="assetMonitorEmpty" class="asset-monitor-empty">
+              <strong>Chưa có tài sản trong danh sách theo dõi</strong>
+              <p>Nhập mã ở phía trên. Hệ thống sẽ tra cứu dữ liệu thật rồi thêm mã vào danh sách.</p>
+            </div>
+
+            <div id="assetMonitorWorkspace" class="asset-monitor-workspace" hidden>
+              <section class="asset-monitor-profile">
+                <div class="asset-monitor-identity">
+                  <span id="assetMonitorLogo" class="asset-monitor-logo">•</span>
+                  <div>
+                    <h3 id="assetMonitorName">-</h3>
+                    <p id="assetMonitorFullName">-</p>
+                  </div>
+                  <button id="assetMonitorFavorite" type="button" class="asset-monitor-star" aria-label="Đánh dấu ưu tiên">★</button>
+                </div>
+                <div class="asset-monitor-price">
+                  <strong id="assetMonitorPrice">-</strong>
+                  <span id="assetMonitorCurrency">-</span>
+                  <em id="assetMonitorChange">-</em>
+                </div>
+                <div id="assetMonitorFrames" class="asset-monitor-frames" role="group" aria-label="Khung phân tích">
+                  <button type="button" data-monitor-frame="1h">1H</button>
+                  <button type="button" data-monitor-frame="4h">4H</button>
+                  <button type="button" data-monitor-frame="1d" class="active">1D</button>
+                  <button type="button" data-monitor-frame="1w">1W</button>
+                </div>
+                <div id="assetMonitorOhlcv" class="asset-monitor-ohlcv"></div>
+                <div id="assetMonitorMiniChart" class="asset-monitor-mini-chart" role="img" aria-label="Biểu đồ tài sản"></div>
+              </section>
+
+              <section id="assetMonitorMetrics" class="asset-monitor-metrics" aria-label="12 nhóm phân tích"></section>
+
+              <aside class="asset-monitor-recommendations">
+                <div class="asset-monitor-recommendations-head">
+                  <h3>Khuyến nghị</h3>
+                  <span class="asset-monitor-recommendation-info" role="img" aria-label="Thông tin khuyến nghị" title="Khuyến nghị tự động dựa trên dữ liệu kỹ thuật">!</span>
+                </div>
+                <div id="assetMonitorRecommendations"></div>
+                <small id="assetMonitorRecommendationTime">-</small>
+              </aside>
+            </div>
+
+            <section class="asset-monitor-list-section">
+              <div class="asset-monitor-list-head">
+                <div>
+                  <h3>Danh sách theo dõi <span id="assetMonitorCount">(0)</span></h3>
+                  <p>Nhấn vào một dòng để mở phân tích chi tiết.</p>
+                </div>
+                <input id="assetMonitorFilter" type="search" placeholder="Tìm kiếm trong danh sách..." aria-label="Lọc danh sách theo dõi">
+              </div>
+              <div class="asset-monitor-table-wrap">
+                <table class="asset-monitor-table">
+                  <thead>
+                    <tr>
+                      <th>Mã</th><th>Giá hiện tại</th><th>24h %</th><th>EMA</th><th>MACD</th><th>ADX</th><th>RSI</th><th>Volume</th><th>ATR</th><th>Bollinger</th><th>Cấu trúc</th><th>Hỗ trợ / Kháng cự</th><th>Dòng tiền</th><th>Sức mạnh</th><th>Tâm lý</th><th>Ngày</th><th>Tuần</th><th>Tháng</th><th>Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody id="assetMonitorRows">
+                    <tr><td colspan="19" class="asset-monitor-table-empty">Chưa có mã nào.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+            <p class="asset-monitor-disclaimer">Dữ liệu và khuyến nghị chỉ mang tính tham khảo, không phải lời khuyên đầu tư.</p>
+          </section>
+        </section>
       </section>
       <footer class="app-footer">made by Trung Dung Nguyen | June 2026</footer>
     </main>
@@ -685,5 +991,6 @@
     <script src="src/ui/watchlist.js"></script>
     <script src="risk.js"></script>
     <script src="portfolio.js"></script>
+    <script src="asset-monitor.js"></script>
   </body>
 </html>

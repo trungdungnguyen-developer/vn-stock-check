@@ -1,4 +1,4 @@
-const CACHE_NAME = "stock-tracker-vietnam-app-v58";
+const CACHE_NAME = "stock-tracker-vietnam-app-v118";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -16,9 +16,12 @@ const APP_SHELL = [
   "./css/links.css",
   "./css/notifications.css",
   "./css/responsive.css",
+  "./css/asset-monitor.css",
+  "./css/dashboard-details.css",
   "./script.js",
   "./risk.js",
   "./portfolio.js",
+  "./asset-monitor.js",
   "./ai.js",
   "./src/app/bootstrap.js",
   "./src/app/main.js",
@@ -38,6 +41,7 @@ const APP_SHELL = [
   "./src/ui/analytics.js",
   "./src/ui/table.js",
   "./src/ui/notification.js",
+  "./src/ui/marketOverview.js",
   "./src/ui/watchlist.js",
   "./src/utils/number.js",
   "./src/utils/date.js",

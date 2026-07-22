@@ -40,6 +40,221 @@
   box-shadow: var(--ui-shadow) !important;
 }
 
+/* Dark workspace normalization */
+.terminal-layout :is(#aiPanel, #tradePanel, #scannerPanel, #cryptoTradingPanel, #riskPanel) > section {
+  background: linear-gradient(180deg, #101e31 0%, #0c192a 100%) !important;
+  border-color: #2b425f !important;
+  color: var(--ui-text) !important;
+}
+
+.terminal-layout :is(#aiPanel, #tradePanel, #scannerPanel, #cryptoTradingPanel, #riskPanel) .section-head {
+  margin: 0;
+  padding: 0 0 20px;
+  border: 0;
+  border-bottom: 1px solid #2b425f;
+  border-radius: 0;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.terminal-layout :is(#aiPanel, #tradePanel, #scannerPanel, #cryptoTradingPanel, #riskPanel) .section-head h2 {
+  margin: 0;
+  color: var(--ui-text) !important;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.terminal-layout :is(#aiPanel, #tradePanel, #scannerPanel, #cryptoTradingPanel, #riskPanel) .section-head p {
+  margin: 5px 0 0;
+  color: var(--ui-muted) !important;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+.terminal-layout :is(#aiPanel, #tradePanel, #scannerPanel, #cryptoTradingPanel) :is(.ai-analysis, .trade-analysis, .scanner-results, .scanner-trade-box, .crypto-trading-body) > article,
+.terminal-layout #aiPanel .ai-panel-card,
+.terminal-layout #scannerPanel :is(.scanner-card, .trade-pick-card),
+.terminal-layout #cryptoTradingPanel :is(.crypto-setup-card, .crypto-stage-card, .crypto-decision-card) {
+  border: 1px solid #2d4665 !important;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #152741 0%, #111f33 72%) !important;
+  color: var(--ui-text) !important;
+  box-shadow: 0 8px 24px rgba(2, 6, 23, 0.22) !important;
+}
+
+.terminal-layout :is(#aiPanel, #tradePanel, #scannerPanel, #cryptoTradingPanel) :is(.ai-analysis, .trade-analysis, .scanner-results, .scanner-trade-box, .crypto-trading-body) > article:hover,
+.terminal-layout #scannerPanel :is(.scanner-card, .trade-pick-card):hover,
+.terminal-layout #cryptoTradingPanel :is(.crypto-setup-card, .crypto-stage-card, .crypto-decision-card):hover {
+  border-color: #4e6b8f !important;
+}
+
+.terminal-layout :is(#aiPanel, #tradePanel, #scannerPanel, #cryptoTradingPanel) article :is(h3, h4, strong),
+.terminal-layout #riskPanel :is(h3, h4, strong) {
+  color: var(--ui-text);
+}
+
+.terminal-layout :is(#aiPanel, #tradePanel, #scannerPanel, #cryptoTradingPanel) article p {
+  color: var(--ui-text-secondary) !important;
+}
+
+.terminal-layout :is(#aiPanel, #tradePanel, #scannerPanel, #cryptoTradingPanel) article > span,
+.terminal-layout :is(#aiPanel, #tradePanel, #scannerPanel, #cryptoTradingPanel) article label,
+.terminal-layout #riskPanel article > span {
+  color: var(--ui-muted) !important;
+}
+
+/* AI analysis */
+.terminal-layout #aiPanel .ai-analysis {
+  gap: 14px;
+  margin-top: 20px;
+}
+
+.terminal-layout #aiPanel .ai-panel-card {
+  padding: 18px 20px;
+}
+
+.terminal-layout #aiPanel .ai-timeframe-grid section {
+  border-color: #2d4665;
+  background: #0d1a2c;
+}
+
+.terminal-layout #aiPanel .ai-section-list li {
+  border-color: #2b425f;
+}
+
+/* Scanner workspace */
+.terminal-layout #scannerPanel .scanner-controls {
+  gap: 8px;
+  padding: 8px;
+  border-color: #2b425f;
+  background: #0a1626 !important;
+}
+
+.terminal-layout #scannerPanel .scanner-controls button {
+  min-height: 38px;
+  border-color: #334b68;
+  background: #111f33 !important;
+  color: var(--ui-text-secondary) !important;
+  box-shadow: none;
+}
+
+.terminal-layout #scannerPanel .scanner-controls button:hover {
+  border-color: #60a5fa;
+  background: #162840 !important;
+  color: var(--ui-text) !important;
+}
+
+.terminal-layout #scannerPanel .scanner-controls button.active {
+  border-color: #3b82f6;
+  background: #2563eb !important;
+  color: #ffffff !important;
+}
+
+.terminal-layout #scannerPanel .scanner-summary article {
+  background: linear-gradient(135deg, #162840, #111f33) !important;
+}
+
+.terminal-layout #scannerPanel .scanner-trade-box {
+  padding: 16px;
+  border-color: rgba(74, 222, 128, 0.3) !important;
+  background: rgba(20, 83, 67, 0.12) !important;
+}
+
+.terminal-layout #scannerPanel :is(.scanner-table-wrap, .scanner-terminal-table) {
+  overflow: hidden;
+  border-color: #2d4665 !important;
+  background: #0d1a2c !important;
+}
+
+.terminal-layout #scannerPanel .scanner-table-toolbar {
+  border-color: #2b425f;
+  background: #111f33;
+}
+
+.terminal-layout #scannerPanel .scanner-table-wrap th,
+.terminal-layout #scannerPanel .coinglass-scanner-table th {
+  background: #162840 !important;
+  color: var(--ui-text-secondary) !important;
+}
+
+.terminal-layout #scannerPanel .coinglass-scanner-table tbody tr:hover {
+  background: rgba(59, 130, 246, 0.08) !important;
+}
+
+/* Crypto Trading playbook */
+.terminal-layout #cryptoTradingPanel .crypto-trading-body {
+  gap: 14px;
+}
+
+.terminal-layout #cryptoTradingPanel .crypto-trading-hero article:first-child,
+.terminal-layout #cryptoTradingPanel .crypto-score-grid > div {
+  border-color: #334b68 !important;
+  background: #162840 !important;
+  color: var(--ui-text) !important;
+}
+
+.terminal-layout #cryptoTradingPanel .crypto-setup-head,
+.terminal-layout #cryptoTradingPanel .trade-pick-checks li {
+  border-color: #2b425f;
+}
+
+/* Risk Calculator */
+.terminal-layout #riskPanel .search-panel {
+  margin-top: 20px;
+  padding: 16px;
+  border: 1px solid #2d4665;
+  border-radius: 10px;
+  background: #0a1626 !important;
+}
+
+.terminal-layout #riskPanel .metrics-grid {
+  gap: 12px;
+}
+
+.terminal-layout #riskPanel .metrics-grid article {
+  min-height: 112px;
+  padding: 16px;
+  border-color: #2d4665 !important;
+  background: linear-gradient(135deg, #162840, #111f33) !important;
+  color: var(--ui-text) !important;
+  box-shadow: none !important;
+}
+
+.terminal-layout #riskPanel .metrics-grid article span {
+  color: var(--ui-muted) !important;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.terminal-layout #riskPanel .metrics-grid article strong {
+  color: var(--ui-text) !important;
+  font-variant-numeric: tabular-nums;
+}
+
+.terminal-layout #riskPanel :is(input, select) {
+  border-color: #334b68 !important;
+  background: #071321 !important;
+  color: var(--ui-text) !important;
+}
+
+@media (max-width: 760px) {
+  .terminal-layout :is(#aiPanel, #tradePanel, #scannerPanel, #cryptoTradingPanel, #riskPanel) > section {
+    padding: 16px !important;
+  }
+
+  .terminal-layout :is(#aiPanel, #tradePanel, #scannerPanel, #cryptoTradingPanel, #riskPanel) .section-head {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .terminal-layout #scannerPanel .scanner-controls button {
+    flex: 1 1 150px;
+  }
+}
+
 .terminal-layout .price-box,
 .terminal-layout .market-card,
 .terminal-layout .market-card-main,
@@ -50,4 +265,205 @@
   background-color: var(--ui-panel-strong) !important;
   border-color: var(--ui-border) !important;
   color: var(--ui-text) !important;
+}
+
+/* News workspace */
+.terminal-layout #newsPanel .news-section {
+  padding: 24px !important;
+  border-color: #2b425f !important;
+  background: linear-gradient(180deg, #101e31 0%, #0c192a 100%) !important;
+}
+
+.terminal-layout #newsPanel .news-section > .section-head {
+  align-items: center;
+  margin: 0;
+  padding: 0 0 20px;
+  border-bottom: 1px solid #2b425f;
+}
+
+.terminal-layout #newsPanel .news-section > .section-head h2 {
+  margin: 0;
+  color: var(--ui-text) !important;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.terminal-layout #newsPanel .news-section > .section-head p {
+  max-width: 720px;
+  margin-top: 5px;
+  color: var(--ui-muted) !important;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.terminal-layout #newsPanel #refreshNewsButton {
+  min-height: 38px;
+  border-color: #3b82f6 !important;
+  background: rgba(37, 99, 235, 0.12) !important;
+  color: #bfdbfe !important;
+}
+
+.terminal-layout #newsPanel #refreshNewsButton:hover {
+  border-color: #60a5fa !important;
+  background: rgba(37, 99, 235, 0.22) !important;
+  color: #ffffff !important;
+}
+
+.terminal-layout #newsPanel .news-list {
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.terminal-layout #newsPanel .news-list > article {
+  position: relative;
+  display: grid;
+  min-height: 142px;
+  grid-template-columns: 180px minmax(0, 1fr);
+  align-items: center;
+  gap: 18px;
+  overflow: hidden;
+  border: 1px solid #2d4665 !important;
+  border-radius: 10px;
+  padding: 12px;
+  background: linear-gradient(135deg, #152741 0%, #111f33 72%) !important;
+  color: var(--ui-text) !important;
+  box-shadow: 0 8px 24px rgba(2, 6, 23, 0.2) !important;
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.terminal-layout #newsPanel .news-list > article::before {
+  position: absolute;
+  top: 14px;
+  bottom: 14px;
+  left: 0;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: #3b82f6;
+  content: "";
+}
+
+.terminal-layout #newsPanel .news-list > article.related {
+  border-color: rgba(74, 222, 128, 0.42) !important;
+  background: linear-gradient(135deg, rgba(20, 83, 67, 0.34), #111f33 58%) !important;
+}
+
+.terminal-layout #newsPanel .news-list > article.related::before {
+  background: var(--ui-positive);
+}
+
+.terminal-layout #newsPanel .news-list > article:hover {
+  transform: translateY(-2px);
+  border-color: #4e6b8f !important;
+  box-shadow: 0 14px 30px rgba(2, 6, 23, 0.34) !important;
+}
+
+.terminal-layout #newsPanel .news-thumb {
+  width: 180px;
+  height: 112px;
+  aspect-ratio: auto;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 8px;
+  background: linear-gradient(135deg, #1e3a5f, #0f172a);
+  object-fit: cover;
+}
+
+.terminal-layout #newsPanel .news-content {
+  align-self: center;
+  padding: 3px 10px 3px 0;
+}
+
+.terminal-layout #newsPanel .news-list span {
+  color: #93c5fd !important;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.terminal-layout #newsPanel .news-list h3 {
+  margin: 7px 0 8px;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.45;
+}
+
+.terminal-layout #newsPanel .news-list h3 a {
+  color: #f8fafc !important;
+  text-decoration: none;
+  text-decoration-color: transparent;
+  transition: color 150ms ease;
+}
+
+.terminal-layout #newsPanel .news-list h3 a:hover {
+  color: #60a5fa !important;
+  text-decoration: none;
+}
+
+.terminal-layout #newsPanel .news-list p {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  color: #cbd5e1 !important;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.6;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.terminal-layout #newsPanel .news-list > article:not(:has(.news-thumb)) {
+  grid-template-columns: 1fr;
+  min-height: 132px;
+  align-content: center;
+  padding: 22px 24px;
+}
+
+.terminal-layout #newsPanel .news-source-note {
+  display: block;
+  margin: 4px 2px 0;
+  padding-top: 12px;
+  border-top: 1px solid #2b425f;
+  color: var(--ui-muted) !important;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+@media (max-width: 820px) {
+  .terminal-layout #newsPanel .news-section {
+    padding: 18px !important;
+  }
+
+  .terminal-layout #newsPanel .news-list > article {
+    grid-template-columns: 132px minmax(0, 1fr);
+    gap: 14px;
+  }
+
+  .terminal-layout #newsPanel .news-thumb {
+    width: 132px;
+    height: 92px;
+  }
+}
+
+@media (max-width: 560px) {
+  .terminal-layout #newsPanel .news-section > .section-head {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .terminal-layout #newsPanel #refreshNewsButton {
+    width: 100%;
+  }
+
+  .terminal-layout #newsPanel .news-list > article {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .terminal-layout #newsPanel .news-thumb {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+  }
 }

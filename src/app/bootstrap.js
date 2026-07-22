@@ -26,6 +26,9 @@ const historyControls = document.querySelector(".history-controls");
 const chartSection = document.querySelector(".chart-section");
 const chartWorkspace = document.getElementById("chartWorkspace");
 const fullscreenChartButton = document.getElementById("fullscreenChart");
+const chartScreenshotButton = document.getElementById("chartScreenshotButton");
+const indicatorSettingsToggle = document.getElementById("indicatorSettingsToggle");
+const chartFitButton = document.getElementById("chartFitButton");
 const refreshNewsButton = document.getElementById("refreshNewsButton");
 const refreshAiButton = document.getElementById("refreshAiButton");
 const refreshTradeButton = document.getElementById("refreshTradeButton");
@@ -74,11 +77,20 @@ const fields = {
   industry: document.getElementById("industry"),
   sector: document.getElementById("sector"),
   marketCap: document.getElementById("marketCap"),
+  assetMarketCap: document.getElementById("assetMarketCap"),
+  dashboardTrend: document.getElementById("dashboardTrend"),
+  dashboardSignal: document.getElementById("dashboardSignal"),
   peRatio: document.getElementById("peRatio"),
   pbRatio: document.getElementById("pbRatio"),
   roe: document.getElementById("roe"),
   eps: document.getElementById("eps"),
   beta: document.getElementById("beta"),
+  support1: document.getElementById("support1"),
+  support2: document.getElementById("support2"),
+  resistance1: document.getElementById("resistance1"),
+  resistance2: document.getElementById("resistance2"),
+  pivotLevel: document.getElementById("pivotLevel"),
+  fibonacciLevel: document.getElementById("fibonacciLevel"),
   rsiValue: document.getElementById("rsiValue"),
   macdValue: document.getElementById("macdValue"),
   change1: document.getElementById("change1"),
@@ -117,17 +129,29 @@ const fields = {
 };
 
 const CHART_PRESETS = {
+  "1min": { label: "1 phút", shortLabel: "1p", sourceRange: "1min", intervalMs: 60 * 1000, intraday: true },
+  "3min": { label: "3 phút", shortLabel: "3p", sourceRange: "1min", intervalMs: 3 * 60 * 1000, intraday: true },
   "5m": { label: "5p", sourceRange: "5m", intervalMs: 5 * 60 * 1000, intraday: true },
+  "15m": { label: "15p", sourceRange: "15m", intervalMs: 15 * 60 * 1000, intraday: true },
   "30m": { label: "30p", sourceRange: "30m", intervalMs: 30 * 60 * 1000, intraday: true },
+  "45min": { label: "45p", sourceRange: "15m", intervalMs: 45 * 60 * 1000, intraday: true },
   "1h": { label: "1h", sourceRange: "1h", intervalMs: 60 * 60 * 1000, intraday: true },
   "2h": { label: "2h", sourceRange: "2h", intervalMs: 2 * 60 * 60 * 1000, intraday: true },
+  "3h": { label: "3h", sourceRange: "1h", intervalMs: 3 * 60 * 60 * 1000, intraday: true },
   "4h": { label: "4h", sourceRange: "4h", intervalMs: 4 * 60 * 60 * 1000, intraday: true },
-  "1d": { label: "1 ngày", sourceRange: "2y", bucket: "1d" },
-  "3d": { label: "3 ngày", sourceRange: "2y", bucket: "3d" },
-  "5d": { label: "5 ngày", sourceRange: "2y", bucket: "5d" },
-  "1w": { label: "1 tuần", sourceRange: "2y", bucket: "1w" },
-  "1m": { label: "1 tháng", sourceRange: "2y", bucket: "1m" },
-  "3m": { label: "3 tháng", sourceRange: "2y", bucket: "3m" }
+  "6h": { label: "6h", sourceRange: "1h", intervalMs: 6 * 60 * 60 * 1000, intraday: true },
+  "8h": { label: "8h", sourceRange: "4h", intervalMs: 8 * 60 * 60 * 1000, intraday: true },
+  "12h": { label: "12h", sourceRange: "4h", intervalMs: 12 * 60 * 60 * 1000, intraday: true },
+  "1d": { label: "1 ngày", sourceRange: "max", bucket: "1d" },
+  "2d": { label: "2 ngày", sourceRange: "max", bucket: "2d" },
+  "3d": { label: "3 ngày", sourceRange: "max", bucket: "3d" },
+  "5d": { label: "5 ngày", sourceRange: "max", bucket: "5d" },
+  "1w": { label: "1 tuần", sourceRange: "max", bucket: "1w" },
+  "2w": { label: "2 tuần", sourceRange: "max", bucket: "2w" },
+  "1m": { label: "1 tháng", sourceRange: "max", bucket: "1m" },
+  "3m": { label: "3 tháng", sourceRange: "max", bucket: "3m" },
+  "6m": { label: "6 tháng", sourceRange: "max", bucket: "6m" },
+  "12m": { label: "12 tháng", sourceRange: "max", bucket: "12m" }
 };
 
 const HISTORY_LIMITS = {
@@ -187,7 +211,7 @@ let currentDataSymbol = "";
 let currentDailyBars = [];
 let currentChartSourceBars = [];
 let activeChartRange = "1d";
-let activeHistoryLimit = 30;
+let activeHistoryLimit = 7;
 let chartRequestId = 0;
 let latestNewsItems = [];
 let latestMarketStrength = null;
@@ -197,6 +221,8 @@ function setMessage(text) {
 }
 
 function setActiveTab(name) {
+  document.querySelector(".terminal-layout")?.setAttribute("data-active-tab", name);
+
   tabs.forEach((tab) => {
     const isActive = tab.dataset.tab === name;
     tab.classList.toggle("active", isActive);

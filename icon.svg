@@ -1,9 +1,21 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="96" fill="#880085"/>
-  <path d="M104 356h304" stroke="#ffe8ff" stroke-width="28" stroke-linecap="round"/>
-  <path d="M128 316l72-76 62 54 114-128" fill="none" stroke="#22BD3F" stroke-width="36" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="128" cy="316" r="24" fill="#ffffff"/>
-  <circle cx="200" cy="240" r="24" fill="#ffffff"/>
-  <circle cx="262" cy="294" r="24" fill="#ffffff"/>
-  <circle cx="376" cy="166" r="24" fill="#ffffff"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="AI Trading Terminal">
+  <defs>
+    <linearGradient id="terminal-bg" x1="8" y1="6" x2="56" y2="58" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#172554"/>
+      <stop offset="1" stop-color="#07111f"/>
+    </linearGradient>
+    <linearGradient id="terminal-line" x1="12" y1="46" x2="53" y2="17" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#38bdf8"/>
+      <stop offset="1" stop-color="#60a5fa"/>
+    </linearGradient>
+  </defs>
+  <rect x="1" y="1" width="62" height="62" rx="14" fill="url(#terminal-bg)" stroke="#334155" stroke-width="2"/>
+  <path d="M12 48V34M22 42V25M33 39V18" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"/>
+  <rect x="9" y="38" width="6" height="7" rx="1.5" fill="#22d3ee"/>
+  <rect x="19" y="29" width="6" height="9" rx="1.5" fill="#38bdf8"/>
+  <rect x="30" y="22" width="6" height="12" rx="1.5" fill="#60a5fa"/>
+  <path d="M11 47L22 39L31 42L49 21" fill="none" stroke="url(#terminal-line)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M41 21H49V29" fill="none" stroke="#f8fafc" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="11" cy="47" r="2.5" fill="#f8fafc"/>
+  <circle cx="49" cy="21" r="3" fill="#22d3ee"/>
 </svg>

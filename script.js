@@ -6,6 +6,7 @@
     "src/api/stockApi.js",
     "src/api/cryptoApi.js",
     "src/ui/notification.js",
+    "src/ui/marketOverview.js",
     "src/ui/chart.js",
     "src/indicator/rsi.js",
     "src/indicator/ma.js",

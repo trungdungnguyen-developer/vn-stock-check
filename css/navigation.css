@@ -21,4 +21,97 @@
   box-shadow: inset 4px 0 0 var(--ui-focus) !important;
 }
 
+.terminal-sidebar .tabs {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-rows: 48px;
+  gap: 6px;
+}
+
+.terminal-sidebar .tab {
+  min-width: 0;
+  min-height: 48px;
+  height: 48px;
+  border-radius: 9px;
+  justify-content: center;
+  padding: 7px 8px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.25;
+  text-align: center;
+  white-space: normal;
+}
+
+.sidebar-disclosure {
+  min-width: 0;
+}
+
+.sidebar-disclosure > summary {
+  position: relative;
+  display: flex;
+  min-height: 38px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 1px solid var(--ui-border);
+  border-radius: 9px;
+  padding: 0 12px;
+  background: #0d1c30;
+  color: var(--ui-text-secondary);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  list-style: none;
+  transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+
+.sidebar-disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+
+.sidebar-disclosure > summary::after {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  border-right: 2px solid var(--ui-muted);
+  border-bottom: 2px solid var(--ui-muted);
+  content: "";
+  transform: rotate(45deg) translate(-2px, -2px);
+  transition: transform 150ms ease, border-color 150ms ease;
+}
+
+.sidebar-disclosure > summary:hover,
+.sidebar-disclosure > summary:focus-visible {
+  border-color: var(--ui-primary);
+  background: #193653;
+  color: #ffffff;
+  outline: none;
+}
+
+.sidebar-disclosure[open] > summary {
+  border-color: #3b82f6;
+  background: #102b48;
+  color: #ffffff;
+}
+
+.sidebar-disclosure[open] > summary::after {
+  border-color: #93c5fd;
+  transform: rotate(225deg) translate(-1px, -1px);
+}
+
+.sidebar-disclosure > :not(summary) {
+  margin-top: 8px;
+}
+
+.watchlist-groups {
+  gap: 7px;
+  margin-top: 7px;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.watchlist-group {
+  display: block;
+}
+
 .watchlist-group h3 { color: var(--ui-text-secondary) !important; }

@@ -3,6 +3,10 @@ const VCI_TRADING_BASE = "https://trading.vietcap.com.vn/api";
 const TRADINGVIEW_SCAN_BASE = "https://scanner.tradingview.com/vietnam/scan";
 const BINANCE_BASE = "https://data-api.binance.vision/api/v3";
 const OKX_BASE = "https://www.okx.com/api/v5";
+const COINGECKO_BASE = "https://api.coingecko.com/api/v3";
+const COINPAPRIKA_BASE = "https://api.coinpaprika.com/v1";
+const CRYPTO_MARKET_CACHE = new Map();
+const { fetchMarketOverview } = require("../../server/market-overview");
 
 const ALLOWED_PREFIXES = [
   "/v8/finance/chart/"
@@ -28,8 +32,11 @@ const FUNDAMENTAL_COLUMNS = [
 ];
 
 const VCI_RANGE_CONFIG = {
+  "max": { timeFrame: "ONE_DAY", lookbackDays: 18250 },
   "2y": { timeFrame: "ONE_DAY", lookbackDays: 7300 },
+  "1min": { timeFrame: "ONE_MINUTE", lookbackDays: 14 },
   "5m": { timeFrame: "ONE_MINUTE", lookbackDays: 30 },
+  "15m": { timeFrame: "ONE_MINUTE", lookbackDays: 60 },
   "30m": { timeFrame: "ONE_MINUTE", lookbackDays: 120 },
   "1h": { timeFrame: "ONE_HOUR", lookbackDays: 365 },
   "2h": { timeFrame: "ONE_HOUR", lookbackDays: 500 },
@@ -43,12 +50,20 @@ const VCI_RANGE_CONFIG = {
 };
 
 const CRYPTO_RANGE_CONFIG = {
+  "max": { binanceInterval: "1d", okxBar: "1D", limit: 1000, fullHistory: true },
+  "1min": { binanceInterval: "1m", okxBar: "1m", limit: 500 },
+  "3min": { binanceInterval: "3m", okxBar: "3m", limit: 500 },
   "5m": { binanceInterval: "5m", okxBar: "5m", limit: 500 },
   "15m": { binanceInterval: "15m", okxBar: "15m", limit: 500 },
   "30m": { binanceInterval: "30m", okxBar: "30m", limit: 500 },
+  "45min": { binanceInterval: "15m", okxBar: "15m", limit: 500 },
   "1h": { binanceInterval: "1h", okxBar: "1H", limit: 500 },
   "2h": { binanceInterval: "2h", okxBar: "2H", limit: 500 },
+  "3h": { binanceInterval: "1h", okxBar: "1H", limit: 500 },
   "4h": { binanceInterval: "4h", okxBar: "4H", limit: 500 },
+  "6h": { binanceInterval: "6h", okxBar: "6H", limit: 500 },
+  "8h": { binanceInterval: "4h", okxBar: "4H", limit: 500 },
+  "12h": { binanceInterval: "12h", okxBar: "12H", limit: 500 },
   "1d": { binanceInterval: "1d", okxBar: "1D", limit: 730 },
   "2y": { binanceInterval: "1d", okxBar: "1D", limit: 730 },
   "3d": { binanceInterval: "3d", okxBar: "3D", limit: 500 },
@@ -258,7 +273,8 @@ function parseBinanceKlines(klines) {
       close: Number(item[4]),
       volume: Number(item[5])
     }))
-    .filter((bar) => Number.isFinite(bar.timestamp) && Number.isFinite(bar.close));
+    .filter((bar) => Number.isFinite(bar.timestamp) && Number.isFinite(bar.close))
+    .sort((a, b) => a.timestamp - b.timestamp);
 }
 
 function parseOkxCandles(candles) {
@@ -330,29 +346,78 @@ function makeCryptoPayload(source, pair, ticker, bars, book = {}) {
   };
 }
 
+async function fetchBinanceKlineHistory(symbol, config) {
+  const headers = { accept: "application/json", "user-agent": "stock-tracker-vietnam-crypto/1.0" };
+  if (!config.fullHistory) {
+    const response = await fetch(`${BINANCE_BASE}/klines?symbol=${encodeURIComponent(symbol)}&interval=${encodeURIComponent(config.binanceInterval)}&limit=${config.limit}`, { headers });
+    if (!response.ok) throw new Error(`Binance klines HTTP ${response.status}`);
+    return response.json();
+  }
+
+  const all = [];
+  let endTime = Date.now() + 86400000;
+  for (let page = 0; page < 30; page += 1) {
+    const response = await fetch(`${BINANCE_BASE}/klines?symbol=${encodeURIComponent(symbol)}&interval=${encodeURIComponent(config.binanceInterval)}&limit=1000&endTime=${endTime}`, { headers });
+    if (!response.ok) throw new Error(`Binance history HTTP ${response.status}`);
+    const batch = await response.json();
+    if (!Array.isArray(batch) || !batch.length) break;
+    all.push(...batch);
+    const oldest = Number(batch[0]?.[0]);
+    if (batch.length < 1000 || !Number.isFinite(oldest)) break;
+    endTime = oldest - 1;
+  }
+  return [...new Map(all.map((item) => [Number(item[0]), item])).values()];
+}
+
+async function fetchOkxCandleHistory(pair, config) {
+  const headers = { accept: "application/json", "user-agent": "stock-tracker-vietnam-crypto/1.0" };
+  if (!config.fullHistory) {
+    const response = await fetch(`${OKX_BASE}/market/candles?instId=${encodeURIComponent(pair)}&bar=${encodeURIComponent(config.okxBar)}&limit=${config.limit}`, { headers });
+    if (!response.ok) throw new Error(`OKX candles HTTP ${response.status}`);
+    const payload = await response.json();
+    if (payload.code !== "0") throw new Error(`OKX ${payload.msg || "không có dữ liệu"}`);
+    return payload.data || [];
+  }
+
+  const all = [];
+  let after = "";
+  for (let page = 0; page < 40; page += 1) {
+    const cursor = after ? `&after=${encodeURIComponent(after)}` : "";
+    const response = await fetch(`${OKX_BASE}/market/history-candles?instId=${encodeURIComponent(pair)}&bar=${encodeURIComponent(config.okxBar)}&limit=300${cursor}`, { headers });
+    if (!response.ok) throw new Error(`OKX history HTTP ${response.status}`);
+    const payload = await response.json();
+    if (payload.code !== "0") throw new Error(`OKX ${payload.msg || "không có dữ liệu"}`);
+    const batch = payload.data || [];
+    if (!batch.length) break;
+    all.push(...batch);
+    const oldest = Math.min(...batch.map((item) => Number(item[0])).filter(Number.isFinite));
+    if (batch.length < 300 || !Number.isFinite(oldest) || String(oldest) === after) break;
+    after = String(oldest);
+  }
+  return [...new Map(all.map((item) => [Number(item[0]), item])).values()];
+}
+
 async function fetchBinanceCrypto(symbol, range) {
   const pair = toCryptoPair(symbol);
   const config = CRYPTO_RANGE_CONFIG[range] || CRYPTO_RANGE_CONFIG["2y"];
   const binanceSymbol = pair.replace("-", "");
-  const [tickerResponse, klinesResponse, bookResponse] = await Promise.all([
+  const [tickerResponse, rawKlines, bookResponse] = await Promise.all([
     fetch(`${BINANCE_BASE}/ticker/24hr?symbol=${encodeURIComponent(binanceSymbol)}`, {
       headers: { accept: "application/json", "user-agent": "stock-tracker-vietnam-crypto/1.0" }
     }),
-    fetch(`${BINANCE_BASE}/klines?symbol=${encodeURIComponent(binanceSymbol)}&interval=${encodeURIComponent(config.binanceInterval)}&limit=${config.limit}`, {
-      headers: { accept: "application/json", "user-agent": "stock-tracker-vietnam-crypto/1.0" }
-    }),
+    fetchBinanceKlineHistory(binanceSymbol, config),
     fetch(`${BINANCE_BASE}/ticker/bookTicker?symbol=${encodeURIComponent(binanceSymbol)}`, {
       headers: { accept: "application/json", "user-agent": "stock-tracker-vietnam-crypto/1.0" }
     })
   ]);
 
-  if (!tickerResponse.ok || !klinesResponse.ok) {
-    throw new Error(`Binance HTTP ${tickerResponse.status}/${klinesResponse.status}`);
+  if (!tickerResponse.ok) {
+    throw new Error(`Binance HTTP ${tickerResponse.status}`);
   }
 
   const ticker = await tickerResponse.json();
   const book = bookResponse.ok ? await bookResponse.json() : {};
-  const bars = parseBinanceKlines(await klinesResponse.json());
+  const bars = parseBinanceKlines(rawKlines);
   if (!bars.length) throw new Error("Binance không có dữ liệu nến");
   return makeCryptoPayload("Binance", pair, ticker, bars, book);
 }
@@ -360,46 +425,109 @@ async function fetchBinanceCrypto(symbol, range) {
 async function fetchOkxCrypto(symbol, range) {
   const pair = toCryptoPair(symbol);
   const config = CRYPTO_RANGE_CONFIG[range] || CRYPTO_RANGE_CONFIG["2y"];
-  const [tickerResponse, candlesResponse] = await Promise.all([
+  const [tickerResponse, rawCandles] = await Promise.all([
     fetch(`${OKX_BASE}/market/ticker?instId=${encodeURIComponent(pair)}`, {
       headers: { accept: "application/json", "user-agent": "stock-tracker-vietnam-crypto/1.0" }
     }),
-    fetch(`${OKX_BASE}/market/candles?instId=${encodeURIComponent(pair)}&bar=${encodeURIComponent(config.okxBar)}&limit=${config.limit}`, {
-      headers: { accept: "application/json", "user-agent": "stock-tracker-vietnam-crypto/1.0" }
-    })
+    fetchOkxCandleHistory(pair, config)
   ]);
 
-  if (!tickerResponse.ok || !candlesResponse.ok) {
-    throw new Error(`OKX HTTP ${tickerResponse.status}/${candlesResponse.status}`);
+  if (!tickerResponse.ok) {
+    throw new Error(`OKX HTTP ${tickerResponse.status}`);
   }
 
   const tickerPayload = await tickerResponse.json();
-  const candlesPayload = await candlesResponse.json();
-  if (tickerPayload.code !== "0" || candlesPayload.code !== "0") {
-    throw new Error(`OKX ${tickerPayload.msg || candlesPayload.msg || "không có dữ liệu"}`);
+  if (tickerPayload.code !== "0") {
+    throw new Error(`OKX ${tickerPayload.msg || "không có dữ liệu"}`);
   }
 
   const ticker = tickerPayload.data?.[0] || {};
-  const bars = parseOkxCandles(candlesPayload.data);
+  const bars = parseOkxCandles(rawCandles);
   if (!bars.length) throw new Error("OKX không có dữ liệu nến");
   return makeCryptoPayload("OKX", pair, ticker, bars);
+}
+
+async function enrichCryptoMarketCap(payload, symbol) {
+  const token = toCryptoPair(symbol).replace("-SWAP", "").split("-")[0].toLowerCase();
+  const cached = CRYPTO_MARKET_CACHE.get(token);
+  if (cached && Date.now() - cached.cachedAt < 10 * 60 * 1000) {
+    payload.overview.marketCap = cached.marketCap;
+    payload.overview.marketCapSource = cached.source || "CoinGecko";
+    return payload;
+  }
+
+  try {
+    const response = await fetch(`${COINGECKO_BASE}/coins/markets?vs_currency=usd&symbols=${encodeURIComponent(token)}&order=market_cap_desc&per_page=10&page=1&sparkline=false`, {
+      headers: { accept: "application/json", "user-agent": "ai-trading-terminal/1.0" }
+    });
+    if (response.ok) {
+      const markets = await response.json();
+      const match = (Array.isArray(markets) ? markets : [])
+        .filter((item) => String(item.symbol || "").toLowerCase() === token && Number.isFinite(Number(item.market_cap)))
+        .sort((a, b) => Number(b.market_cap) - Number(a.market_cap))[0];
+      if (match) {
+        payload.overview.marketCap = Number(match.market_cap);
+        payload.overview.marketCapSource = "CoinGecko";
+      }
+    }
+  } catch {
+    // Continue with the fallback source below.
+  }
+
+  if (!(Number.isFinite(Number(payload.overview.marketCap)) && Number(payload.overview.marketCap) > 0)) {
+    try {
+      const searchResponse = await fetch(`${COINPAPRIKA_BASE}/search?q=${encodeURIComponent(token)}&c=currencies&limit=20`, {
+        headers: { accept: "application/json", "user-agent": "ai-trading-terminal/1.0" }
+      });
+      if (searchResponse.ok) {
+        const search = await searchResponse.json();
+        const match = (Array.isArray(search.currencies) ? search.currencies : [])
+          .filter((item) => String(item.symbol || "").toLowerCase() === token && item.is_active !== false)
+          .sort((a, b) => Number(a.rank || Number.MAX_SAFE_INTEGER) - Number(b.rank || Number.MAX_SAFE_INTEGER))[0];
+        if (match?.id) {
+          const tickerResponse = await fetch(`${COINPAPRIKA_BASE}/tickers/${encodeURIComponent(match.id)}`, {
+            headers: { accept: "application/json", "user-agent": "ai-trading-terminal/1.0" }
+          });
+          if (tickerResponse.ok) {
+            const ticker = await tickerResponse.json();
+            const marketCap = Number(ticker.quotes?.USD?.market_cap);
+            if (Number.isFinite(marketCap) && marketCap > 0) {
+              payload.overview.marketCap = marketCap;
+              payload.overview.marketCapSource = "CoinPaprika";
+            }
+          }
+        }
+      }
+    } catch {
+      // Price and chart data remain usable if both optional market-cap sources fail.
+    }
+  }
+
+  if (Number.isFinite(Number(payload.overview.marketCap)) && Number(payload.overview.marketCap) > 0) {
+    CRYPTO_MARKET_CACHE.set(token, {
+      marketCap: Number(payload.overview.marketCap),
+      source: payload.overview.marketCapSource,
+      cachedAt: Date.now()
+    });
+  }
+  return payload;
 }
 
 async function fetchCrypto(symbol, range = "2y") {
   const pair = toCryptoPair(symbol);
   if (pair.endsWith("-SWAP")) {
-    return await fetchOkxCrypto(pair, range);
+    return enrichCryptoMarketCap(await fetchOkxCrypto(pair, range), symbol);
   }
 
   let binanceError = null;
   try {
-    return await fetchBinanceCrypto(symbol, range);
+    return enrichCryptoMarketCap(await fetchBinanceCrypto(symbol, range), symbol);
   } catch (error) {
     binanceError = error;
   }
 
   try {
-    return await fetchOkxCrypto(symbol, range);
+    return enrichCryptoMarketCap(await fetchOkxCrypto(symbol, range), symbol);
   } catch (okxError) {
     throw new Error(`Binance: ${binanceError.message}; OKX: ${okxError.message}`);
   }
@@ -445,6 +573,14 @@ async function fetchOkxUniverse(instType = "SPOT") {
 exports.handler = async function handler(event) {
   if (event.httpMethod === "OPTIONS") {
     return response(200, { ok: true });
+  }
+
+  if (event.queryStringParameters && event.queryStringParameters.source === "market-overview") {
+    try {
+      return response(200, await fetchMarketOverview());
+    } catch (error) {
+      return response(502, { error: "Market overview request failed", details: error.message });
+    }
   }
 
   if (event.queryStringParameters && event.queryStringParameters.source === "okx-universe") {

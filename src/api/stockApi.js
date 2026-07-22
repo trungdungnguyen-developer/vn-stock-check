@@ -37,3 +37,14 @@ async function requestYahooChartData(symbol, range = "2y", interval = "1d") {
   return requestJson(`/v8/finance/chart/${encodeURIComponent(symbol)}?range=${encodeURIComponent(range)}&interval=${encodeURIComponent(interval)}`);
 }
 
+async function requestMarketOverviewData() {
+  if (location.protocol === "file:") {
+    throw new Error("Hãy chạy local-server.js để tải dữ liệu thị trường.");
+  }
+  const response = await fetch(`${PROXY_BASE}?source=market-overview`, {
+    headers: { accept: "application/json" }
+  });
+  if (!response.ok) throw new Error(`Không tải được tổng quan thị trường. HTTP ${response.status}`);
+  return response.json();
+}
+

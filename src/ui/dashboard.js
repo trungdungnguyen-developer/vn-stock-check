@@ -97,6 +97,47 @@ function renderPriceChanges(bars) {
   });
 }
 
+function renderTechnicalLevels(bars, score) {
+  const levels = score?.levels || {};
+  const latest = bars[bars.length - 1] || {};
+  const high = toNumber(latest.high);
+  const low = toNumber(latest.low);
+  const close = toNumber(latest.close);
+  const pivot = high !== null && low !== null && close !== null
+    ? (high + low + close) / 3
+    : null;
+  const classicLevels = pivot !== null
+    ? {
+        support1: (2 * pivot) - high,
+        support2: pivot - (high - low),
+        resistance1: (2 * pivot) - low,
+        resistance2: pivot + (high - low)
+      }
+    : {};
+
+  const recent = bars.slice(-60);
+  const recentHighs = recent.map((bar) => toNumber(bar.high)).filter((value) => value !== null);
+  const recentLows = recent.map((bar) => toNumber(bar.low)).filter((value) => value !== null);
+  const rangeHigh = recentHighs.length ? Math.max(...recentHighs) : null;
+  const rangeLow = recentLows.length ? Math.min(...recentLows) : null;
+  const fibonacci = rangeHigh !== null && rangeLow !== null && rangeHigh > rangeLow
+    ? rangeHigh - ((rangeHigh - rangeLow) * 0.618)
+    : null;
+
+  const values = {
+    support1: levels.support1 ?? classicLevels.support1,
+    support2: levels.support2 ?? classicLevels.support2,
+    resistance1: levels.resistance1 ?? classicLevels.resistance1,
+    resistance2: levels.resistance2 ?? classicLevels.resistance2,
+    pivotLevel: pivot,
+    fibonacciLevel: fibonacci
+  };
+
+  Object.entries(values).forEach(([key, value]) => {
+    if (fields[key]) fields[key].textContent = formatAssetPrice(value);
+  });
+}
+
 function classifyPe(pe) {
   const value = toNumber(pe);
   if (value === null || value <= 0) return { label: "Thiếu dữ liệu", className: "neutral", score: 0, text: "Chưa có P/E hợp lệ để đánh giá định giá theo lợi nhuận." };
@@ -287,4 +328,3 @@ function scoreTimeframeSignals(bars) {
     neutral
   };
 }
-

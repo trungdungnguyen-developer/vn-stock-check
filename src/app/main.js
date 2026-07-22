@@ -12,7 +12,7 @@
   let lastError = null;
 
   try {
-    const rawVci = await requestVciData(symbol, "2y");
+    const rawVci = await requestVciData(symbol, "max");
     parsed = parseVciData(rawVci);
   } catch (error) {
     lastError = error;
@@ -22,7 +22,7 @@
 
   for (const candidate of candidates) {
     try {
-      const raw = await requestJson(`/v8/finance/chart/${encodeURIComponent(candidate)}?range=2y&interval=1d`);
+      const raw = await requestJson(`/v8/finance/chart/${encodeURIComponent(candidate)}?range=max&interval=1d`);
       parsed = parseYahooChart(raw);
       if (parsed && parsed.bars.length) break;
     } catch (error) {
@@ -41,7 +41,7 @@
   latestMarketStrength = null;
   const [newsResult, indexResult, fundamentalsResult] = await Promise.allSettled([
     loadNews(symbol, { silent: true }),
-    requestVciData("VNINDEX", "2y"),
+    requestVciData("VNINDEX", "max"),
     requestFundamentalsData(symbol)
   ]);
 
@@ -113,6 +113,18 @@
   };
   fields.rawData.textContent = JSON.stringify(latestPayload, null, 2);
   fields.lastUpdated.textContent = `Cập nhật: ${new Date().toLocaleString("vi-VN")}`;
+  publishAssetMonitorData({
+    symbol,
+    assetType: "stock",
+    resolvedSymbol: quote.ticker,
+    source: parsed.source,
+    quote,
+    overview,
+    bars,
+    score: analysis.score,
+    marketStrength: latestMarketStrength,
+    newsItems: latestNewsItems
+  });
   setMessage("");
 }
 
@@ -121,7 +133,7 @@ async function loadCryptoAsset(inputSymbol, cryptoSymbol) {
   let lastError = null;
 
   try {
-    parsed = await requestCryptoData(cryptoSymbol, "2y");
+    parsed = await requestCryptoData(cryptoSymbol, "max");
   } catch (error) {
     lastError = error;
   }
@@ -130,7 +142,7 @@ async function loadCryptoAsset(inputSymbol, cryptoSymbol) {
     const yahooSymbol = toYahooCryptoSymbol(inputSymbol) || toYahooCryptoSymbol(cryptoSymbol);
     if (yahooSymbol) {
       try {
-        parsed = parseYahooChart(await requestYahooChartData(yahooSymbol, "2y", "1d"));
+        parsed = parseYahooChart(await requestYahooChartData(yahooSymbol, "max", "1d"));
       } catch (error) {
         lastError = error;
       }
@@ -196,11 +208,123 @@ async function loadCryptoAsset(inputSymbol, cryptoSymbol) {
   };
   fields.rawData.textContent = JSON.stringify(latestPayload, null, 2);
   fields.lastUpdated.textContent = `Cập nhật: ${new Date().toLocaleString("vi-VN")}`;
+  publishAssetMonitorData({
+    symbol: inputSymbol,
+    assetType: "crypto",
+    resolvedSymbol: parsed.resolvedSymbol || cryptoSymbol,
+    source: parsed.source,
+    quote,
+    overview,
+    bars,
+    score: analysis.score,
+    marketStrength: latestMarketStrength,
+    newsItems: latestNewsItems
+  });
   setMessage("");
+}
+
+function publishAssetMonitorData(context) {
+  const detail = { ...context, payload: latestPayload, updatedAt: Date.now() };
+  window.__aiTradingTerminalLatestAsset = detail;
+  window.dispatchEvent(new CustomEvent("ai-trading-terminal:asset-loaded", { detail }));
+}
+
+async function refreshActiveSymbolPanel() {
+  const activeTab = document.querySelector(".terminal-layout")?.dataset.activeTab;
+
+  if (activeTab === "ai") {
+    await loadAiAnalysis();
+    return;
+  }
+
+  if (activeTab === "trade") {
+    await loadTradeAnalysis();
+  }
+}
+
+const stickySearchForm = document.getElementById("stickyStockForm");
+const stickySymbolInput = document.getElementById("stickySymbol");
+const primarySearchRow = form.querySelector(".input-row");
+const stickyHomeToggle = document.getElementById("stickyHomeToggle");
+const stickyFavoriteToggle = document.getElementById("stickyFavoriteToggle");
+const stickyNotificationToggle = document.getElementById("stickyNotificationToggle");
+const stickyUserButton = document.getElementById("stickyUserButton");
+const primaryHomeToggle = document.getElementById("homeToggle");
+const primaryFavoriteToggle = document.getElementById("favoriteToggle");
+const primaryNotificationToggle = document.getElementById("notificationToggle");
+const primaryUserButton = form.querySelector(".user-chip");
+
+function returnToDashboard() {
+  document.getElementById("overviewTab")?.click();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+primaryHomeToggle?.addEventListener("click", returnToDashboard);
+stickyHomeToggle?.addEventListener("click", returnToDashboard);
+
+window.aiTradingTerminalBridge = {
+  search(symbol) {
+    const normalized = String(symbol || "").trim().toUpperCase();
+    if (!normalized) return;
+    symbolInput.value = normalized;
+    if (stickySymbolInput) stickySymbolInput.value = normalized;
+    form.requestSubmit();
+  },
+  getLatestAsset() {
+    return window.__aiTradingTerminalLatestAsset || null;
+  },
+  async requestFrame(rangeKey) {
+    if (!currentSymbol || !currentDailyBars.length) throw new Error("Chưa có mã đang được tra cứu.");
+    const preset = CHART_PRESETS[rangeKey] || CHART_PRESETS["1d"];
+    if (!preset.intraday) return aggregateBarsForPreset(currentDailyBars, preset);
+    const bars = await requestBarsForRange(currentSymbol, rangeKey);
+    return aggregateBarsForPreset(bars, preset);
+  }
+};
+
+if (stickySearchForm && stickySymbolInput && primarySearchRow) {
+  stickySymbolInput.value = symbolInput.value;
+
+  symbolInput.addEventListener("input", () => {
+    stickySymbolInput.value = symbolInput.value;
+  });
+
+  stickySymbolInput.addEventListener("input", () => {
+    symbolInput.value = stickySymbolInput.value;
+  });
+
+  stickySearchForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    symbolInput.value = stickySymbolInput.value;
+    form.requestSubmit();
+  });
+
+  const stickySearchObserver = new IntersectionObserver(([entry]) => {
+    stickySearchForm.classList.toggle("is-visible", !entry.isIntersecting);
+  }, { threshold: 0 });
+
+  stickySearchObserver.observe(primarySearchRow);
+
+  stickyFavoriteToggle?.addEventListener("click", () => primaryFavoriteToggle?.click());
+  stickyNotificationToggle?.addEventListener("click", () => primaryNotificationToggle?.click());
+  stickyUserButton?.addEventListener("click", () => primaryUserButton?.click());
+
+  if (primaryFavoriteToggle && stickyFavoriteToggle) {
+    const syncFavoriteState = () => {
+      stickyFavoriteToggle.classList.toggle("is-favorite", primaryFavoriteToggle.classList.contains("is-favorite"));
+      stickyFavoriteToggle.setAttribute("aria-pressed", primaryFavoriteToggle.getAttribute("aria-pressed") || "false");
+      const primaryLabel = primaryFavoriteToggle.querySelector("span");
+      const stickyLabel = stickyFavoriteToggle.querySelector("span");
+      if (primaryLabel && stickyLabel) stickyLabel.textContent = primaryLabel.textContent;
+    };
+    new MutationObserver(syncFavoriteState).observe(primaryFavoriteToggle, { attributes: true, attributeFilter: ["class", "aria-pressed"] });
+    syncFavoriteState();
+  }
 }
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
+  if (stickySymbolInput) stickySymbolInput.value = symbolInput.value;
   const symbol = symbolInput.value.trim().toUpperCase();
 
   if (!symbol) {
@@ -211,6 +335,7 @@ form.addEventListener("submit", async (event) => {
 
   try {
     await loadVietnamStock(symbol);
+    await refreshActiveSymbolPanel();
   } catch (error) {
     setMessage(error.message || "Không tải được dữ liệu.");
   }
@@ -232,7 +357,7 @@ chartControls?.addEventListener("click", (event) => {
 historyControls?.addEventListener("click", (event) => {
   const button = event.target.closest("button[data-history-limit]");
   if (!button || !currentDailyBars.length) return;
-  activeHistoryLimit = Number(button.dataset.historyLimit) || 30;
+  activeHistoryLimit = Number(button.dataset.historyLimit) || 7;
   setActiveHistoryButton(activeHistoryLimit);
   renderHistory(currentDailyBars, activeHistoryLimit);
 });
@@ -249,9 +374,35 @@ fullscreenChartButton?.addEventListener("click", async () => {
   }
 });
 
+chartScreenshotButton?.addEventListener("click", () => {
+  downloadLightweightChartScreenshot();
+});
+
+chartFitButton?.addEventListener("click", () => {
+  fitLightweightChartContent();
+});
+
+const indicatorManager = chartSection?.querySelector(".indicator-manager");
+
+function setIndicatorManagerOpen(open) {
+  if (!indicatorManager) return;
+  indicatorManager.classList.toggle("is-collapsed", !open);
+  indicatorSettingsToggle?.setAttribute("aria-expanded", String(open));
+  indicatorSettingsToggle?.classList.toggle("active", open);
+}
+
+indicatorSettingsToggle?.addEventListener("click", () => {
+  setIndicatorManagerOpen(indicatorManager?.classList.contains("is-collapsed"));
+});
+
+document.getElementById("closeIndicatorSettings")?.addEventListener("click", () => {
+  setIndicatorManagerOpen(false);
+  indicatorSettingsToggle?.focus();
+});
+
 document.addEventListener("fullscreenchange", () => {
   if (!fullscreenChartButton) return;
-  fullscreenChartButton.textContent = document.fullscreenElement ? "Thu nhỏ" : "Phóng to";
+  fullscreenChartButton.textContent = document.fullscreenElement ? "Thoát toàn màn hình" : "Toàn màn hình";
   if (currentChartSourceBars.length) {
     requestAnimationFrame(() => renderSelectedChart(currentChartSourceBars, activeChartRange));
   }

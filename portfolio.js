@@ -48,7 +48,7 @@
     if (!Number.isFinite(value)) return "-";
     return value.toLocaleString("vi-VN", {
       maximumFractionDigits: digits,
-      minimumFractionDigits: digits
+      minimumFractionDigits: 0
     });
   }
 

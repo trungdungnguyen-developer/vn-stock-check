@@ -9,9 +9,28 @@ let overlaySeries = {};
 let chartSeriesState = { times: [] };
 let latestChartPoints = [];
 let latestChartMovingAverages = null;
+let chartHudState = { points: [], movingAverages: null, indexByTime: new Map() };
+let syncingVisibleRange = false;
+
+const PROFESSIONAL_CHART_COLORS = {
+  background: "#131722",
+  grid: "rgba(42, 46, 57, 0.72)",
+  text: "#b2b5be",
+  border: "#2a2e39",
+  up: "#26a69a",
+  down: "#ef5350",
+  ma20: "#2196f3",
+  ma50: "#22c55e",
+  ma100: "#f97316",
+  ma200: "#a855f7"
+};
 
 const OVERLAY_CONFIG_KEY = "trading-terminal-overlays-v1";
 const DEFAULT_OVERLAY_CONFIG = {
+  ma20: true,
+  ma50: true,
+  ma100: true,
+  ma200: true,
   bollinger: false,
   vwap: false,
   supertrend: false,
@@ -41,25 +60,38 @@ function ensureLightweightChart() {
     height: container.clientHeight || 560,
     autoSize: true,
     layout: {
-      background: { type: lightweight.ColorType.Solid, color: "#0f172a" },
-      textColor: "#cbd5e1",
+      background: { type: lightweight.ColorType.Solid, color: PROFESSIONAL_CHART_COLORS.background },
+      textColor: PROFESSIONAL_CHART_COLORS.text,
       fontFamily: "Inter, 'Be Vietnam Pro', Arial, sans-serif",
       fontSize: 12
     },
     grid: {
-      vertLines: { color: "rgba(148, 163, 184, 0.12)" },
-      horzLines: { color: "rgba(148, 163, 184, 0.12)" }
+      vertLines: { color: PROFESSIONAL_CHART_COLORS.grid },
+      horzLines: { color: PROFESSIONAL_CHART_COLORS.grid }
     },
     rightPriceScale: {
-      borderColor: "#334155",
-      scaleMargins: { top: 0.08, bottom: 0.24 }
+      borderVisible: false,
+      alignLabels: true,
+      entireTextOnly: true,
+      scaleMargins: { top: 0.12, bottom: 0.25 }
     },
     timeScale: {
-      borderColor: "#334155",
+      borderVisible: false,
       timeVisible: true,
-      secondsVisible: false
+      secondsVisible: false,
+      rightOffset: 8,
+      barSpacing: 7,
+      minBarSpacing: 3,
+      fixLeftEdge: true
     },
-    crosshair: { mode: lightweight.CrosshairMode.Normal },
+    crosshair: {
+      mode: lightweight.CrosshairMode.Normal,
+      vertLine: { color: "rgba(178, 181, 190, 0.55)", width: 1, style: lightweight.LineStyle?.Dashed ?? 2, labelBackgroundColor: "#363a45" },
+      horzLine: { color: "rgba(178, 181, 190, 0.55)", width: 1, style: lightweight.LineStyle?.Dashed ?? 2, labelBackgroundColor: "#363a45" }
+    },
+    handleScroll: { mouseWheel: true, pressedMouseMove: true, horzTouchDrag: true, vertTouchDrag: false },
+    handleScale: { axisPressedMouseMove: true, mouseWheel: true, pinch: true },
+    kineticScroll: { mouse: true, touch: true },
     localization: {
       locale: "vi-VN",
       priceFormatter: (price) => formatAssetPrice(price)
@@ -67,27 +99,46 @@ function ensureLightweightChart() {
   });
 
   candleSeries = lightweightSeries(lightweightChart, "candlestick", lightweight.CandlestickSeries, {
-    upColor: CHART_COLORS.positive,
-    downColor: CHART_COLORS.negative,
-    borderUpColor: CHART_COLORS.positive,
-    borderDownColor: CHART_COLORS.negative,
-    wickUpColor: CHART_COLORS.positive,
-    wickDownColor: CHART_COLORS.negative,
-    priceLineColor: "#60a5fa"
+    upColor: PROFESSIONAL_CHART_COLORS.up,
+    downColor: PROFESSIONAL_CHART_COLORS.down,
+    borderVisible: false,
+    wickUpColor: PROFESSIONAL_CHART_COLORS.up,
+    wickDownColor: PROFESSIONAL_CHART_COLORS.down,
+    priceLineColor: "#2962ff",
+    priceLineWidth: 1,
+    priceLineStyle: lightweight.LineStyle?.Dotted ?? 1,
+    lastValueVisible: true
   });
   volumeSeries = lightweightSeries(lightweightChart, "histogram", lightweight.HistogramSeries, {
     priceFormat: { type: "volume" },
     priceScaleId: "volume",
     base: 0
   });
-  lightweightChart.priceScale("volume").applyOptions({ scaleMargins: { top: 0.78, bottom: 0 } });
+  lightweightChart.priceScale("volume").applyOptions({ scaleMargins: { top: 0.78, bottom: 0 }, borderVisible: false });
 
-  const maOptions = { lineWidth: 2, priceLineVisible: false, lastValueVisible: true, crosshairMarkerVisible: false };
-  ma20Series = lightweightSeries(lightweightChart, "line", lightweight.LineSeries, { ...maOptions, color: CHART_COLORS.ma10 });
-  ma50Series = lightweightSeries(lightweightChart, "line", lightweight.LineSeries, { ...maOptions, color: CHART_COLORS.ma50 });
-  ma100Series = lightweightSeries(lightweightChart, "line", lightweight.LineSeries, { ...maOptions, color: CHART_COLORS.ma100 });
-  ma200Series = lightweightSeries(lightweightChart, "line", lightweight.LineSeries, { ...maOptions, color: CHART_COLORS.ma200 });
+  // Keep moving averages visually secondary to the candles, matching TradingView's default weight.
+  const maOptions = { lineWidth: 1, priceLineVisible: false, lastValueVisible: true, crosshairMarkerVisible: false };
+  ma20Series = lightweightSeries(lightweightChart, "line", lightweight.LineSeries, { ...maOptions, color: PROFESSIONAL_CHART_COLORS.ma20 });
+  ma50Series = lightweightSeries(lightweightChart, "line", lightweight.LineSeries, { ...maOptions, color: PROFESSIONAL_CHART_COLORS.ma50 });
+  ma100Series = lightweightSeries(lightweightChart, "line", lightweight.LineSeries, { ...maOptions, color: PROFESSIONAL_CHART_COLORS.ma100 });
+  ma200Series = lightweightSeries(lightweightChart, "line", lightweight.LineSeries, { ...maOptions, color: PROFESSIONAL_CHART_COLORS.ma200 });
   ensureOverlaySeries();
+
+  lightweightChart.subscribeCrosshairMove((param) => {
+    const index = chartHudState.indexByTime.get(chartTimeKey(param?.time));
+    if (index === undefined) {
+      updateChartHud(chartHudState.points.length - 1);
+      return;
+    }
+    updateChartHud(index);
+  });
+  lightweightChart.timeScale().subscribeVisibleLogicalRangeChange((range) => {
+    if (!range || syncingVisibleRange || typeof indicatorCharts === "undefined") return;
+    syncingVisibleRange = true;
+    indicatorCharts.rsi?.timeScale().setVisibleLogicalRange(range);
+    indicatorCharts.macd?.timeScale().setVisibleLogicalRange(range);
+    syncingVisibleRange = false;
+  });
 
   new ResizeObserver(() => {
     if (!lightweightChart || !container.isConnected) return;
@@ -95,6 +146,70 @@ function ensureLightweightChart() {
   }).observe(container);
 
   return lightweightChart;
+}
+
+function chartTimeKey(time) {
+  if (time && typeof time === "object") return `${time.year}-${time.month}-${time.day}`;
+  return String(time ?? "");
+}
+
+function setChartHudText(id, value) {
+  const target = document.getElementById(id);
+  if (target) target.textContent = value;
+}
+
+function updateChartHud(index) {
+  const points = chartHudState.points;
+  const point = points[index];
+  if (!point) return;
+  const previousClose = index > 0 ? toNumber(points[index - 1]?.close) : null;
+  const close = toNumber(point.close);
+  const change = close !== null && previousClose ? ((close - previousClose) / previousClose) * 100 : null;
+  const symbol = safeText(fields?.ticker?.textContent || currentSymbol || "-");
+  const exchange = safeText(fields?.listedExchange?.textContent || "");
+  const preset = CHART_PRESETS?.[activeChartRange];
+  setChartHudText("chartHudSymbol", exchange && exchange !== "-" ? `${symbol} · ${exchange}` : symbol);
+  setChartHudText("chartHudTimeframe", preset?.label || activeChartRange || "-");
+  setChartHudText("chartHudOpen", formatAssetPrice(point.open));
+  setChartHudText("chartHudHigh", formatAssetPrice(point.high));
+  setChartHudText("chartHudLow", formatAssetPrice(point.low));
+  setChartHudText("chartHudClose", formatAssetPrice(point.close));
+  setChartHudText("chartHudChange", change === null ? "-" : formatPercent(change));
+  const changeTarget = document.getElementById("chartHudChange");
+  changeTarget?.classList.remove("positive", "negative", "neutral");
+  if (changeTarget) changeTarget.classList.add(change > 0 ? "positive" : change < 0 ? "negative" : "neutral");
+  const statusTarget = document.getElementById("chartHudStatus");
+  statusTarget?.classList.toggle("negative", change < 0);
+
+  const averages = chartHudState.movingAverages || {};
+  setChartHudText("chartHudMa20", formatAssetPrice(averages.ma10?.[index]));
+  setChartHudText("chartHudMa50", formatAssetPrice(averages.ma50?.[index]));
+  setChartHudText("chartHudMa100", formatAssetPrice(averages.ma100?.[index]));
+  setChartHudText("chartHudMa200", formatAssetPrice(averages.ma200?.[index]));
+}
+
+function fitLightweightChartContent() {
+  lightweightChart?.timeScale().fitContent();
+}
+
+function showRecentLogicalRange(chart, length, visibleBars = 160) {
+  if (!chart || !length) return;
+  chart.timeScale().setVisibleLogicalRange({
+    from: Math.max(0, length - visibleBars),
+    to: length + 8
+  });
+}
+
+function downloadLightweightChartScreenshot() {
+  const canvas = lightweightChart?.takeScreenshot?.();
+  if (!canvas) {
+    setMessage("Không thể chụp ảnh biểu đồ lúc này.");
+    return;
+  }
+  const link = document.createElement("a");
+  link.download = `${safeText(currentSymbol || "chart")}-${safeText(activeChartRange || "range")}.png`;
+  link.href = canvas.toDataURL("image/png");
+  link.click();
 }
 
 function getOverlayConfig() {
@@ -111,6 +226,10 @@ function saveOverlayConfig(config) {
 
 function overlayControls() {
   return {
+    ma20: document.getElementById("toggleMa20Overlay"),
+    ma50: document.getElementById("toggleMa50Overlay"),
+    ma100: document.getElementById("toggleMa100Overlay"),
+    ma200: document.getElementById("toggleMa200Overlay"),
     bollinger: document.getElementById("toggleBollingerOverlay"),
     vwap: document.getElementById("toggleVwapOverlay"),
     supertrend: document.getElementById("toggleSupertrendOverlay"),
@@ -121,16 +240,45 @@ function overlayControls() {
   };
 }
 
+function syncMovingAverageVisibility(config = getOverlayConfig()) {
+  ["ma20", "ma50", "ma100", "ma200"].forEach((key) => {
+    document.querySelectorAll(`[data-ma-key="${key}"]`).forEach((element) => {
+      element.classList.toggle("ma-series-hidden", config[key] === false);
+    });
+  });
+  const allHidden = ["ma20", "ma50", "ma100", "ma200"].every((key) => config[key] === false);
+  const summary = document.querySelector(".ma-summary");
+  const summaryItems = [...(summary?.querySelectorAll("[data-ma-key]") || [])];
+  const visibleItems = summaryItems.filter((element) => config[element.dataset.maKey] !== false);
+  summaryItems.forEach((element) => element.classList.remove("ma-last-visible"));
+  visibleItems.at(-1)?.classList.add("ma-last-visible");
+  summary?.style.setProperty("grid-template-columns", `repeat(${Math.max(visibleItems.length, 1)}, minmax(0, 1fr))`, "important");
+  summary?.classList.toggle("all-ma-hidden", allHidden);
+  document.querySelector(".chart-inline-legend")?.classList.toggle("all-ma-hidden", allHidden);
+}
+
+function renderMovingAverageSeries(points, movingAverages, useUpdate = false) {
+  const config = getOverlayConfig();
+  const averages = movingAverages || calculateMovingAverages(points);
+  updateLineSeries(ma20Series, config.ma20 ? lineData(points, averages.ma10) : [], useUpdate && config.ma20);
+  updateLineSeries(ma50Series, config.ma50 ? lineData(points, averages.ma50) : [], useUpdate && config.ma50);
+  updateLineSeries(ma100Series, config.ma100 ? lineData(points, averages.ma100) : [], useUpdate && config.ma100);
+  updateLineSeries(ma200Series, config.ma200 ? lineData(points, averages.ma200) : [], useUpdate && config.ma200);
+  syncMovingAverageVisibility(config);
+}
+
 function setupOverlayManager() {
   const controls = overlayControls();
   if (!Object.values(controls).some(Boolean)) return;
   const config = getOverlayConfig();
+  syncMovingAverageVisibility(config);
   Object.entries(controls).forEach(([key, control]) => {
     if (!control) return;
     control.checked = Boolean(config[key]);
     control.addEventListener("change", () => {
       const nextConfig = Object.fromEntries(Object.entries(overlayControls()).map(([name, input]) => [name, Boolean(input?.checked)]));
       saveOverlayConfig(nextConfig);
+      renderMovingAverageSeries(latestChartPoints, latestChartMovingAverages, false);
       renderAdvancedOverlays(latestChartPoints, latestChartMovingAverages, { forceSetData: true });
     });
   });
@@ -406,7 +554,7 @@ function drawChart(points, movingAverages = null) {
     volumes.push({
       time,
       value: toNumber(point.volume) || 0,
-      color: pricePoint.close >= pricePoint.open ? "rgba(74, 222, 128, 0.35)" : "rgba(248, 113, 113, 0.35)"
+      color: pricePoint.close >= pricePoint.open ? "rgba(38, 166, 154, 0.52)" : "rgba(239, 83, 80, 0.52)"
     });
   });
 
@@ -420,11 +568,14 @@ function drawChart(points, movingAverages = null) {
     candleSeries.setData(candles);
     volumeSeries.setData(volumes);
   }
-  updateLineSeries(ma20Series, lineData(points, chartMovingAverages.ma10), realtimeUpdate);
-  updateLineSeries(ma50Series, lineData(points, chartMovingAverages.ma50), realtimeUpdate);
-  updateLineSeries(ma100Series, lineData(points, chartMovingAverages.ma100), realtimeUpdate);
-  updateLineSeries(ma200Series, lineData(points, chartMovingAverages.ma200), realtimeUpdate);
+  renderMovingAverageSeries(points, chartMovingAverages, realtimeUpdate);
   renderAdvancedOverlays(points, chartMovingAverages, { realtimeUpdate });
+  chartHudState = {
+    points,
+    movingAverages: chartMovingAverages,
+    indexByTime: new Map(points.map((point, index) => [chartTimeKey(lightweightTimeFor(point, index)), index]))
+  };
+  updateChartHud(points.length - 1);
   chartSeriesState = { times: nextTimes };
-  if (!realtimeUpdate) chart.timeScale().fitContent();
+  if (!realtimeUpdate) showRecentLogicalRange(chart, candles.length);
 }

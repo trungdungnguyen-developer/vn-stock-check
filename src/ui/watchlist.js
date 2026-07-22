@@ -161,8 +161,10 @@
     if (!elements.favoriteButton) return;
     const symbol = getCurrentSymbol();
     const record = symbol ? readState().records[symbol] : null;
-    elements.favoriteButton.textContent = record?.favorite ? "Favorited" : "Favorite";
+    const label = elements.favoriteButton.querySelector("span");
+    if (label) label.textContent = record?.favorite ? "Favorited" : "Favorite";
     elements.favoriteButton.classList.toggle("is-favorite", Boolean(record?.favorite));
+    elements.favoriteButton.setAttribute("aria-pressed", record?.favorite ? "true" : "false");
   }
 
   function openSymbol(symbol) {

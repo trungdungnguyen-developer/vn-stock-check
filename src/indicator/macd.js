@@ -1,4 +1,4 @@
-const INDICATOR_CONFIG_KEY = "trading-terminal-indicators-v1";
+const INDICATOR_CONFIG_KEY = "trading-terminal-indicators-v2";
 const DEFAULT_INDICATOR_CONFIG = {
   rsi: { enabled: true, period: 14, color: "#a855f7" },
   macd: { enabled: true, fast: 12, slow: 26, signal: 9, color: "#38bdf8", signalColor: "#f59e0b" }
@@ -142,8 +142,8 @@ function createIndicatorChart(container, height = 220) {
       fontSize: 12
     },
     grid: {
-      vertLines: { color: "rgba(148, 163, 184, 0.1)" },
-      horzLines: { color: "rgba(148, 163, 184, 0.1)" }
+      vertLines: { color: "rgba(148, 163, 184, 0.065)" },
+      horzLines: { color: "rgba(148, 163, 184, 0.065)" }
     },
     rightPriceScale: { borderColor: "#334155" },
     timeScale: {
@@ -169,18 +169,18 @@ function ensureIndicatorCharts() {
     if (!indicatorCharts.rsi) return false;
     indicatorCharts.rsiLine = lightweightSeries(indicatorCharts.rsi, "line", lightweight.LineSeries, {
       color: DEFAULT_INDICATOR_CONFIG.rsi.color,
-      lineWidth: 2,
+      lineWidth: 1,
       priceLineVisible: false
     });
     indicatorCharts.rsiUpper = lightweightSeries(indicatorCharts.rsi, "line", lightweight.LineSeries, {
-      color: "rgba(248, 113, 113, 0.75)",
+      color: "rgba(248, 113, 113, 0.5)",
       lineWidth: 1,
       lineStyle: lightweight.LineStyle?.Dashed ?? 2,
       priceLineVisible: false,
       lastValueVisible: false
     });
     indicatorCharts.rsiLower = lightweightSeries(indicatorCharts.rsi, "line", lightweight.LineSeries, {
-      color: "rgba(74, 222, 128, 0.75)",
+      color: "rgba(74, 222, 128, 0.5)",
       lineWidth: 1,
       lineStyle: lightweight.LineStyle?.Dashed ?? 2,
       priceLineVisible: false,
@@ -196,12 +196,12 @@ function ensureIndicatorCharts() {
     });
     indicatorCharts.macdLine = lightweightSeries(indicatorCharts.macd, "line", lightweight.LineSeries, {
       color: DEFAULT_INDICATOR_CONFIG.macd.color,
-      lineWidth: 2,
+      lineWidth: 1,
       priceLineVisible: false
     });
     indicatorCharts.macdSignal = lightweightSeries(indicatorCharts.macd, "line", lightweight.LineSeries, {
       color: DEFAULT_INDICATOR_CONFIG.macd.signalColor,
-      lineWidth: 2,
+      lineWidth: 1,
       priceLineVisible: false
     });
   }
@@ -249,7 +249,7 @@ function drawLineCanvas(_canvas, values, options = {}) {
   indicatorCharts.rsiLine?.setData(indicatorData(indicatorSourceBars, values));
   indicatorCharts.rsiUpper?.setData(guideData(indicatorSourceBars, 70));
   indicatorCharts.rsiLower?.setData(guideData(indicatorSourceBars, 30));
-  indicatorCharts.rsi?.timeScale().fitContent();
+  showRecentLogicalRange(indicatorCharts.rsi, indicatorSourceBars.length);
 }
 
 function drawMacdCanvas(_canvas, macdData) {
@@ -268,5 +268,5 @@ function drawMacdCanvas(_canvas, macdData) {
       color: number > 0 ? "rgba(74, 222, 128, 0.7)" : number < 0 ? "rgba(248, 113, 113, 0.7)" : "rgba(250, 204, 21, 0.7)"
     };
   }).filter(Boolean));
-  indicatorCharts.macd?.timeScale().fitContent();
+  showRecentLogicalRange(indicatorCharts.macd, indicatorSourceBars.length);
 }

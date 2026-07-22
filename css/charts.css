@@ -5,6 +5,16 @@
   border-radius: 10px;
 }
 
+/* Lightweight Charts stacks transparent canvases. Opaque canvas backgrounds
+   hide the price series, axes and indicators drawn on lower layers. */
+.terminal-layout #priceChart canvas,
+.terminal-layout #rsiChart canvas,
+.terminal-layout #macdChart canvas {
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+}
+
 .terminal-layout .chart-legend,
 .terminal-layout .chart-legend span,
 .terminal-layout .timeframe-label {

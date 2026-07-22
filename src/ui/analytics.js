@@ -93,7 +93,14 @@ function ensureAnalyticsChart(key) {
 function setAnalyticsOption(key, option) {
   const chart = ensureAnalyticsChart(key);
   if (!chart) return;
-  chart.setOption(option, true);
+  chart.setOption({
+    ...option,
+    textStyle: {
+      fontFamily: '"Inter", "Be Vietnam Pro", "Segoe UI", Arial, sans-serif',
+      color: "#cbd5e1",
+      ...(option.textStyle || {})
+    }
+  }, true);
   requestAnimationFrame(() => chart.resize());
 }
 
@@ -109,7 +116,8 @@ function getAnalyticsTheme() {
     negative: "#f87171",
     warning: "#facc15",
     link: "#60a5fa",
-    purple: "#a855f7"
+    purple: "#a855f7",
+    fontFamily: '"Inter", "Be Vietnam Pro", "Segoe UI", Arial, sans-serif'
   };
 }
 
@@ -181,7 +189,7 @@ function renderIndustryHeatmap(context) {
       formatter: (params) => `${params.name}<br/>Change: ${formatPercent(params.data.change)}<br/>Weight: ${formatNumber(params.value, 0)}`,
       backgroundColor: theme.panel,
       borderColor: theme.grid,
-      textStyle: { color: theme.primary }
+      textStyle: { color: theme.primary, fontFamily: theme.fontFamily }
     },
     series: [{
       type: "treemap",
@@ -190,7 +198,10 @@ function renderIndustryHeatmap(context) {
       breadcrumb: { show: false },
       label: {
         color: "#020617",
-        fontWeight: 700,
+        fontFamily: theme.fontFamily,
+        fontSize: 12,
+        fontWeight: 600,
+        lineHeight: 16,
         formatter: (params) => `${params.name}\n${formatPercent(params.data.change)}`
       },
       upperLabel: { show: false },

@@ -38,7 +38,9 @@
     `
     : `<p>Chưa tải được dữ liệu VNINDEX để so sánh sức mạnh tương đối. Điểm này được giữ ở mức trung tính có điều kiện.</p>`;
 
-  fields.scoreTotalBadge.textContent = `${score.total}/100 điểm`;
+  fields.scoreTotalBadge.textContent = `${score.total}/100`;
+  fields.scoreTotalBadge.classList.remove("positive", "negative", "neutral");
+  fields.scoreTotalBadge.classList.add(score.total > 50 ? "positive" : score.total < 50 ? "negative" : "neutral");
   fields.scoreAnalysis.innerHTML = `
     <div class="score-hero">
       <h3>${escapeHtml(symbol)} - ${escapeHtml(name)}</h3>
@@ -254,6 +256,53 @@ function renderTradingRecommendations(bars) {
   `).join("");
 }
 
+function renderDashboardTrendSignal(bars, movingAverages, indicators) {
+  const currentPrice = toNumber(bars[bars.length - 1]?.close);
+  const ma20 = toNumber(latestNonNull(movingAverages.ma10));
+  const ma50 = toNumber(latestNonNull(movingAverages.ma50));
+  const ma200 = toNumber(latestNonNull(movingAverages.ma200));
+  const rsi = toNumber(latestNonNull(indicators.rsi));
+  const macd = toNumber(latestNonNull(indicators.macd.macd));
+  const signal = toNumber(latestNonNull(indicators.macd.signal));
+  const histogram = toNumber(latestNonNull(indicators.macd.histogram));
+
+  let trend = { text: "Đi ngang", className: "neutral" };
+  if (currentPrice !== null && ma20 !== null && ma50 !== null) {
+    if (currentPrice > ma20 && ma20 > ma50 && (ma200 === null || ma50 > ma200)) {
+      trend = { text: "Tăng mạnh", className: "positive" };
+    } else if (currentPrice > ma20 && ma20 > ma50) {
+      trend = { text: "Xu hướng tăng", className: "positive" };
+    } else if (currentPrice < ma20 && ma20 < ma50 && (ma200 === null || ma50 < ma200)) {
+      trend = { text: "Giảm mạnh", className: "negative" };
+    } else if (currentPrice < ma20 && ma20 < ma50) {
+      trend = { text: "Xu hướng giảm", className: "negative" };
+    }
+  }
+
+  let tradeSignal = { text: "Theo dõi", className: "neutral" };
+  const bullish = currentPrice !== null && ma20 !== null && currentPrice > ma20
+    && rsi !== null && rsi >= 50 && rsi < 70
+    && macd !== null && signal !== null && histogram !== null && macd > signal && histogram > 0;
+  const bearish = currentPrice !== null && ma20 !== null && currentPrice < ma20
+    && rsi !== null && rsi < 50
+    && macd !== null && signal !== null && histogram !== null && macd < signal && histogram < 0;
+
+  if (bullish) tradeSignal = { text: "Tín hiệu mua", className: "positive" };
+  if (bearish) tradeSignal = { text: "Tín hiệu bán", className: "negative" };
+
+  [fields.dashboardTrend, fields.dashboardSignal].forEach((target) => {
+    target?.classList.remove("positive", "negative", "neutral");
+  });
+  if (fields.dashboardTrend) {
+    fields.dashboardTrend.textContent = trend.text;
+    fields.dashboardTrend.classList.add(trend.className);
+  }
+  if (fields.dashboardSignal) {
+    fields.dashboardSignal.textContent = tradeSignal.text;
+    fields.dashboardSignal.classList.add(tradeSignal.className);
+  }
+}
+
 function fillData(symbol, quote, overview, bars) {
   const isCrypto = overview.assetType === "crypto";
   const latestBar = bars[bars.length - 1] || {};
@@ -276,7 +325,7 @@ function fillData(symbol, quote, overview, bars) {
       ? "Dữ liệu coin được ưu tiên lấy từ Binance, sau đó OKX; Yahoo Finance chỉ dùng làm dự phòng. Một số chỉ số cơ bản kiểu cổ phiếu sẽ không áp dụng cho coin."
       : "Dữ liệu được lấy từ nguồn công khai. Một số trường có thể trống tùy theo mã cổ phiếu.";
   fields.currentPrice.textContent = formatAssetPrice(currentPrice, isCrypto ? "crypto" : "stock");
-  fields.priceChange.textContent = `${toNumber(change) > 0 ? "+" : ""}${formatAssetPrice(change, isCrypto ? "crypto" : "stock")} (${formatPercent(changePercent)})`;
+  fields.priceChange.textContent = formatPercent(changePercent);
   updatePriceColor(currentPrice, reference, fields.priceChange);
 
   fields.referencePrice.textContent = formatAssetPrice(reference, isCrypto ? "crypto" : "stock");
@@ -296,7 +345,14 @@ function fillData(symbol, quote, overview, bars) {
   fields.listedExchange.textContent = safeText(overview.exchange || quote.exchange);
   fields.industry.textContent = safeText(overview.industry);
   fields.sector.textContent = safeText(overview.sector);
-  fields.marketCap.textContent = toNumber(overview.marketCap) ? formatLargeNumber(overview.marketCap) : "-";
+  const marketCap = toNumber(overview.marketCap);
+  fields.marketCap.textContent = marketCap ? `${isCrypto ? "$" : ""}${formatLargeNumber(marketCap)}` : "-";
+  if (fields.assetMarketCap) {
+    fields.assetMarketCap.textContent = marketCap ? `${isCrypto ? "$" : ""}${formatLargeNumber(marketCap)}` : "-";
+  }
+  fields.marketCap.title = isCrypto
+    ? "Vốn hóa thị trường theo USD"
+    : "Vốn hóa thị trường theo VND";
   fields.peRatio.textContent = formatFundamentalNumber(overview.pe, 2);
   fields.pbRatio.textContent = formatFundamentalNumber(overview.pb, 2);
   fields.roe.textContent = toNumber(overview.roe) ? formatPercent(overview.roe) : "-";
@@ -308,7 +364,7 @@ function fillData(symbol, quote, overview, bars) {
   currentDataSymbol = quote.ticker || overview.ticker || symbol;
   currentDailyBars = bars;
   activeChartRange = "1d";
-  activeHistoryLimit = 30;
+  activeHistoryLimit = 7;
   setActiveChartButton(activeChartRange);
   setActiveHistoryButton(activeHistoryLimit);
   renderSelectedChart(bars, activeChartRange);
@@ -319,11 +375,13 @@ function fillData(symbol, quote, overview, bars) {
     rsi: calculateRsi(scoreTechnicalBars),
     macd: calculateMacd(scoreTechnicalBars)
   };
+  renderDashboardTrendSignal(scoreBars, movingAverages, indicators);
   renderPriceChanges(bars);
   renderTradingRecommendations(bars);
   renderInvestorFlow(quote);
   renderHistory(bars, activeHistoryLimit);
   const score = renderScoreAnalysis(symbol, quote, overview, scoreBars, movingAverages, indicators);
+  renderTechnicalLevels(scoreBars, score);
   const fundamentalView = renderFundamentalAnalysis(overview, score);
   return { movingAverages, indicators, score, fundamentalView };
 }
